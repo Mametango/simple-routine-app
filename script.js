@@ -31,6 +31,8 @@ const titleInput = document.getElementById('titleInput');
 const descriptionInput = document.getElementById('descriptionInput');
 const frequencyInput = document.getElementById('frequencyInput');
 const timeInput = document.getElementById('timeInput');
+const weeklyDaysRow = document.getElementById('weeklyDaysRow');
+const weekdayInputs = document.querySelectorAll('.weekday-input');
 const monthlyDateRow = document.getElementById('monthlyDateRow');
 const monthlyDateInput = document.getElementById('monthlyDateInput');
 const saveButton = document.getElementById('saveButton');
@@ -46,6 +48,8 @@ const editTitleInput = document.getElementById('editTitleInput');
 const editDescriptionInput = document.getElementById('editDescriptionInput');
 const editFrequencyInput = document.getElementById('editFrequencyInput');
 const editTimeInput = document.getElementById('editTimeInput');
+const editWeeklyDaysRow = document.getElementById('editWeeklyDaysRow');
+const editWeekdayInputs = document.querySelectorAll('#editWeeklyDaysRow .weekday-input');
 const editMonthlyDateRow = document.getElementById('editMonthlyDateRow');
 const editMonthlyDateInput = document.getElementById('editMonthlyDateInput');
 const editSaveButton = document.getElementById('editSaveButton');
@@ -161,20 +165,46 @@ function setupEventListeners() {
 // 頻度変更時の処理
 function handleFrequencyChange() {
     const frequency = frequencyInput.value;
-    if (frequency === 'monthly') {
+    
+    // 全ての追加フィールドを非表示
+    weeklyDaysRow.style.display = 'none';
+    monthlyDateRow.style.display = 'none';
+    
+    // 頻度に応じてフィールドを表示
+    if (frequency === 'weekly') {
+        weeklyDaysRow.style.display = 'block';
+    } else if (frequency === 'monthly') {
         monthlyDateRow.style.display = 'block';
-    } else {
-        monthlyDateRow.style.display = 'none';
+    }
+    
+    // 入力値をクリア
+    if (frequency !== 'weekly') {
+        weekdayInputs.forEach(input => input.checked = false);
+    }
+    if (frequency !== 'monthly') {
         monthlyDateInput.value = '';
     }
 }
 
 function handleEditFrequencyChange() {
     const frequency = editFrequencyInput.value;
-    if (frequency === 'monthly') {
+    
+    // 全ての追加フィールドを非表示
+    editWeeklyDaysRow.style.display = 'none';
+    editMonthlyDateRow.style.display = 'none';
+    
+    // 頻度に応じてフィールドを表示
+    if (frequency === 'weekly') {
+        editWeeklyDaysRow.style.display = 'block';
+    } else if (frequency === 'monthly') {
         editMonthlyDateRow.style.display = 'block';
-    } else {
-        editMonthlyDateRow.style.display = 'none';
+    }
+    
+    // 入力値をクリア
+    if (frequency !== 'weekly') {
+        editWeekdayInputs.forEach(input => input.checked = false);
+    }
+    if (frequency !== 'monthly') {
         editMonthlyDateInput.value = '';
     }
 }
@@ -367,6 +397,10 @@ function hideAddForm() {
     timeInput.value = '';
     monthlyDateInput.value = '';
     monthlyDateRow.style.display = 'none';
+    
+    // 曜日選択をリセット
+    weekdayInputs.forEach(input => input.checked = false);
+    weeklyDaysRow.style.display = 'none';
 }
 
 function saveRoutine() {
@@ -376,8 +410,22 @@ function saveRoutine() {
     const time = timeInput.value;
     const monthlyDate = frequency === 'monthly' ? monthlyDateInput.value : null;
     
+    // 曜日選択の取得
+    let weeklyDays = null;
+    if (frequency === 'weekly') {
+        weeklyDays = Array.from(weekdayInputs)
+            .filter(input => input.checked)
+            .map(input => parseInt(input.value))
+            .sort((a, b) => a - b);
+    }
+    
     if (!title) {
         alert('タイトルを入力してください');
+        return;
+    }
+    
+    if (frequency === 'weekly' && (!weeklyDays || weeklyDays.length === 0)) {
+        alert('曜日を選択してください');
         return;
     }
     
@@ -393,6 +441,7 @@ function saveRoutine() {
         frequency,
         time,
         monthlyDate,
+        weeklyDays,
         completed: false,
         createdAt: new Date().toISOString(),
         lastCompleted: null
@@ -422,6 +471,12 @@ function editRoutine(id) {
         editFrequencyInput.value = routine.frequency;
         editTimeInput.value = routine.time;
         editMonthlyDateInput.value = routine.monthlyDate || '';
+        
+        // 曜日選択を設定
+        editWeekdayInputs.forEach(input => {
+            input.checked = routine.weeklyDays && routine.weeklyDays.includes(parseInt(input.value));
+        });
+        
         editSaveButton.dataset.routineId = id;
         
         // 頻度に応じて日付フィールドの表示を制御
@@ -442,8 +497,23 @@ function saveEditRoutine() {
         routine.time = editTimeInput.value;
         routine.monthlyDate = editFrequencyInput.value === 'monthly' ? editMonthlyDateInput.value : null;
         
+        // 曜日選択の更新
+        if (editFrequencyInput.value === 'weekly') {
+            routine.weeklyDays = Array.from(editWeekdayInputs)
+                .filter(input => input.checked)
+                .map(input => parseInt(input.value))
+                .sort((a, b) => a - b);
+        } else {
+            routine.weeklyDays = null;
+        }
+        
         if (!routine.title) {
             alert('タイトルを入力してください');
+            return;
+        }
+        
+        if (routine.frequency === 'weekly' && (!routine.weeklyDays || routine.weeklyDays.length === 0)) {
+            alert('曜日を選択してください');
             return;
         }
         
@@ -547,6 +617,11 @@ function displayRoutines(routinesToShow) {
                         <i data-lucide="calendar"></i>
                         <span>毎月${routine.monthlyDate}日</span>
                     </div>
+                ` : routine.frequency === 'weekly' && routine.weeklyDays ? `
+                    <div class="routine-meta">
+                        <i data-lucide="calendar-days"></i>
+                        <span>毎週${getWeekdayText(routine.weeklyDays)}</span>
+                    </div>
                 ` : `
                     <div class="routine-meta">
                         <i data-lucide="${getFrequencyIcon(routine.frequency)}"></i>
@@ -583,4 +658,9 @@ function getFrequencyText(frequency) {
         monthly: '毎月'
     };
     return texts[frequency] || frequency;
+}
+
+function getWeekdayText(weekdays) {
+    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+    return weekdays.map(day => dayNames[day]).join('・');
 } 
