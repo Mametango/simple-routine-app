@@ -256,7 +256,23 @@ body {
 .form-select:focus {
   outline: none;
   border-color: #667eea;
+  background: white;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 毎月の日付入力フィールドのスタイル */
+.form-input[type="number"] {
+  padding-left: 12px; /* アイコンがないので左パディングを調整 */
+}
+
+.form-input[type="number"]::-webkit-inner-spin-button,
+.form-input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 .form-select {
@@ -522,6 +538,10 @@ body {
 .cancel-button:hover {
   background: rgba(239, 68, 68, 0.3);
   transform: translateY(-1px);
+}
+
+.password-toggle {
+  /* Add appropriate styles for the password toggle */
 }
 
 @media (max-width: 768px) {
