@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Routine</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <i data-lucide="target" class="title-icon"></i>
+                    My Routine
+                </h1>
+                <p class="subtitle">毎日の習慣を管理して、より良い生活を</p>
+            </div>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <i data-lucide="calendar" class="stat-icon"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="totalCount">0</span>
+                    <span class="stat-label">総ルーティン</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i data-lucide="check" class="stat-icon completed"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="completedCount">0</span>
+                    <span class="stat-label">完了済み</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i data-lucide="clock" class="stat-icon"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="completionRate">0%</span>
+                    <span class="stat-label">達成率</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="frequency-tabs">
+            <button class="tab-button active" data-frequency="all">
+                <i data-lucide="list" class="tab-icon"></i>
+                全て
+            </button>
+            <button class="tab-button" data-frequency="daily">
+                <i data-lucide="sun" class="tab-icon"></i>
+                毎日
+            </button>
+            <button class="tab-button" data-frequency="weekly">
+                <i data-lucide="calendar-days" class="tab-icon"></i>
+                毎週
+            </button>
+            <button class="tab-button" data-frequency="monthly">
+                <i data-lucide="calendar" class="tab-icon"></i>
+                毎月
+            </button>
+        </div>
+
+        <div class="actions">
+            <button class="add-button" id="addButton">
+                <i data-lucide="plus" class="button-icon"></i>
+                新しいルーティンを追加
+            </button>
+        </div>
+
+        <div class="form-container" id="formContainer" style="display: none;">
+            <div class="form">
+                <input type="text" placeholder="ルーティンのタイトル" id="titleInput" class="form-input">
+                <textarea placeholder="説明（オプション）" id="descriptionInput" class="form-textarea"></textarea>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="frequencyInput" class="form-label">頻度</label>
+                        <select id="frequencyInput" class="form-select">
+                            <option value="daily">毎日</option>
+                            <option value="weekly">毎週</option>
+                            <option value="monthly">毎月</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="timeInput" class="form-label">時間</label>
+                        <input type="time" id="timeInput" class="form-input">
+                    </div>
+                </div>
+                <div class="form-buttons">
+                    <button class="save-button" id="saveButton">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="routines-container">
+            <div class="empty-state" id="emptyState">
+                <i data-lucide="target" class="empty-icon"></i>
+                <h3>まだルーティンがありません</h3>
+                <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
+            </div>
+            <div class="routines-list" id="routinesList" style="display: none;"></div>
+        </div>
+
+        <div class="modal-overlay" id="modalOverlay" style="display: none;">
+            <div class="modal">
+                <h3>ルーティンを編集</h3>
+                <input type="text" placeholder="ルーティンのタイトル" id="editTitleInput" class="form-input">
+                <textarea placeholder="説明（オプション）" id="editDescriptionInput" class="form-textarea"></textarea>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editFrequencyInput" class="form-label">頻度</label>
+                        <select id="editFrequencyInput" class="form-select">
+                            <option value="daily">毎日</option>
+                            <option value="weekly">毎週</option>
+                            <option value="monthly">毎月</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTimeInput" class="form-label">時間</label>
+                        <input type="time" id="editTimeInput" class="form-input">
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button class="save-button" id="editSaveButton">保存</button>
+                    <button class="cancel-button" id="editCancelButton">キャンセル</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
