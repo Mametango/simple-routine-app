@@ -695,4 +695,63 @@ body {
 .form-textarea::placeholder {
     color: #666666;
     font-family: inherit;
+}
+
+/* 曜日選択のスタイル */
+.weekday-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.weekday-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666666;
+  user-select: none;
+}
+
+.weekday-checkbox:hover {
+  background: #e9ecef;
+  border-color: #667eea;
+}
+
+.weekday-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #667eea;
+  cursor: pointer;
+}
+
+.weekday-checkbox input[type="checkbox"]:checked + span {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.weekday-checkbox:has(input[type="checkbox"]:checked) {
+  background: #f0f4ff;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 480px) {
+  .weekday-checkboxes {
+    gap: 6px;
+  }
+  
+  .weekday-checkbox {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
 } 
