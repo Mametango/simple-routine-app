@@ -234,30 +234,66 @@ body {
   font-weight: 500;
 }
 
-.form-input,
-.form-textarea,
-.form-select {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  color: #ffffff;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.form-input::placeholder,
-.form-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.form-input:focus,
-.form-textarea:focus,
-.form-select:focus {
+.form-input:focus {
   outline: none;
   border-color: #667eea;
   background: white;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  color: #333333;
+}
+
+/* メインフォームの入力フィールド */
+.form-container .form-input,
+.form-container .form-textarea,
+.form-container .form-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  color: #333333;
+}
+
+.form-container .form-input:focus,
+.form-container .form-textarea:focus,
+.form-container .form-select:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  color: #333333;
+}
+
+/* モーダルの入力フィールド */
+.modal .form-input,
+.modal .form-textarea,
+.modal .form-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  color: #333333;
+}
+
+.modal .form-input:focus,
+.modal .form-textarea:focus,
+.modal .form-select:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  color: #333333;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #666666;
+  font-family: inherit;
 }
 
 /* 日本語入力の改善 */
@@ -633,4 +669,30 @@ body {
     margin: 1rem;
     width: calc(100% - 2rem);
   }
+}
+
+/* 認証フォームの入力フィールド */
+.auth-form .form-input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+    color: #333333;
+}
+
+.auth-form .form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    color: #333333;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: #666666;
+    font-family: inherit;
 } 
