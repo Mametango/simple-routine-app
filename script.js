@@ -287,6 +287,14 @@ function showAddForm() {
     formContainer.style.display = 'block';
     titleInput.focus();
     addButton.style.display = 'none';
+    
+    // 現在選択されているタブに基づいて頻度を自動設定
+    if (currentFilter !== 'all') {
+        frequencyInput.value = currentFilter;
+    } else {
+        frequencyInput.value = 'daily'; // デフォルトは毎日
+    }
+    
     // 頻度に応じて日付フィールドの表示を制御
     handleFrequencyChange();
 }
@@ -296,7 +304,14 @@ function hideAddForm() {
     addButton.style.display = 'flex';
     titleInput.value = '';
     descriptionInput.value = '';
-    frequencyInput.value = 'daily';
+    
+    // 現在選択されているタブに基づいて頻度をリセット
+    if (currentFilter !== 'all') {
+        frequencyInput.value = currentFilter;
+    } else {
+        frequencyInput.value = 'daily';
+    }
+    
     timeInput.value = '';
     monthlyDateInput.value = '';
     monthlyDateRow.style.display = 'none';
@@ -416,6 +431,12 @@ function setActiveTab(frequency) {
         }
     });
     currentFilter = frequency;
+    
+    // フォームが開いている場合は頻度も更新
+    if (formContainer.style.display === 'block' && frequency !== 'all') {
+        frequencyInput.value = frequency;
+        handleFrequencyChange();
+    }
 }
 
 function filterRoutines(frequency) {
