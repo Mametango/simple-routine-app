@@ -4,6 +4,9 @@ let currentUser = null;
 let isRegistering = false;
 let currentFilter = 'all';
 
+// 日本語入力の状態管理
+let isComposing = false;
+
 // DOM要素の取得
 const authContainer = document.getElementById('authContainer');
 const mainApp = document.getElementById('mainApp');
@@ -55,8 +58,60 @@ const tabButtons = document.querySelectorAll('.tab-button');
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     setupEventListeners();
+    setupJapaneseInput();
     lucide.createIcons();
 });
+
+// 日本語入力の設定
+function setupJapaneseInput() {
+    const textInputs = [titleInput, descriptionInput, editTitleInput, editDescriptionInput];
+    
+    textInputs.forEach(input => {
+        if (input) {
+            // IME入力開始
+            input.addEventListener('compositionstart', function() {
+                isComposing = true;
+            });
+            
+            // IME入力中
+            input.addEventListener('compositionupdate', function() {
+                isComposing = true;
+            });
+            
+            // IME入力完了
+            input.addEventListener('compositionend', function() {
+                isComposing = false;
+            });
+            
+            // キー入力（日本語入力中は無視）
+            input.addEventListener('keydown', function(e) {
+                if (isComposing) {
+                    return;
+                }
+                
+                // Enterキーで保存
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (input === titleInput || input === editTitleInput) {
+                        if (input === titleInput) {
+                            saveRoutine();
+                        } else {
+                            saveEditRoutine();
+                        }
+                    }
+                }
+            });
+            
+            // 入力値の正規化
+            input.addEventListener('input', function() {
+                if (!isComposing) {
+                    // 入力値を正規化（全角スペースを半角に変換など）
+                    this.value = this.value.replace(/　/g, ' '); // 全角スペースを半角に
+                }
+            });
+        }
+    });
+}
 
 function initializeApp() {
     // ユーザーの認証状態をチェック
@@ -81,10 +136,7 @@ function setupEventListeners() {
     // ルーティン関連
     addButton.addEventListener('click', showAddForm);
     saveButton.addEventListener('click', saveRoutine);
-    titleInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') saveRoutine();
-    });
-
+    
     // 頻度変更時の処理
     frequencyInput.addEventListener('change', handleFrequencyChange);
     editFrequencyInput.addEventListener('change', handleEditFrequencyChange);
