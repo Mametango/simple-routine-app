@@ -542,20 +542,21 @@ function displayRoutines(routinesToShow) {
                 </div>
             </div>
             <div class="routine-info">
-                <div class="routine-meta">
-                    <i data-lucide="${getFrequencyIcon(routine.frequency)}"></i>
-                    <span>${getFrequencyText(routine.frequency)}</span>
-                </div>
+                ${routine.frequency === 'monthly' && routine.monthlyDate ? `
+                    <div class="routine-meta">
+                        <i data-lucide="calendar"></i>
+                        <span>毎月${routine.monthlyDate}日</span>
+                    </div>
+                ` : `
+                    <div class="routine-meta">
+                        <i data-lucide="${getFrequencyIcon(routine.frequency)}"></i>
+                        <span>${getFrequencyText(routine.frequency)}</span>
+                    </div>
+                `}
                 ${routine.time ? `
                     <div class="routine-meta">
                         <i data-lucide="clock"></i>
                         <span>${routine.time}</span>
-                    </div>
-                ` : ''}
-                ${routine.monthlyDate ? `
-                    <div class="routine-meta">
-                        <i data-lucide="calendar"></i>
-                        <span>毎月${routine.monthlyDate}日</span>
                     </div>
                 ` : ''}
             </div>
