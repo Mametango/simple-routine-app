@@ -779,4 +779,53 @@ body {
     padding: 6px 10px;
     font-size: 13px;
   }
+}
+
+.logout-button {
+    background: #f8f9fa;
+    border: 2px solid #e1e5e9;
+    color: #666;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.logout-button:hover {
+    background: #fee;
+    border-color: #f56565;
+    color: #c53030;
+}
+
+.notification-button {
+    background: #f0f4ff;
+    border: 2px solid #667eea;
+    color: #667eea;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notification-button:hover {
+    background: #667eea;
+    color: white;
+}
+
+.notification-button.enabled {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: white;
+}
+
+.notification-button.enabled:hover {
+    background: #16a34a;
 } 
