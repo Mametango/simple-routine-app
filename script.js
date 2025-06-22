@@ -222,9 +222,9 @@ function checkAndSendNotifications() {
                 }
             }
         } else if (shouldNotify) {
-            // 時間が設定されていない場合は朝9時に通知
+            // 時間が設定されていない場合は朝8時に通知
             const notificationKey = `notification_${routine.id}_${now.toDateString()}`;
-            if (currentTime >= 540 && currentTime < 600 && !localStorage.getItem(notificationKey)) { // 9:00-10:00
+            if (currentTime >= 480 && currentTime < 540 && !localStorage.getItem(notificationKey)) { // 8:00-9:00
                 showNotification(routine.title, `今日のルーティンです！${routine.description ? routine.description : ''}`);
                 localStorage.setItem(notificationKey, 'true');
             }
