@@ -3,12 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Routine</title>
+    <title>My Routine - 習慣管理アプリ</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
-    <div class="app">
+    <!-- 認証画面 -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 id="authTitle">ログイン</h1>
+                <p id="authSubtitle">アカウントにログインしてください</p>
+            </div>
+
+            <form id="authForm" class="auth-form">
+                <div class="form-group">
+                    <label for="username">ユーザー名</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="user" class="input-icon"></i>
+                        <input type="text" id="username" name="username" placeholder="ユーザー名を入力" required class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group" id="emailGroup" style="display: none;">
+                    <label for="email">メールアドレス</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="mail" class="input-icon"></i>
+                        <input type="email" id="email" name="email" placeholder="メールアドレスを入力" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="lock" class="input-icon"></i>
+                        <input type="password" id="password" name="password" placeholder="パスワードを入力" required class="form-input">
+                        <button type="button" id="togglePassword" class="password-toggle">
+                            <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+                    <label for="confirmPassword">パスワード確認</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="lock" class="input-icon"></i>
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="パスワードを再入力" class="form-input">
+                        <button type="button" id="toggleConfirmPassword" class="password-toggle">
+                            <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="error-message" id="authError" style="display: none;"></div>
+
+                <button type="submit" class="auth-button" id="authButton">ログイン</button>
+            </form>
+
+            <div class="auth-footer">
+                <p>
+                    <span id="toggleText">アカウントをお持ちでない方は</span>
+                    <button type="button" id="toggleAuth" class="toggle-button">会員登録</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- メインアプリ -->
+    <div class="app" id="mainApp" style="display: none;">
         <header class="header">
             <div class="header-content">
                 <h1 class="title">
@@ -16,6 +78,16 @@
                     My Routine
                 </h1>
                 <p class="subtitle">毎日の習慣を管理して、より良い生活を</p>
+            </div>
+            <div class="user-section">
+                <div class="user-info">
+                    <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                    <span id="currentUser">ユーザー</span>
+                </div>
+                <button class="logout-button" id="logoutButton">
+                    <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+                    ログアウト
+                </button>
             </div>
         </header>
 
