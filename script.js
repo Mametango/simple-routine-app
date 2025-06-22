@@ -598,7 +598,33 @@ function displayRoutines(routinesToShow) {
     routinesList.innerHTML = routinesToShow.map(routine => `
         <div class="routine-item ${routine.completed ? 'completed' : ''}">
             <div class="routine-header">
-                <h3 class="routine-title">${routine.title}</h3>
+                <div class="routine-main">
+                    <h3 class="routine-title">${routine.title}</h3>
+                    <div class="routine-meta-compact">
+                        ${routine.frequency === 'monthly' && routine.monthlyDate ? `
+                            <span class="meta-item">
+                                <i data-lucide="calendar"></i>
+                                毎月${routine.monthlyDate}日
+                            </span>
+                        ` : routine.frequency === 'weekly' && routine.weeklyDays ? `
+                            <span class="meta-item">
+                                <i data-lucide="calendar-days"></i>
+                                毎週${getWeekdayText(routine.weeklyDays)}
+                            </span>
+                        ` : `
+                            <span class="meta-item">
+                                <i data-lucide="${getFrequencyIcon(routine.frequency)}"></i>
+                                ${getFrequencyText(routine.frequency)}
+                            </span>
+                        `}
+                        ${routine.time ? `
+                            <span class="meta-item">
+                                <i data-lucide="clock"></i>
+                                ${routine.time}
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
                 <div class="routine-actions">
                     <button class="routine-toggle" onclick="toggleRoutine('${routine.id}')">
                         <i data-lucide="${routine.completed ? 'check' : 'circle'}"></i>
@@ -610,30 +636,6 @@ function displayRoutines(routinesToShow) {
                         <i data-lucide="trash-2"></i>
                     </button>
                 </div>
-            </div>
-            <div class="routine-info">
-                ${routine.frequency === 'monthly' && routine.monthlyDate ? `
-                    <div class="routine-meta">
-                        <i data-lucide="calendar"></i>
-                        <span>毎月${routine.monthlyDate}日</span>
-                    </div>
-                ` : routine.frequency === 'weekly' && routine.weeklyDays ? `
-                    <div class="routine-meta">
-                        <i data-lucide="calendar-days"></i>
-                        <span>毎週${getWeekdayText(routine.weeklyDays)}</span>
-                    </div>
-                ` : `
-                    <div class="routine-meta">
-                        <i data-lucide="${getFrequencyIcon(routine.frequency)}"></i>
-                        <span>${getFrequencyText(routine.frequency)}</span>
-                    </div>
-                `}
-                ${routine.time ? `
-                    <div class="routine-meta">
-                        <i data-lucide="clock"></i>
-                        <span>${routine.time}</span>
-                    </div>
-                ` : ''}
             </div>
             ${routine.description ? `<p class="routine-description">${routine.description}</p>` : ''}
         </div>
