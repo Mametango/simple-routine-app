@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>My Routine - 習慣管理アプリ</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -16,12 +18,12 @@
                 <p id="authSubtitle">アカウントにログインしてください</p>
             </div>
 
-            <form id="authForm" class="auth-form">
+            <form id="authForm" class="auth-form" accept-charset="UTF-8">
                 <div class="form-group">
                     <label for="username">ユーザー名</label>
                     <div class="input-wrapper">
                         <i data-lucide="user" class="input-icon"></i>
-                        <input type="text" id="username" name="username" placeholder="ユーザー名を入力" required class="form-input">
+                        <input type="text" id="username" name="username" placeholder="ユーザー名を入力" required class="form-input" autocomplete="username">
                     </div>
                 </div>
 
@@ -29,7 +31,7 @@
                     <label for="email">メールアドレス</label>
                     <div class="input-wrapper">
                         <i data-lucide="mail" class="input-icon"></i>
-                        <input type="email" id="email" name="email" placeholder="メールアドレスを入力" class="form-input">
+                        <input type="email" id="email" name="email" placeholder="メールアドレスを入力" class="form-input" autocomplete="email">
                     </div>
                 </div>
 
@@ -37,7 +39,7 @@
                     <label for="password">パスワード</label>
                     <div class="input-wrapper">
                         <i data-lucide="lock" class="input-icon"></i>
-                        <input type="password" id="password" name="password" placeholder="パスワードを入力" required class="form-input">
+                        <input type="password" id="password" name="password" placeholder="パスワードを入力" required class="form-input" autocomplete="current-password">
                         <button type="button" id="togglePassword" class="password-toggle">
                             <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
                         </button>
@@ -48,7 +50,7 @@
                     <label for="confirmPassword">パスワード確認</label>
                     <div class="input-wrapper">
                         <i data-lucide="lock" class="input-icon"></i>
-                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="パスワードを再入力" class="form-input">
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="パスワードを再入力" class="form-input" autocomplete="new-password">
                         <button type="button" id="toggleConfirmPassword" class="password-toggle">
                             <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
                         </button>
@@ -143,8 +145,8 @@
 
         <div class="form-container" id="formContainer" style="display: none;">
             <div class="form">
-                <input type="text" placeholder="ルーティンのタイトル" id="titleInput" class="form-input">
-                <textarea placeholder="説明（オプション）" id="descriptionInput" class="form-textarea"></textarea>
+                <input type="text" placeholder="ルーティンのタイトル" id="titleInput" class="form-input" autocomplete="off" inputmode="text">
+                <textarea placeholder="説明（オプション）" id="descriptionInput" class="form-textarea" autocomplete="off"></textarea>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="frequencyInput" class="form-label">頻度</label>
@@ -183,8 +185,8 @@
         <div class="modal-overlay" id="modalOverlay" style="display: none;">
             <div class="modal">
                 <h3>ルーティンを編集</h3>
-                <input type="text" placeholder="ルーティンのタイトル" id="editTitleInput" class="form-input">
-                <textarea placeholder="説明（オプション）" id="editDescriptionInput" class="form-textarea"></textarea>
+                <input type="text" placeholder="ルーティンのタイトル" id="editTitleInput" class="form-input" autocomplete="off" inputmode="text">
+                <textarea placeholder="説明（オプション）" id="editDescriptionInput" class="form-textarea" autocomplete="off"></textarea>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="editFrequencyInput" class="form-label">頻度</label>
