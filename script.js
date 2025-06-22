@@ -28,6 +28,8 @@ const titleInput = document.getElementById('titleInput');
 const descriptionInput = document.getElementById('descriptionInput');
 const frequencyInput = document.getElementById('frequencyInput');
 const timeInput = document.getElementById('timeInput');
+const monthlyDateRow = document.getElementById('monthlyDateRow');
+const monthlyDateInput = document.getElementById('monthlyDateInput');
 const saveButton = document.getElementById('saveButton');
 const routinesList = document.getElementById('routinesList');
 const emptyState = document.getElementById('emptyState');
@@ -41,6 +43,8 @@ const editTitleInput = document.getElementById('editTitleInput');
 const editDescriptionInput = document.getElementById('editDescriptionInput');
 const editFrequencyInput = document.getElementById('editFrequencyInput');
 const editTimeInput = document.getElementById('editTimeInput');
+const editMonthlyDateRow = document.getElementById('editMonthlyDateRow');
+const editMonthlyDateInput = document.getElementById('editMonthlyDateInput');
 const editSaveButton = document.getElementById('editSaveButton');
 const editCancelButton = document.getElementById('editCancelButton');
 
@@ -81,6 +85,10 @@ function setupEventListeners() {
         if (e.key === 'Enter') saveRoutine();
     });
 
+    // 頻度変更時の処理
+    frequencyInput.addEventListener('change', handleFrequencyChange);
+    editFrequencyInput.addEventListener('change', handleEditFrequencyChange);
+
     // モーダル関連
     editSaveButton.addEventListener('click', saveEditRoutine);
     editCancelButton.addEventListener('click', hideModal);
@@ -96,6 +104,27 @@ function setupEventListeners() {
             filterRoutines(frequency);
         });
     });
+}
+
+// 頻度変更時の処理
+function handleFrequencyChange() {
+    const frequency = frequencyInput.value;
+    if (frequency === 'monthly') {
+        monthlyDateRow.style.display = 'block';
+    } else {
+        monthlyDateRow.style.display = 'none';
+        monthlyDateInput.value = '';
+    }
+}
+
+function handleEditFrequencyChange() {
+    const frequency = editFrequencyInput.value;
+    if (frequency === 'monthly') {
+        editMonthlyDateRow.style.display = 'block';
+    } else {
+        editMonthlyDateRow.style.display = 'none';
+        editMonthlyDateInput.value = '';
+    }
 }
 
 // 認証機能
@@ -258,6 +287,8 @@ function showAddForm() {
     formContainer.style.display = 'block';
     titleInput.focus();
     addButton.style.display = 'none';
+    // 頻度に応じて日付フィールドの表示を制御
+    handleFrequencyChange();
 }
 
 function hideAddForm() {
@@ -267,6 +298,8 @@ function hideAddForm() {
     descriptionInput.value = '';
     frequencyInput.value = 'daily';
     timeInput.value = '';
+    monthlyDateInput.value = '';
+    monthlyDateRow.style.display = 'none';
 }
 
 function saveRoutine() {
@@ -274,9 +307,15 @@ function saveRoutine() {
     const description = descriptionInput.value.trim();
     const frequency = frequencyInput.value;
     const time = timeInput.value;
+    const monthlyDate = frequency === 'monthly' ? monthlyDateInput.value : null;
     
     if (!title) {
         alert('タイトルを入力してください');
+        return;
+    }
+    
+    if (frequency === 'monthly' && (!monthlyDate || monthlyDate < 1 || monthlyDate > 31)) {
+        alert('毎月の日付は1-31の間で入力してください');
         return;
     }
     
@@ -286,6 +325,7 @@ function saveRoutine() {
         description,
         frequency,
         time,
+        monthlyDate,
         completed: false,
         createdAt: new Date().toISOString(),
         lastCompleted: null
@@ -314,7 +354,12 @@ function editRoutine(id) {
         editDescriptionInput.value = routine.description;
         editFrequencyInput.value = routine.frequency;
         editTimeInput.value = routine.time;
+        editMonthlyDateInput.value = routine.monthlyDate || '';
         editSaveButton.dataset.routineId = id;
+        
+        // 頻度に応じて日付フィールドの表示を制御
+        handleEditFrequencyChange();
+        
         showModal();
     }
 }
@@ -328,9 +373,15 @@ function saveEditRoutine() {
         routine.description = editDescriptionInput.value.trim();
         routine.frequency = editFrequencyInput.value;
         routine.time = editTimeInput.value;
+        routine.monthlyDate = editFrequencyInput.value === 'monthly' ? editMonthlyDateInput.value : null;
         
         if (!routine.title) {
             alert('タイトルを入力してください');
+            return;
+        }
+        
+        if (routine.frequency === 'monthly' && (!routine.monthlyDate || routine.monthlyDate < 1 || routine.monthlyDate > 31)) {
+            alert('毎月の日付は1-31の間で入力してください');
             return;
         }
         
@@ -426,6 +477,12 @@ function displayRoutines(routinesToShow) {
                     <div class="routine-meta">
                         <i data-lucide="clock"></i>
                         <span>${routine.time}</span>
+                    </div>
+                ` : ''}
+                ${routine.monthlyDate ? `
+                    <div class="routine-meta">
+                        <i data-lucide="calendar"></i>
+                        <span>毎月${routine.monthlyDate}日</span>
                     </div>
                 ` : ''}
             </div>
