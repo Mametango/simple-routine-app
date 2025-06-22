@@ -407,27 +407,24 @@ body {
   gap: 1rem;
 }
 
-.routine-card {
+.routine-item {
   background: #ffffff;
   border-radius: 16px;
-  padding: 1.5rem;
+  padding: 1rem;
   border: 1px solid #e1e5e9;
   transition: all 0.3s ease;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #667eea;
 }
 
-.routine-card:hover {
+.routine-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.routine-card.completed {
+.routine-item.completed {
   background: #f8f9fa;
-  border-color: #22c55e;
+  border-left-color: #22c55e;
   opacity: 0.8;
 }
 
@@ -442,12 +439,18 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.routine-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .routine-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #333333;
   margin: 0;
-  flex: 1;
   word-break: break-word;
   overflow-wrap: break-word;
 }
@@ -457,9 +460,30 @@ body {
   color: #666666;
 }
 
+.routine-meta-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #666666;
+}
+
+.meta-item i {
+  width: 14px;
+  height: 14px;
+}
+
 .routine-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 10px;
+  align-items: center;
 }
 
 .action-button {
@@ -489,8 +513,9 @@ body {
 
 .routine-description {
   color: #666666;
-  margin: 0.5rem 0;
-  line-height: 1.5;
+  margin: 0.25rem 0 0 0;
+  line-height: 1.4;
+  font-size: 0.875rem;
 }
 
 .routine-meta {
@@ -641,7 +666,7 @@ body {
     grid-template-columns: 1fr;
   }
   
-  .routine-card {
+  .routine-item {
     flex-direction: column;
     align-items: stretch;
   }
