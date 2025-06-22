@@ -260,6 +260,37 @@ body {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* 日本語入力の改善 */
+.form-input, .form-textarea {
+  font-family: 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Meiryo', sans-serif;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* IME入力中のスタイル */
+.form-input:focus, .form-textarea:focus {
+  ime-mode: active;
+}
+
+/* プレースホルダーのスタイル */
+.form-input::placeholder, .form-textarea::placeholder {
+  color: #999;
+  font-family: inherit;
+}
+
+/* 日本語入力時のカーソル位置調整 */
+.form-input, .form-textarea {
+  text-align: start;
+  text-align-last: start;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
 /* 毎月の日付入力フィールドのスタイル */
 .form-input[type="number"] {
   padding-left: 12px; /* アイコンがないので左パディングを調整 */
@@ -282,11 +313,6 @@ body {
 .form-select option {
   background: #2a2a2a;
   color: #ffffff;
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 100px;
 }
 
 .form-buttons {
