@@ -3,6 +3,7 @@ let routines = [];
 let currentUser = null;
 let isRegistering = false;
 let currentFilter = 'all';
+let notificationPermission = false;
 
 // 日本語入力の状態管理
 let isComposing = false;
@@ -20,6 +21,7 @@ const authError = document.getElementById('authError');
 const emailGroup = document.getElementById('emailGroup');
 const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
 const currentUserSpan = document.getElementById('currentUser');
+const notificationButton = document.getElementById('notificationButton');
 const logoutButton = document.getElementById('logoutButton');
 const togglePassword = document.getElementById('togglePassword');
 const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
@@ -117,6 +119,134 @@ function setupJapaneseInput() {
     });
 }
 
+// 通知機能
+function initializeNotifications() {
+    if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+            notificationPermission = true;
+            updateNotificationButton();
+            scheduleNotifications();
+        } else if (Notification.permission === 'denied') {
+            notificationPermission = false;
+            updateNotificationButton();
+        } else {
+            notificationButton.style.display = 'flex';
+        }
+    }
+}
+
+function requestNotificationPermission() {
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                notificationPermission = true;
+                updateNotificationButton();
+                scheduleNotifications();
+                showNotification('通知が有効になりました！', 'ルーティンの時間になるとお知らせします。');
+            } else {
+                notificationPermission = false;
+                updateNotificationButton();
+                alert('通知の許可が必要です。ブラウザの設定で通知を許可してください。');
+            }
+        });
+    } else {
+        alert('このブラウザは通知をサポートしていません。');
+    }
+}
+
+function updateNotificationButton() {
+    if (notificationPermission) {
+        notificationButton.textContent = '通知有効';
+        notificationButton.classList.add('enabled');
+        notificationButton.innerHTML = '<i data-lucide="bell" style="width: 16px; height: 16px;"></i>通知有効';
+    } else {
+        notificationButton.textContent = '通知を有効にする';
+        notificationButton.classList.remove('enabled');
+        notificationButton.innerHTML = '<i data-lucide="bell" style="width: 16px; height: 16px;"></i>通知を有効にする';
+    }
+    lucide.createIcons();
+}
+
+function scheduleNotifications() {
+    if (!notificationPermission) return;
+    
+    // 既存の通知をクリア
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(registration => {
+                registration.unregister();
+            });
+        });
+    }
+    
+    // 毎分チェックして通知を送信
+    setInterval(checkAndSendNotifications, 60000);
+    
+    // 初回チェック
+    checkAndSendNotifications();
+}
+
+function checkAndSendNotifications() {
+    if (!notificationPermission) return;
+    
+    const now = new Date();
+    const currentDay = now.getDay(); // 0=日曜日, 1=月曜日, ...
+    const currentDate = now.getDate();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // 分単位
+    
+    routines.forEach(routine => {
+        if (routine.completed) return; // 完了済みは通知しない
+        
+        let shouldNotify = false;
+        
+        // 頻度に応じてチェック
+        if (routine.frequency === 'daily') {
+            shouldNotify = true;
+        } else if (routine.frequency === 'weekly' && routine.weeklyDays) {
+            shouldNotify = routine.weeklyDays.includes(currentDay);
+        } else if (routine.frequency === 'monthly' && routine.monthlyDate) {
+            shouldNotify = parseInt(routine.monthlyDate) === currentDate;
+        }
+        
+        // 時間が設定されている場合は時間もチェック
+        if (shouldNotify && routine.time) {
+            const [hours, minutes] = routine.time.split(':').map(Number);
+            const routineTime = hours * 60 + minutes;
+            
+            // 現在時刻が設定時刻の前後5分以内の場合に通知
+            if (Math.abs(currentTime - routineTime) <= 5) {
+                const notificationKey = `notification_${routine.id}_${now.toDateString()}`;
+                if (!localStorage.getItem(notificationKey)) {
+                    showNotification(routine.title, `ルーティンの時間です！${routine.description ? routine.description : ''}`);
+                    localStorage.setItem(notificationKey, 'true');
+                }
+            }
+        } else if (shouldNotify) {
+            // 時間が設定されていない場合は朝9時に通知
+            const notificationKey = `notification_${routine.id}_${now.toDateString()}`;
+            if (currentTime >= 540 && currentTime < 600 && !localStorage.getItem(notificationKey)) { // 9:00-10:00
+                showNotification(routine.title, `今日のルーティンです！${routine.description ? routine.description : ''}`);
+                localStorage.setItem(notificationKey, 'true');
+            }
+        }
+    });
+}
+
+function showNotification(title, body) {
+    if (!notificationPermission) return;
+    
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+            body: body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'routine-notification',
+            requireInteraction: false,
+            silent: false
+        });
+    }
+}
+
 function initializeApp() {
     // ユーザーの認証状態をチェック
     const savedUser = localStorage.getItem('currentUser');
@@ -124,6 +254,7 @@ function initializeApp() {
         currentUser = JSON.parse(savedUser);
         showMainApp();
         loadUserRoutines();
+        initializeNotifications();
     } else {
         showAuthScreen();
     }
@@ -136,6 +267,9 @@ function setupEventListeners() {
     logoutButton.addEventListener('click', handleLogout);
     togglePassword.addEventListener('click', () => togglePasswordVisibility('password'));
     toggleConfirmPassword.addEventListener('click', () => togglePasswordVisibility('confirmPassword'));
+
+    // 通知関連
+    notificationButton.addEventListener('click', requestNotificationPermission);
 
     // ルーティン関連
     addButton.addEventListener('click', showAddForm);
@@ -458,6 +592,14 @@ function toggleRoutine(id) {
     if (routine) {
         routine.completed = !routine.completed;
         routine.lastCompleted = routine.completed ? new Date().toISOString() : null;
+        
+        // 完了した場合は通知をリセット
+        if (routine.completed) {
+            const today = new Date().toDateString();
+            const notificationKey = `notification_${routine.id}_${today}`;
+            localStorage.removeItem(notificationKey);
+        }
+        
         saveUserRoutines();
         updateDisplay();
     }
