@@ -322,71 +322,6 @@ function showMainApp() {
     }
 }
 
-function showLogin() {
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'none';
-}
-
-function showRegister() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('registerForm').style.display = 'block';
-}
-
-function login() {
-    const username = document.getElementById('loginUsername').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    if (!username || !password) {
-        alert('ユーザー名とパスワードを入力してください。');
-        return;
-    }
-    
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const user = users.find(u => u.username === username);
-    
-    if (user && user.password === password) {
-        currentUser = { username: user.username };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        showMainApp();
-        loadRoutines();
-        displayRoutines();
-    } else {
-        alert('ユーザー名またはパスワードが正しくありません。');
-    }
-}
-
-function register() {
-    const username = document.getElementById('registerUsername').value;
-    const password = document.getElementById('registerPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    
-    if (!username || !password || !confirmPassword) {
-        alert('すべての項目を入力してください。');
-        return;
-    }
-    
-    if (password !== confirmPassword) {
-        alert('パスワードが一致しません。');
-        return;
-    }
-    
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    if (users.find(u => u.username === username)) {
-        alert('このユーザー名は既に使用されています。');
-        return;
-    }
-    
-    users.push({ username, password });
-    localStorage.setItem('users', JSON.stringify(users));
-    
-    currentUser = { username };
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    showMainApp();
-    loadRoutines();
-    displayRoutines();
-}
-
 function logout() {
     currentUser = null;
     localStorage.removeItem('currentUser');
@@ -563,14 +498,29 @@ function clearAllData() {
 
 // ルーティン管理
 function loadRoutines() {
-    if (!currentUser) return;
-    const saved = localStorage.getItem(`routines_${currentUser.username}`);
+    if (!currentUser) {
+        console.log('No current user, cannot load routines');
+        return;
+    }
+    const key = `routines_${currentUser.username}`;
+    const saved = localStorage.getItem(key);
+    console.log('Loading routines for user:', currentUser.username);
+    console.log('Storage key:', key);
+    console.log('Saved data:', saved);
     routines = saved ? JSON.parse(saved) : [];
+    console.log('Loaded routines:', routines);
 }
 
 function saveRoutines() {
-    if (!currentUser) return;
-    localStorage.setItem(`routines_${currentUser.username}`, JSON.stringify(routines));
+    if (!currentUser) {
+        console.log('No current user, cannot save routines');
+        return;
+    }
+    const key = `routines_${currentUser.username}`;
+    console.log('Saving routines for user:', currentUser.username);
+    console.log('Storage key:', key);
+    console.log('Routines to save:', routines);
+    localStorage.setItem(key, JSON.stringify(routines));
 }
 
 function showAddForm() {
@@ -1036,6 +986,9 @@ function handleAuthSubmit(e) {
         
         showMainApp();
         initializeUserData();
+        loadRoutines();
+        displayRoutines();
+        initializeNotifications();
         
     } else {
         // ログイン
@@ -1052,6 +1005,8 @@ function handleAuthSubmit(e) {
         
         showMainApp();
         loadRoutines();
+        displayRoutines();
+        initializeNotifications();
     }
 }
 
