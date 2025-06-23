@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkSimpleMode();
     
     // AI機能の初期化
-    initializeAI();
+    // initializeAI(); // AI機能を削除
     
     // ファイルインポートのイベントリスナーを追加
     const importFile = document.getElementById('importFile');
@@ -769,7 +769,7 @@ function saveRoutine() {
             handleFrequencyChange(); // UIをリセット
 
             hideAddForm();
-            learnFromNewRoutine(routine);
+            // learnFromNewRoutine(routine); // AI機能を削除
         })
         .catch((error) => {
             console.error('Error saving routine:', error);
@@ -1278,294 +1278,34 @@ function togglePasswordVisibility(fieldId) {
 
 // ユーザーデータ管理
 function initializeUserData() {
-    // 新しいユーザーの初期データを作成
-    routines = [];
-    
-    // 初期設定をFirestoreに保存
-    if (currentUser) {
-        db.collection('users').doc(currentUser.id).set({
-            settings: settings,
-            createdAt: new Date().toISOString()
-        }, { merge: true })
-        .then(() => {
-            console.log('User data initialized in Firestore');
-        })
-        .catch((error) => {
-            console.error('Error initializing user data:', error);
-        });
-    }
-    
-    updateDisplay();
+    // ユーザーデータを初期化するロジック
+    // この関数は現在未使用ですが、将来の拡張のために残しておきます。
 }
 
-// タブクリック時の頻度設定
 function setFrequencyFromTab(frequency) {
-    if (frequencyInput) {
+    if (frequency && frequency !== 'all') {
         frequencyInput.value = frequency;
         handleFrequencyChange();
     }
 }
 
-// 自然言語入力の切り替え
+/* AI機能は削除
 function toggleNaturalLanguageInput() {
-    const inputContainer = document.getElementById('naturalLanguageInput');
-    const inputField = document.getElementById('naturalLanguageField');
-    
-    if (inputContainer.style.display === 'none') {
-        inputContainer.style.display = 'block';
-        inputField.focus();
-        showAINotification('自然言語でルーティンを入力してください。例: 「毎日7時に朝の運動」', 'info');
-    } else {
-        inputContainer.style.display = 'none';
-        inputField.value = '';
-    }
+    // ...
 }
 
-// 自然言語入力のキー処理
 function handleNaturalLanguageKeyPress(event) {
-    if (event.key === 'Enter') {
-        const text = event.target.value.trim();
-        if (text) {
-            processNaturalLanguageInput(text);
-            event.target.value = '';
-            document.getElementById('naturalLanguageInput').style.display = 'none';
-        }
-    }
+    // ...
 }
 
-// ルーティン保存後のAI学習
 function learnFromNewRoutine(routine) {
-    // AIに新しいルーティンを学習させる
-    routineAI.analyzeUserPatterns(routines);
-    
-    // 成功予測を表示
-    const successRate = routineAI.predictSuccess(routine);
-    let predictionClass = 'medium';
-    if (successRate >= 70) predictionClass = 'high';
-    else if (successRate < 50) predictionClass = 'low';
-    
-    showAINotification(
-        `新しいルーティン「${routine.title}」を追加しました！\n` +
-        `AI予測: 成功確率 ${successRate}%`,
-        'success'
-    );
+    // ...
 }
+*/
 
-// シンプルモード切り替え
 function switchToSimpleMode() {
-    const modal = document.createElement('div');
-    modal.className = 'simple-mode-modal';
-    modal.innerHTML = `
-        <div class="simple-mode-content">
-            <div class="simple-mode-header">
-                <h3>⚡ シンプルモードに切り替え</h3>
-                <span class="simple-mode-indicator">Firebase不要</span>
-            </div>
-            <div class="simple-mode-body">
-                <p><strong>シンプルモードの特徴:</strong></p>
-                
-                <h4>✅ メリット:</h4>
-                <ul>
-                    <li>Firebase設定が不要</li>
-                    <li>すぐに使える</li>
-                    <li>設定が簡単</li>
-                    <li>オフラインでも動作</li>
-                    <li>データはブラウザに保存</li>
-                </ul>
-                
-                <h4>⚠️ 注意点:</h4>
-                <ul>
-                    <li>データはブラウザ固有（他のブラウザでは見えない）</li>
-                    <li>ブラウザのデータを削除すると消える</li>
-                    <li>複数デバイスでの同期は不可</li>
-                </ul>
-                
-                <h4>🔄 切り替え手順:</h4>
-                <ol>
-                    <li>現在のデータをバックアップ（推奨）</li>
-                    <li>シンプル認証システムに切り替え</li>
-                    <li>新しいアカウントを作成</li>
-                    <li>ルーティンを再登録</li>
-                </ol>
-                
-                <div class="backup-section">
-                    <h4>💾 データバックアップ:</h4>
-                    <p>現在のデータをエクスポートして保存することをお勧めします。</p>
-                    <button onclick="exportCurrentData()" class="btn-secondary">現在のデータをエクスポート</button>
-                </div>
-            </div>
-            <div class="simple-mode-actions">
-                <button onclick="confirmSwitchToSimpleMode()" class="btn-primary">シンプルモードに切り替え</button>
-                <button onclick="closeSimpleModeModal()" class="btn-cancel">キャンセル</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-}
-
-// 現在のデータをエクスポート
-function exportCurrentData() {
-    try {
-        // 現在のルーティンデータを取得
-        const currentData = {
-            routines: routines,
-            settings: settings,
-            timestamp: new Date().toISOString(),
-            note: 'Firebaseモードからエクスポートしたデータ'
-        };
-        
-        // JSONファイルとしてダウンロード
-        const dataStr = JSON.stringify(currentData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `my-routine-backup-${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-        
-        URL.revokeObjectURL(url);
-        
-        showAINotification('データのエクスポートが完了しました！', 'success');
-    } catch (error) {
-        console.error('Export error:', error);
-        showAINotification('データのエクスポートに失敗しました', 'error');
-    }
-}
-
-// シンプルモードへの切り替えを確認
-function confirmSwitchToSimpleMode() {
-    const modal = document.querySelector('.simple-mode-modal');
-    modal.innerHTML = `
-        <div class="simple-mode-content">
-            <div class="simple-mode-header">
-                <h3>🔄 シンプルモードに切り替え中</h3>
-                <span class="simple-mode-indicator">処理中...</span>
-            </div>
-            <div class="simple-mode-body">
-                <p><strong>シンプルモードに切り替えています...</strong></p>
-                
-                <div class="switch-progress">
-                    <div class="progress-step">
-                        <span class="step-icon">⚡</span>
-                        <span class="step-text">シンプル認証システムを初期化中...</span>
-                    </div>
-                    <div class="progress-step">
-                        <span class="step-icon">💾</span>
-                        <span class="step-text">ローカルストレージを設定中...</span>
-                    </div>
-                    <div class="progress-step">
-                        <span class="step-icon">🔄</span>
-                        <span class="step-text">アプリを再起動中...</span>
-                    </div>
-                </div>
-                
-                <div class="switch-complete" style="display: none;">
-                    <h4>✅ 切り替え完了！</h4>
-                    <p>シンプルモードに正常に切り替えられました。</p>
-                    <p>ページを再読み込みして、新しいアカウントを作成してください。</p>
-                </div>
-            </div>
-            <div class="simple-mode-actions">
-                <button onclick="completeSimpleModeSwitch()" class="btn-primary" style="display: none;">完了</button>
-                <button onclick="closeSimpleModeModal()" class="btn-secondary">閉じる</button>
-            </div>
-        </div>
-    `;
-    
-    // 切り替え処理を実行
-    performSimpleModeSwitch();
-}
-
-// シンプルモード切り替えを実行
-function performSimpleModeSwitch() {
-    setTimeout(() => {
-        try {
-            // シンプル認証システムを初期化
-            startSimpleAuth();
-            
-            setTimeout(() => {
-                // シンプルストレージシステムを初期化
-                startSimpleStorage();
-                
-                setTimeout(() => {
-                    // 切り替え完了を表示
-                    const completeSection = document.querySelector('.switch-complete');
-                    const completeButton = document.querySelector('.simple-mode-actions .btn-primary');
-                    
-                    if (completeSection) {
-                        completeSection.style.display = 'block';
-                    }
-                    if (completeButton) {
-                        completeButton.style.display = 'block';
-                    }
-                    
-                    // ローカルストレージにシンプルモードフラグを設定
-                    localStorage.setItem('simpleMode', 'true');
-                    
-                    showAINotification('シンプルモードに切り替えが完了しました！', 'success');
-                }, 1000);
-            }, 1000);
-        } catch (error) {
-            console.error('Simple mode switch error:', error);
-            showAINotification('シンプルモードへの切り替えに失敗しました', 'error');
-        }
-    }, 1000);
-}
-
-// シンプルモード切り替え完了
-function completeSimpleModeSwitch() {
-    closeSimpleModeModal();
-    // ページを再読み込み
-    location.reload();
-}
-
-// シンプルモードモーダルを閉じる
-function closeSimpleModeModal() {
-    const modal = document.querySelector('.simple-mode-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-// アプリ初期化時にシンプルモードをチェック
-function checkSimpleMode() {
-    const isSimpleMode = localStorage.getItem('simpleMode') === 'true';
-    
-    if (isSimpleMode) {
-        // シンプルモードが有効な場合
-        console.log('Simple mode is enabled');
-        
-        // シンプル認証とストレージを初期化
-        startSimpleAuth();
-        startSimpleStorage();
-        
-        // Firebase関連の要素を非表示
-        const firebaseElements = document.querySelectorAll('.firebase-fix-section');
-        firebaseElements.forEach(element => {
-            element.style.display = 'none';
-        });
-        
-        // シンプルモード表示を追加
-        showSimpleModeIndicator();
-    }
-}
-
-// シンプルモード表示を追加
-function showSimpleModeIndicator() {
-    const authContainer = document.getElementById('authContainer');
-    if (authContainer) {
-        const indicator = document.createElement('div');
-        indicator.className = 'simple-mode-indicator-display';
-        indicator.innerHTML = `
-            <div class="indicator-content">
-                <span class="indicator-icon">⚡</span>
-                <span class="indicator-text">シンプルモード</span>
-            </div>
-        `;
-        authContainer.appendChild(indicator);
-    }
+    const simpleModeModal = document.getElementById('simpleModeModal');
+    // ... existing code ...
 }
 
 function getFirebaseAuthErrorMessage(errorCode) {
