@@ -1979,10 +1979,10 @@ body {
 }
 
 .simple-hint {
-    margin: 0;
     font-size: 12px;
-    color: #00b894;
-    font-style: italic;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 5px;
+    text-align: center;
 }
 
 /* シンプルモード切り替えモーダル */
@@ -2177,4 +2177,50 @@ body {
 .backup-section p {
     color: #155724;
     margin: 0 0 12px 0;
+}
+
+.simple-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 5px;
+    text-align: center;
+}
+
+.simple-firebase-section {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.simple-firebase-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.simple-firebase-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.simple-firebase-icon {
+    font-size: 16px;
+}
+
+.simple-firebase-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 5px;
+    text-align: center;
 } 
