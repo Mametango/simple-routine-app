@@ -760,6 +760,15 @@ function saveRoutine() {
         .add(routine)
         .then((docRef) => {
             console.log('Routine saved with ID:', docRef.id);
+            // フォームをクリアして非表示にする
+            titleInput.value = '';
+            descriptionInput.value = '';
+            frequencyInput.value = 'daily';
+            timeInput.value = '';
+            monthlyDateInput.value = '';
+            weekdayInputs.forEach(input => input.checked = false);
+            handleFrequencyChange(); // UIをリセット
+
             hideAddForm();
             learnFromNewRoutine(routine);
         })
