@@ -69,6 +69,18 @@
                 <div class="error-message" id="authError" style="display: none;"></div>
 
                 <button type="submit" class="auth-button" id="authButton">ログイン</button>
+
+                <!-- 認証エラーメッセージ -->
+                <div id="authError" class="auth-error" style="display: none;"></div>
+                
+                <!-- Firebase設定修正ボタン -->
+                <div class="firebase-fix-section">
+                    <button type="button" onclick="fixFirebaseConfig()" class="firebase-fix-button">
+                        <span class="fix-icon">🔧</span>
+                        Firebase設定を修正
+                    </button>
+                    <p class="fix-hint">ログインに問題がある場合はこちらをクリック</p>
+                </div>
             </form>
 
             <div class="auth-footer">
@@ -436,6 +448,7 @@
     <input type="file" id="importFile" accept=".json" style="display: none;">
 
     <script src="auto-firebase-setup.js"></script>
+    <script src="fix-firebase-config.js"></script>
     <script src="ai-features.js"></script>
     <script src="script.js"></script>
 </body>
