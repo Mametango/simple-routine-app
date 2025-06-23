@@ -92,7 +92,6 @@
                 <div class="header-buttons">
                     <button id="notificationBtn" class="notification-btn" onclick="requestNotificationPermission()">🔔</button>
                     <button id="settingsBtn" class="settings-btn" onclick="openSettings()">⚙️</button>
-                    <button id="logoutBtn" class="logout-btn" onclick="logout()">ログアウト</button>
                 </div>
             </div>
         </header>
@@ -389,6 +388,11 @@
             <div class="settings-actions">
                 <button onclick="saveSettings()" class="primary-btn">設定を保存</button>
                 <button onclick="closeSettings()" class="secondary-btn">キャンセル</button>
+            </div>
+            
+            <!-- ログアウトボタン -->
+            <div class="logout-section">
+                <button onclick="logout()" class="logout-btn-large">ログアウト</button>
             </div>
         </div>
     </div>
