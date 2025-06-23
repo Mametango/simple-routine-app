@@ -97,6 +97,9 @@ document.addEventListener('DOMContentLoaded', function() {
     updateTheme();
     lucide.createIcons();
     
+    // AI機能の初期化
+    initializeAI();
+    
     // ファイルインポートのイベントリスナーを追加
     const importFile = document.getElementById('importFile');
     if (importFile) {
@@ -677,6 +680,7 @@ function saveRoutine() {
         .then((docRef) => {
             console.log('Routine saved with ID:', docRef.id);
             hideAddForm();
+            learnFromNewRoutine(routine);
         })
         .catch((error) => {
             console.error('Error saving routine:', error);
@@ -1208,4 +1212,49 @@ function setFrequencyFromTab(frequency) {
         frequencyInput.value = frequency;
         handleFrequencyChange();
     }
+}
+
+// 自然言語入力の切り替え
+function toggleNaturalLanguageInput() {
+    const inputContainer = document.getElementById('naturalLanguageInput');
+    const inputField = document.getElementById('naturalLanguageField');
+    
+    if (inputContainer.style.display === 'none') {
+        inputContainer.style.display = 'block';
+        inputField.focus();
+        showAINotification('自然言語でルーティンを入力してください。例: 「毎日7時に朝の運動」', 'info');
+    } else {
+        inputContainer.style.display = 'none';
+        inputField.value = '';
+    }
+}
+
+// 自然言語入力のキー処理
+function handleNaturalLanguageKeyPress(event) {
+    if (event.key === 'Enter') {
+        const text = event.target.value.trim();
+        if (text) {
+            processNaturalLanguageInput(text);
+            event.target.value = '';
+            document.getElementById('naturalLanguageInput').style.display = 'none';
+        }
+    }
+}
+
+// ルーティン保存後のAI学習
+function learnFromNewRoutine(routine) {
+    // AIに新しいルーティンを学習させる
+    routineAI.analyzeUserPatterns(routines);
+    
+    // 成功予測を表示
+    const successRate = routineAI.predictSuccess(routine);
+    let predictionClass = 'medium';
+    if (successRate >= 70) predictionClass = 'high';
+    else if (successRate < 50) predictionClass = 'low';
+    
+    showAINotification(
+        `新しいルーティン「${routine.title}」を追加しました！\n` +
+        `AI予測: 成功確率 ${successRate}%`,
+        'success'
+    );
 } 
