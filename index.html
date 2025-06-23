@@ -86,14 +86,11 @@
                     <i data-lucide="user" style="width: 16px; height: 16px;"></i>
                     <span id="currentUser">ユーザー</span>
                 </div>
-                <button class="notification-button" id="notificationButton" style="display: none;">
-                    <i data-lucide="bell" style="width: 16px; height: 16px;"></i>
-                    通知を有効にする
-                </button>
-                <button class="logout-button" id="logoutButton">
-                    <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
-                    ログアウト
-                </button>
+                <div class="header-buttons">
+                    <button id="notificationBtn" class="notification-btn" onclick="requestNotificationPermission()">🔔</button>
+                    <button id="settingsBtn" class="settings-btn" onclick="openSettings()">⚙️</button>
+                    <button id="logoutBtn" class="logout-btn" onclick="logout()">ログアウト</button>
+                </div>
             </div>
         </header>
 
@@ -274,6 +271,127 @@
             </div>
         </div>
     </div>
+
+    <!-- 認証モーダル -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="loginForm">
+                <h2>ログイン</h2>
+                <input type="text" id="loginUsername" placeholder="ユーザー名" required>
+                <input type="password" id="loginPassword" placeholder="パスワード" required>
+                <button onclick="login()">ログイン</button>
+                <p>アカウントをお持ちでない方は <a href="#" onclick="showRegister()">新規登録</a></p>
+            </div>
+            <div id="registerForm" style="display: none;">
+                <h2>新規登録</h2>
+                <input type="text" id="registerUsername" placeholder="ユーザー名" required>
+                <input type="password" id="registerPassword" placeholder="パスワード" required>
+                <input type="password" id="confirmPassword" placeholder="パスワード確認" required>
+                <button onclick="register()">登録</button>
+                <p>既にアカウントをお持ちの方は <a href="#" onclick="showLogin()">ログイン</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定モーダル -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content settings-content">
+            <span class="close">&times;</span>
+            <h2>設定</h2>
+            
+            <!-- 通知設定 -->
+            <div class="settings-section">
+                <h3>🔔 通知設定</h3>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="enableNotifications" checked>
+                        通知を有効にする
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>デフォルト通知時刻（時間指定なしの場合）:</label>
+                    <input type="time" id="defaultNotificationTime" value="08:00">
+                </div>
+                <div class="setting-item">
+                    <label>通知音:</label>
+                    <select id="notificationSound">
+                        <option value="default">デフォルト</option>
+                        <option value="gentle">優しい音</option>
+                        <option value="alert">アラート音</option>
+                        <option value="none">音なし</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>通知の表示時間:</label>
+                    <select id="notificationDuration">
+                        <option value="5">5秒</option>
+                        <option value="10" selected>10秒</option>
+                        <option value="15">15秒</option>
+                        <option value="30">30秒</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- アカウント設定 -->
+            <div class="settings-section">
+                <h3>👤 アカウント設定</h3>
+                <div class="setting-item">
+                    <label>現在のユーザー名:</label>
+                    <span id="currentUsername" class="current-value"></span>
+                </div>
+                <div class="setting-item">
+                    <label>パスワード変更:</label>
+                    <input type="password" id="newPassword" placeholder="新しいパスワード">
+                    <input type="password" id="confirmNewPassword" placeholder="新しいパスワード確認">
+                    <button onclick="changePassword()" class="small-btn">パスワード変更</button>
+                </div>
+                <div class="setting-item">
+                    <button onclick="deleteAccount()" class="danger-btn">アカウント削除</button>
+                </div>
+            </div>
+
+            <!-- データ管理 -->
+            <div class="settings-section">
+                <h3>💾 データ管理</h3>
+                <div class="setting-item">
+                    <button onclick="exportData()" class="small-btn">データをエクスポート</button>
+                    <button onclick="importData()" class="small-btn">データをインポート</button>
+                </div>
+                <div class="setting-item">
+                    <button onclick="clearAllData()" class="danger-btn">全データを削除</button>
+                </div>
+            </div>
+
+            <!-- 表示設定 -->
+            <div class="settings-section">
+                <h3>🎨 表示設定</h3>
+                <div class="setting-item">
+                    <label>テーマ:</label>
+                    <select id="themeSelect">
+                        <option value="light" selected>ライト</option>
+                        <option value="dark">ダーク</option>
+                        <option value="auto">自動</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>言語:</label>
+                    <select id="languageSelect">
+                        <option value="ja" selected>日本語</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button onclick="saveSettings()" class="primary-btn">設定を保存</button>
+                <button onclick="closeSettings()" class="secondary-btn">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ファイルインポート用の隠しinput -->
+    <input type="file" id="importFile" accept=".json" style="display: none;">
 
     <script src="script.js"></script>
 </body>
