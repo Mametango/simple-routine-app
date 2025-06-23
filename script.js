@@ -70,27 +70,6 @@ const editCancelButton = document.getElementById('editCancelButton');
 // フィルター関連のDOM要素
 const tabButtons = document.querySelectorAll('.tab-button');
 
-// Firebase認証状態の監視
-auth.onAuthStateChanged(function(user) {
-    if (user) {
-        // ユーザーがログインしている
-        currentUser = {
-            id: user.uid,
-            username: user.email || user.displayName || 'ユーザー',
-            email: user.email
-        };
-        showMainApp();
-        loadRoutines();
-        displayRoutines();
-        initializeNotifications();
-    } else {
-        // ユーザーがログアウトしている
-        currentUser = null;
-        routines = [];
-        showAuthScreen();
-    }
-});
-
 // 初期化
 document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
@@ -177,29 +156,49 @@ document.addEventListener('DOMContentLoaded', function() {
         const onAuthPage = window.location.pathname.includes('register.html') || window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
         
         if (user) {
+            currentUser = {
+                id: user.uid,
+                username: user.email || user.displayName || 'Anonymous',
+                email: user.email
+            };
             // ユーザーがログインしている場合
-            // ログインページまたは登録ページにいれば、メインアプリ画面に遷移したかのように表示を切り替える
-             if (window.location.pathname.includes('register.html')) {
+            if (window.location.pathname.includes('register.html')) {
                 window.location.href = 'index.html'; // 登録ページからメインページへ
-            } else if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
+            } else if (onAuthPage) {
                 const authContainer = document.getElementById('authContainer');
                 const mainApp = document.getElementById('mainApp');
                 if (authContainer) authContainer.style.display = 'none';
                 if (mainApp) mainApp.style.display = 'block';
-                initializeApp(user); // アプリのメイン機能を初期化
+                initializeApp(); // アプリのメイン機能を初期化
+            } else {
+                 // ログイン済みで、かつアプリページを直接開いた場合
+                 initializeApp();
             }
         } else {
             // ユーザーがログアウトしている場合
-            // ログインページまたは登録ページにいる場合は、フォームを表示したままにする
-            if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
+            currentUser = null;
+            routines = [];
+            if (onAuthPage) {
                  const authContainer = document.getElementById('authContainer');
                  const mainApp = document.getElementById('mainApp');
                  if (authContainer) authContainer.style.display = 'flex';
                  if (mainApp) mainApp.style.display = 'none';
+            } else {
+                // ログインしていない状態でアプリページを開こうとしたらログインページにリダイレクト
+                window.location.href = 'index.html';
             }
         }
     });
 });
+
+function initializeApp() {
+    if (!currentUser) return;
+    
+    console.log("Initializing app for user:", currentUser.username);
+    showMainApp();
+    loadRoutines();
+    initializeNotifications();
+}
 
 // 日本認入力の設定
 function setupJapaneseInput() {
@@ -1799,10 +1798,6 @@ function onVerifyCode() {
 
 function initializeAI() {
     // AIの初期化コードをここに追加
-}
-
-function initializeApp(user) {
-    // アプリのメイン機能の初期化コードをここに追加
 }
 
 function startSimpleAuth() {
