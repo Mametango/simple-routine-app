@@ -72,9 +72,6 @@ const tabButtons = document.querySelectorAll('.tab-button');
 document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
     checkAuth();
-    loadRoutines();
-    displayRoutines();
-    initializeNotifications();
     setupEventListeners();
     setupJapaneseInput();
     updateTheme();
@@ -297,20 +294,32 @@ function checkAuth() {
     if (user) {
         currentUser = JSON.parse(user);
         showMainApp();
+        loadRoutines();
+        displayRoutines();
+        initializeNotifications();
     } else {
         showAuthScreen();
     }
 }
 
 function showAuthScreen() {
-    authContainer.style.display = 'flex';
-    mainApp.style.display = 'none';
+    // 認証画面を表示し、他の画面を非表示
+    document.getElementById('authContainer').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('authModal').style.display = 'none';
+    document.getElementById('settingsModal').style.display = 'none';
 }
 
 function showMainApp() {
-    authContainer.style.display = 'none';
-    mainApp.style.display = 'block';
-    currentUserSpan.textContent = currentUser.username;
+    // メインアプリを表示し、他の画面を非表示
+    document.getElementById('authContainer').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('authModal').style.display = 'none';
+    document.getElementById('settingsModal').style.display = 'none';
+    
+    if (currentUser) {
+        document.getElementById('currentUser').textContent = currentUser.username;
+    }
 }
 
 function showLogin() {
@@ -381,7 +390,15 @@ function register() {
 function logout() {
     currentUser = null;
     localStorage.removeItem('currentUser');
-    showAuthScreen();
+    
+    // すべての画面を非表示にして認証画面を表示
+    document.getElementById('authContainer').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('authModal').style.display = 'none';
+    document.getElementById('settingsModal').style.display = 'none';
+    
+    routines = [];
+    hideAuthError();
 }
 
 // 設定関連
@@ -421,8 +438,11 @@ function applySettings() {
 }
 
 function openSettings() {
+    // 設定モーダルを表示し、他のモーダルを非表示
     document.getElementById('settingsModal').style.display = 'block';
-    if (document.getElementById('currentUsername')) {
+    document.getElementById('authModal').style.display = 'none';
+    
+    if (document.getElementById('currentUsername') && currentUser) {
         document.getElementById('currentUsername').textContent = currentUser.username;
     }
 }
