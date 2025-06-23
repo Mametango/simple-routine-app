@@ -142,35 +142,6 @@
             </button>
         </div>
 
-        <!-- AI機能コントロール -->
-        <div class="ai-controls">
-            <button class="ai-button" onclick="showAISuggestions()">
-                <span class="ai-icon">🤖</span>
-                AI提案
-            </button>
-            <button class="ai-button" onclick="showAIAnalysis()">
-                <span class="ai-icon">📊</span>
-                AI分析
-            </button>
-            <button class="ai-button" onclick="toggleNaturalLanguageInput()">
-                <span class="ai-icon">💬</span>
-                自然言語入力
-            </button>
-            <button class="ai-button" onclick="startFirebaseAutoSetup()" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);">
-                <span class="ai-icon">⚙️</span>
-                Firebase設定
-            </button>
-        </div>
-
-        <!-- 自然言語入力 -->
-        <div class="natural-language-input" id="naturalLanguageInput" style="display: none;">
-            <input type="text" 
-                   placeholder="例: 毎日7時に朝の運動、毎週月曜日に読書、毎月1日に掃除" 
-                   id="naturalLanguageField"
-                   onkeypress="handleNaturalLanguageKeyPress(event)">
-            <div class="ai-suggestions" id="aiSuggestions" style="display: none;"></div>
-        </div>
-
         <div class="form-container" id="formContainer" style="display: none;">
             <div class="form">
                 <input type="text" placeholder="ルーティンのタイトル" id="titleInput" class="form-input" autocomplete="off" inputmode="text">
@@ -487,7 +458,6 @@
     <script src="simple-auth.js"></script>
     <script src="simple-storage.js"></script>
     <script src="simple-firebase-setup.js"></script>
-    <script src="ai-features.js"></script>
     <script src="script.js"></script>
 </body>
 </html> 
