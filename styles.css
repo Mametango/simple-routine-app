@@ -828,4 +828,235 @@ body {
 
 .notification-button.enabled:hover {
     background: #16a34a;
+}
+
+/* ヘッダーボタン */
+.header-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.notification-btn, .settings-btn, .logout-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.notification-btn:hover, .settings-btn:hover, .logout-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn {
+    font-size: 14px;
+    background-color: #ff4757;
+    color: white;
+    border-radius: 20px;
+    padding: 8px 16px;
+}
+
+.logout-btn:hover {
+    background-color: #ff3742;
+}
+
+/* 設定モーダル */
+.settings-content {
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #007bff;
+}
+
+.settings-section h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.setting-item {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-item label {
+    font-weight: 500;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-item input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.setting-item input[type="time"],
+.setting-item select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    max-width: 200px;
+}
+
+.current-value {
+    font-weight: bold;
+    color: #007bff;
+    background-color: #e3f2fd;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.small-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    max-width: 150px;
+}
+
+.small-btn:hover {
+    background-color: #5a6268;
+}
+
+.danger-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.danger-btn:hover {
+    background-color: #c82333;
+}
+
+.primary-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.primary-btn:hover {
+    background-color: #0056b3;
+}
+
+.secondary-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.secondary-btn:hover {
+    background-color: #5a6268;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+/* 認証モーダル */
+#authModal .modal-content {
+    max-width: 400px;
+}
+
+#authModal h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+#authModal input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#authModal button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+#authModal button:hover {
+    background-color: #0056b3;
+}
+
+#authModal p {
+    text-align: center;
+    margin: 0;
+}
+
+#authModal a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+#authModal a:hover {
+    text-decoration: underline;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .settings-content {
+        max-width: 95vw;
+        margin: 20px;
+    }
+    
+    .settings-section {
+        padding: 15px;
+    }
+    
+    .settings-actions {
+        flex-direction: column;
+    }
+    
+    .setting-item input[type="time"],
+    .setting-item select {
+        max-width: 100%;
+    }
 } 
