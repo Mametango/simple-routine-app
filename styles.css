@@ -873,10 +873,40 @@ body {
 }
 
 /* 設定モーダル */
-.settings-content {
+#settingsModal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+#settingsModal .modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 90%;
     max-width: 600px;
     max-height: 80vh;
     overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.settings-content {
+    padding: 30px;
+}
+
+.settings-content h2 {
+    margin: 0 0 30px 0;
+    color: #333;
+    font-size: 24px;
+    text-align: center;
 }
 
 .settings-section {
