@@ -770,15 +770,24 @@ body {
 }
 
 /* レスポンシブ対応 */
-@media (max-width: 480px) {
-  .weekday-checkboxes {
-    gap: 6px;
-  }
-  
-  .weekday-checkbox {
-    padding: 6px 10px;
-    font-size: 13px;
-  }
+@media (max-width: 768px) {
+    .settings-content {
+        max-width: 95vw;
+        margin: 20px;
+    }
+    
+    .settings-section {
+        padding: 15px;
+    }
+    
+    .settings-actions {
+        flex-direction: column;
+    }
+    
+    .setting-item input[type="time"],
+    .setting-item select {
+        max-width: 100%;
+    }
 }
 
 .logout-button {
