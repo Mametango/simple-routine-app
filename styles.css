@@ -1687,415 +1687,15 @@ body {
     100% { opacity: 1; }
 }
 
-/* Firebase自動設定モーダル */
-.firebase-setup-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 20000;
-    backdrop-filter: blur(5px);
+/* Firebase自動作成ボタン */
+.firebase-auto-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #ffeaa7;
 }
 
-.firebase-setup-content {
-    background: white;
-    border-radius: 16px;
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: slideInUp 0.3s ease-out;
-}
-
-.firebase-setup-header {
+.firebase-auto-button {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 20px;
-    border-radius: 16px 16px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.firebase-setup-header h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.step-indicator {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.firebase-setup-body {
-    padding: 24px;
-    line-height: 1.6;
-    font-size: 16px;
-}
-
-.firebase-setup-body pre {
-    background: #f8f9fa;
-    padding: 16px;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin: 16px 0;
-    border: 1px solid #e9ecef;
-}
-
-.firebase-setup-body code {
-    background: #f1f3f4;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-}
-
-.firebase-setup-actions {
-    padding: 20px 24px 24px;
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    border-top: 1px solid #e9ecef;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-}
-
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.btn-secondary:hover {
-    background: #5a6268;
-    transform: translateY(-2px);
-}
-
-.btn-cancel {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.btn-cancel:hover {
-    background: #c82333;
-    transform: translateY(-2px);
-}
-
-@keyframes slideInUp {
-    from {
-        transform: translateY(50px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-/* 設定入力フィールド */
-.firebase-config-input {
-    width: 100%;
-    min-height: 120px;
-    padding: 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    resize: vertical;
-    margin: 16px 0;
-}
-
-.firebase-config-input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* レスポンシブ対応 */
-@media (max-width: 768px) {
-    .firebase-setup-content {
-        width: 95%;
-        max-height: 90vh;
-    }
-    
-    .firebase-setup-header {
-        padding: 16px;
-    }
-    
-    .firebase-setup-header h3 {
-        font-size: 18px;
-    }
-    
-    .firebase-setup-body {
-        padding: 16px;
-        font-size: 14px;
-    }
-    
-    .firebase-setup-actions {
-        padding: 16px;
-        flex-direction: column;
-    }
-    
-    .firebase-setup-actions button {
-        width: 100%;
-    }
-}
-
-/* Firebase設定修正モーダル */
-.firebase-config-fix-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 20001;
-    backdrop-filter: blur(5px);
-}
-
-.firebase-config-fix-content {
-    background: white;
-    border-radius: 16px;
-    max-width: 700px;
-    width: 90%;
-    max-height: 85vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: slideInUp 0.3s ease-out;
-}
-
-.firebase-config-fix-header {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-    color: white;
-    padding: 20px;
-    border-radius: 16px 16px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.firebase-config-fix-header h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.fix-indicator {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.firebase-config-fix-body {
-    padding: 24px;
-    line-height: 1.6;
-    font-size: 16px;
-}
-
-.firebase-config-fix-body h4 {
-    color: #333;
-    margin: 20px 0 10px 0;
-    font-size: 18px;
-}
-
-.firebase-config-fix-body ol {
-    margin: 10px 0;
-    padding-left: 20px;
-}
-
-.firebase-config-fix-body li {
-    margin: 8px 0;
-}
-
-.config-input-section {
-    margin: 20px 0;
-}
-
-.config-input-section label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #333;
-}
-
-.firebase-config-textarea {
-    width: 100%;
-    min-height: 150px;
-    padding: 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    resize: vertical;
-    line-height: 1.4;
-}
-
-.firebase-config-textarea:focus {
-    outline: none;
-    border-color: #ff6b6b;
-    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
-}
-
-.config-status {
-    margin: 16px 0;
-    padding: 12px;
-    border-radius: 8px;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-}
-
-.status-waiting {
-    color: #6c757d;
-    font-weight: 500;
-}
-
-.status-success {
-    color: #28a745;
-    font-weight: 600;
-}
-
-.status-error {
-    color: #dc3545;
-    font-weight: 600;
-}
-
-.config-preview {
-    margin: 20px 0;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-.config-preview pre {
-    margin: 10px 0;
-    padding: 12px;
-    background: #fff;
-    border-radius: 4px;
-    overflow-x: auto;
-    font-size: 12px;
-    border: 1px solid #dee2e6;
-}
-
-.next-steps, .success-steps {
-    margin: 20px 0;
-    padding: 16px;
-    background: #e8f5e8;
-    border-radius: 8px;
-    border-left: 4px solid #28a745;
-}
-
-.app-url {
-    margin: 20px 0;
-    padding: 16px;
-    background: #e3f2fd;
-    border-radius: 8px;
-    border-left: 4px solid #2196f3;
-}
-
-.app-url a {
-    color: #1976d2;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.app-url a:hover {
-    text-decoration: underline;
-}
-
-.firebase-config-fix-actions {
-    padding: 20px 24px 24px;
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    border-top: 1px solid #e9ecef;
-}
-
-/* レスポンシブ対応 */
-@media (max-width: 768px) {
-    .firebase-config-fix-content {
-        width: 95%;
-        max-height: 90vh;
-    }
-    
-    .firebase-config-fix-header {
-        padding: 16px;
-    }
-    
-    .firebase-config-fix-header h3 {
-        font-size: 18px;
-    }
-    
-    .firebase-config-fix-body {
-        padding: 16px;
-        font-size: 14px;
-    }
-    
-    .firebase-config-fix-actions {
-        padding: 16px;
-        flex-direction: column;
-    }
-    
-    .firebase-config-fix-actions button {
-        width: 100%;
-    }
-}
-
-/* Firebase設定修正ボタン */
-.firebase-fix-section {
-    margin-top: 20px;
-    text-align: center;
-    padding: 16px;
-    background: #fff3cd;
-    border-radius: 8px;
-    border: 1px solid #ffeaa7;
-}
-
-.firebase-fix-button {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
     color: white;
     border: none;
     padding: 12px 20px;
@@ -2110,18 +1710,238 @@ body {
     margin-bottom: 8px;
 }
 
-.firebase-fix-button:hover {
+.firebase-auto-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 
-.fix-icon {
+.auto-icon {
     font-size: 16px;
 }
 
-.fix-hint {
+.auto-hint {
     margin: 0;
     font-size: 12px;
-    color: #856404;
+    color: #6c5ce7;
     font-style: italic;
+}
+
+/* Firebase自動作成モーダル */
+.firebase-auto-create-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20002;
+    backdrop-filter: blur(5px);
+}
+
+.firebase-auto-create-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideInUp 0.3s ease-out;
+}
+
+.firebase-auto-create-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.firebase-auto-create-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.create-indicator {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.firebase-auto-create-body {
+    padding: 24px;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.firebase-auto-create-body h4 {
+    color: #333;
+    margin: 20px 0 10px 0;
+    font-size: 18px;
+}
+
+.project-info, .auto-creation-options, .quick-setup {
+    margin: 20px 0;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.option-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.option-buttons button {
+    flex: 1;
+    min-width: 150px;
+}
+
+.btn-large {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.btn-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+}
+
+.project-details, .config-preview, .config-example {
+    margin: 20px 0;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.detail-item {
+    margin: 8px 0;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.sample-config {
+    margin: 20px 0;
+}
+
+.config-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    resize: vertical;
+    margin-bottom: 12px;
+}
+
+.warning {
+    margin: 20px 0;
+    padding: 16px;
+    background: #fff3cd;
+    border-radius: 8px;
+    border: 1px solid #ffeaa7;
+    border-left: 4px solid #ffc107;
+}
+
+.warning h4 {
+    color: #856404;
+    margin: 0 0 12px 0;
+}
+
+.warning ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.warning li {
+    margin: 4px 0;
+    color: #856404;
+}
+
+.firebase-auto-create-actions {
+    padding: 20px 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    border-top: 1px solid #e9ecef;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .firebase-auto-create-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .firebase-auto-create-header {
+        padding: 16px;
+    }
+    
+    .firebase-auto-create-header h3 {
+        font-size: 18px;
+    }
+    
+    .firebase-auto-create-body {
+        padding: 16px;
+        font-size: 14px;
+    }
+    
+    .option-buttons {
+        flex-direction: column;
+    }
+    
+    .option-buttons button {
+        min-width: auto;
+    }
+    
+    .firebase-auto-create-actions {
+        padding: 16px;
+        flex-direction: column;
+    }
+    
+    .firebase-auto-create-actions button {
+        width: 100%;
+    }
 } 
