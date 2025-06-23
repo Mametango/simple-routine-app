@@ -234,29 +234,112 @@ body {
   font-weight: 500;
 }
 
-.form-input,
-.form-textarea,
-.form-select {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  color: #ffffff;
-  font-size: 1rem;
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  color: #333333;
+}
+
+/* メインフォームの入力フィールド */
+.form-container .form-input,
+.form-container .form-textarea,
+.form-container .form-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
+  font-size: 14px;
   transition: all 0.3s ease;
+  background: #f8f9fa;
+  color: #333333;
+}
+
+.form-container .form-input:focus,
+.form-container .form-textarea:focus,
+.form-container .form-select:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  color: #333333;
+}
+
+/* モーダルの入力フィールド */
+.modal .form-input,
+.modal .form-textarea,
+.modal .form-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  color: #333333;
+}
+
+.modal .form-input:focus,
+.modal .form-textarea:focus,
+.modal .form-select:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  color: #333333;
 }
 
 .form-input::placeholder,
 .form-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: #666666;
+  font-family: inherit;
 }
 
-.form-input:focus,
-.form-textarea:focus,
-.form-select:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+/* 日本語入力の改善 */
+.form-input, .form-textarea {
+  font-family: 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Meiryo', sans-serif;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* IME入力中のスタイル */
+.form-input:focus, .form-textarea:focus {
+  ime-mode: active;
+}
+
+/* プレースホルダーのスタイル */
+.form-input::placeholder, .form-textarea::placeholder {
+  color: #999;
+  font-family: inherit;
+}
+
+/* 日本語入力時のカーソル位置調整 */
+.form-input, .form-textarea {
+  text-align: start;
+  text-align-last: start;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+/* 毎月の日付入力フィールドのスタイル */
+.form-input[type="number"] {
+  padding-left: 12px; /* アイコンがないので左パディングを調整 */
+}
+
+.form-input[type="number"]::-webkit-inner-spin-button,
+.form-input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 .form-select {
@@ -266,11 +349,6 @@ body {
 .form-select option {
   background: #2a2a2a;
   color: #ffffff;
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 100px;
 }
 
 .form-buttons {
@@ -329,27 +407,25 @@ body {
   gap: 1rem;
 }
 
-.routine-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+.routine-item {
+  background: #ffffff;
   border-radius: 16px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1rem;
+  border: 1px solid #e1e5e9;
   transition: all 0.3s ease;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #667eea;
 }
 
-.routine-card:hover {
+.routine-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.routine-card.completed {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.3);
+.routine-item.completed {
+  background: #f8f9fa;
+  border-left-color: #22c55e;
+  opacity: 0.8;
 }
 
 .routine-content {
@@ -363,22 +439,56 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.routine-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .routine-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #ffffff;
+  color: #333333;
   margin: 0;
-  flex: 1;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.routine-item.completed .routine-title {
+  text-decoration: line-through;
+  color: #666666;
+}
+
+.routine-meta-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #666666;
+}
+
+.meta-item i {
+  width: 14px;
+  height: 14px;
 }
 
 .routine-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 10px;
+  align-items: center;
 }
 
 .action-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #f8f9fa;
+  border: 1px solid #e1e5e9;
   border-radius: 6px;
   padding: 0.5rem;
   cursor: pointer;
@@ -389,7 +499,7 @@ body {
 }
 
 .action-button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #e9ecef;
   transform: scale(1.05);
 }
 
@@ -402,9 +512,10 @@ body {
 }
 
 .routine-description {
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0.5rem 0;
-  line-height: 1.5;
+  color: #666666;
+  margin: 0.25rem 0 0 0;
+  line-height: 1.4;
+  font-size: 0.875rem;
 }
 
 .routine-meta {
@@ -418,24 +529,24 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666666;
   font-size: 0.875rem;
   padding: 0.25rem 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: #f8f9fa;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #e1e5e9;
 }
 
 .routine-time {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666666;
   font-size: 0.875rem;
 }
 
 .routine-date {
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
   font-size: 0.75rem;
   margin-top: 0.5rem;
 }
@@ -444,11 +555,11 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #f8f9fa;
+  border: 1px solid #e1e5e9;
   border-radius: 8px;
   padding: 0.75rem 1rem;
-  color: #ffffff;
+  color: #333333;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -457,13 +568,13 @@ body {
 }
 
 .complete-button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #e9ecef;
   transform: translateY(-1px);
 }
 
 .complete-button.completed {
-  background: rgba(34, 197, 94, 0.2);
-  border-color: rgba(34, 197, 94, 0.5);
+  background: #f0fff4;
+  border-color: #22c55e;
   color: #22c55e;
 }
 
@@ -524,6 +635,10 @@ body {
   transform: translateY(-1px);
 }
 
+.password-toggle {
+  /* Add appropriate styles for the password toggle */
+}
+
 @media (max-width: 768px) {
   .app {
     padding: 1rem;
@@ -551,7 +666,7 @@ body {
     grid-template-columns: 1fr;
   }
   
-  .routine-card {
+  .routine-item {
     flex-direction: column;
     align-items: stretch;
   }
@@ -579,4 +694,1625 @@ body {
     margin: 1rem;
     width: calc(100% - 2rem);
   }
+}
+
+/* 認証フォームの入力フィールド */
+.auth-form .form-input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+    color: #333333;
+}
+
+.auth-form .form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    color: #333333;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: #666666;
+    font-family: inherit;
+}
+
+/* 曜日選択のスタイル */
+.weekday-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.weekday-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666666;
+  user-select: none;
+}
+
+.weekday-checkbox:hover {
+  background: #e9ecef;
+  border-color: #667eea;
+}
+
+.weekday-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #667eea;
+  cursor: pointer;
+}
+
+.weekday-checkbox input[type="checkbox"]:checked + span {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.weekday-checkbox:has(input[type="checkbox"]:checked) {
+  background: #f0f4ff;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .settings-content {
+        max-width: 95vw;
+        margin: 20px;
+    }
+    
+    .settings-section {
+        padding: 15px;
+    }
+    
+    .settings-actions {
+        flex-direction: column;
+    }
+    
+    .setting-item input[type="time"],
+    .setting-item select {
+        max-width: 100%;
+    }
+}
+
+.logout-button {
+    background: #f8f9fa;
+    border: 2px solid #e1e5e9;
+    color: #666;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.logout-button:hover {
+    background: #fee;
+    border-color: #f56565;
+    color: #c53030;
+}
+
+.notification-button {
+    background: #f0f4ff;
+    border: 2px solid #667eea;
+    color: #667eea;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notification-button:hover {
+    background: #667eea;
+    color: white;
+}
+
+.notification-button.enabled {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: white;
+}
+
+.notification-button.enabled:hover {
+    background: #16a34a;
+}
+
+/* ヘッダーボタン */
+.header-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.notification-btn, .settings-btn, .logout-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.notification-btn:hover, .settings-btn:hover, .logout-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn {
+    font-size: 14px;
+    background-color: #ff4757;
+    color: white;
+    border-radius: 20px;
+    padding: 8px 16px;
+}
+
+.logout-btn:hover {
+    background-color: #ff3742;
+}
+
+/* 設定モーダル */
+#settingsModal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+#settingsModal .modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.settings-content {
+    padding: 30px;
+}
+
+.settings-content h2 {
+    margin: 0 0 30px 0;
+    color: #333;
+    font-size: 24px;
+    text-align: center;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #007bff;
+}
+
+.settings-section h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.setting-item {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-item label {
+    font-weight: 500;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-item input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.setting-item input[type="time"],
+.setting-item select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    max-width: 200px;
+}
+
+.current-value {
+    font-weight: bold;
+    color: #007bff;
+    background-color: #e3f2fd;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.small-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    max-width: 150px;
+}
+
+.small-btn:hover {
+    background-color: #5a6268;
+}
+
+.danger-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.danger-btn:hover {
+    background-color: #c82333;
+}
+
+.primary-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.primary-btn:hover {
+    background-color: #0056b3;
+}
+
+.secondary-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.secondary-btn:hover {
+    background-color: #5a6268;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+/* ログアウトセクション */
+.logout-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    text-align: center;
+}
+
+.logout-btn-large {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    width: 100%;
+    max-width: 200px;
+    transition: background-color 0.3s ease;
+}
+
+.logout-btn-large:hover {
+    background-color: #c82333;
+}
+
+/* 認証モーダル */
+#authModal .modal-content {
+    max-width: 400px;
+}
+
+#authModal h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+#authModal input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#authModal button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+#authModal button:hover {
+    background-color: #0056b3;
+}
+
+#authModal p {
+    text-align: center;
+    margin: 0;
+}
+
+#authModal a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+#authModal a:hover {
+    text-decoration: underline;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .settings-content {
+        max-width: 95vw;
+        margin: 20px;
+    }
+    
+    .settings-section {
+        padding: 15px;
+    }
+    
+    .settings-actions {
+        flex-direction: column;
+    }
+    
+    .setting-item input[type="time"],
+    .setting-item select {
+        max-width: 100%;
+    }
+}
+
+/* iOS Safari 特有の修正 */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari での viewport 問題を修正 */
+  body {
+    -webkit-overflow-scrolling: touch;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  /* iOS Safari での input 要素のズームを防ぐ */
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="number"],
+  input[type="time"],
+  textarea,
+  select {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+  
+  /* iOS Safari での button 要素の修正 */
+  button {
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* iOS Safari での backdrop-filter の修正 */
+  .app,
+  .stat-card,
+  .form-container,
+  .modal {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+}
+
+/* iPhone 特有の修正 */
+@media screen and (max-width: 414px) {
+  .app {
+    padding: 1rem;
+    margin: 0.5rem;
+    border-radius: 15px;
+  }
+  
+  .title {
+    font-size: 2rem;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  .frequency-tabs {
+    gap: 0.25rem;
+  }
+  
+  .tab-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .add-button {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+  }
+  
+  .form-container {
+    margin: 0.5rem;
+  }
+  
+  .form {
+    padding: 1rem;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .routine-item {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+  }
+  
+  .routine-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .routine-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .action-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
+  .modal {
+    margin: 1rem;
+    padding: 1rem;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .settings-content {
+    max-width: 100%;
+    margin: 0;
+  }
+  
+  .settings-section {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .setting-item {
+    margin-bottom: 1rem;
+  }
+  
+  .setting-item input[type="time"],
+  .setting-item select {
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .settings-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* iPhone SE などの小さい画面用 */
+@media screen and (max-width: 375px) {
+  .app {
+    padding: 0.75rem;
+    margin: 0.25rem;
+  }
+  
+  .title {
+    font-size: 1.75rem;
+  }
+  
+  .stat-card {
+    padding: 0.75rem;
+  }
+  
+  .tab-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+  
+  .routine-item {
+    padding: 0.5rem;
+  }
+  
+  .routine-actions {
+    justify-content: space-between;
+  }
+  
+  .action-button {
+    flex: 1;
+    margin: 0 0.25rem;
+  }
+}
+
+/* iPhone の横画面対応 */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .app {
+    padding: 0.5rem;
+    margin: 0.25rem;
+  }
+  
+  .header {
+    margin-bottom: 1rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .stat-card {
+    padding: 0.5rem;
+  }
+  
+  .frequency-tabs {
+    margin-bottom: 1rem;
+  }
+  
+  .actions {
+    margin-bottom: 1rem;
+  }
+}
+
+/* 安全領域の対応 */
+@supports (padding: max(0px)) {
+  .app {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* タッチデバイス用の最適化 */
+@media (hover: none) and (pointer: coarse) {
+  .tab-button:hover,
+  .add-button:hover,
+  .action-button:hover,
+  .save-button:hover,
+  .cancel-button:hover {
+    transform: none;
+  }
+  
+  .tab-button:active,
+  .add-button:active,
+  .action-button:active,
+  .save-button:active,
+  .cancel-button:active {
+    transform: scale(0.95);
+  }
+  
+  .routine-item:hover {
+    transform: none;
+  }
+  
+  .stat-card:hover {
+    transform: none;
+  }
+}
+
+/* AI機能のスタイル */
+
+/* AI通知 */
+.ai-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 400px;
+    max-width: 90vw;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    animation: slideInRight 0.3s ease-out;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ai-notification.ai-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.ai-notification.ai-error {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+}
+
+.ai-notification.ai-analysis {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    color: #333;
+}
+
+.ai-notification-content {
+    padding: 16px;
+}
+
+.ai-notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.ai-icon {
+    font-size: 20px;
+    margin-right: 8px;
+}
+
+.ai-title {
+    flex: 1;
+    font-size: 16px;
+}
+
+.ai-close {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.ai-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.ai-message {
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* AIボタン */
+.ai-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.ai-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.ai-button:active {
+    transform: translateY(0);
+}
+
+.ai-button .ai-icon {
+    font-size: 16px;
+}
+
+/* AI分析パネル */
+.ai-analysis-panel {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.ai-analysis-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.ai-analysis-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.ai-metric {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.ai-metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.ai-metric-label {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* 自然言語入力 */
+.natural-language-input {
+    position: relative;
+    margin: 20px 0;
+}
+
+.natural-language-input input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.natural-language-input input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.natural-language-input .ai-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.ai-suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.ai-suggestion-item:hover {
+    background-color: #f8f9fa;
+}
+
+.ai-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+/* AI機能ボタン群 */
+.ai-controls {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.ai-controls .ai-button {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .ai-notification {
+        width: calc(100vw - 40px);
+        right: 20px;
+        left: 20px;
+    }
+    
+    .ai-analysis-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .ai-controls {
+        flex-direction: column;
+    }
+    
+    .ai-controls .ai-button {
+        width: 100%;
+    }
+}
+
+/* AI成功予測インジケーター */
+.success-prediction {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.success-prediction.high {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+    border-color: rgba(76, 175, 80, 0.2);
+}
+
+.success-prediction.medium {
+    background: rgba(255, 152, 0, 0.1);
+    color: #ff9800;
+    border-color: rgba(255, 152, 0, 0.2);
+}
+
+.success-prediction.low {
+    background: rgba(244, 67, 54, 0.1);
+    color: #f44336;
+    border-color: rgba(244, 67, 54, 0.2);
+}
+
+/* AI学習インジケーター */
+.ai-learning-indicator {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 1000;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Firebase自動作成ボタン */
+.firebase-auto-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #ffeaa7;
+}
+
+.firebase-auto-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    margin-bottom: 8px;
+}
+
+.firebase-auto-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.auto-icon {
+    font-size: 16px;
+}
+
+.auto-hint {
+    margin: 0;
+    font-size: 12px;
+    color: #6c5ce7;
+    font-style: italic;
+}
+
+/* Firebase自動作成モーダル */
+.firebase-auto-create-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20002;
+    backdrop-filter: blur(5px);
+}
+
+.firebase-auto-create-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideInUp 0.3s ease-out;
+}
+
+.firebase-auto-create-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.firebase-auto-create-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.create-indicator {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.firebase-auto-create-body {
+    padding: 24px;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.firebase-auto-create-body h4 {
+    color: #333;
+    margin: 20px 0 10px 0;
+    font-size: 18px;
+}
+
+.project-info, .auto-creation-options, .quick-setup {
+    margin: 20px 0;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.option-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.option-buttons button {
+    flex: 1;
+    min-width: 150px;
+}
+
+.btn-large {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.btn-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+}
+
+.project-details, .config-preview, .config-example {
+    margin: 20px 0;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.detail-item {
+    margin: 8px 0;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.sample-config {
+    margin: 20px 0;
+}
+
+.config-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    resize: vertical;
+    margin-bottom: 12px;
+}
+
+.warning {
+    margin: 20px 0;
+    padding: 16px;
+    background: #fff3cd;
+    border-radius: 8px;
+    border: 1px solid #ffeaa7;
+    border-left: 4px solid #ffc107;
+}
+
+.warning h4 {
+    color: #856404;
+    margin: 0 0 12px 0;
+}
+
+.warning ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.warning li {
+    margin: 4px 0;
+    color: #856404;
+}
+
+.firebase-auto-create-actions {
+    padding: 20px 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    border-top: 1px solid #e9ecef;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .firebase-auto-create-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .firebase-auto-create-header {
+        padding: 16px;
+    }
+    
+    .firebase-auto-create-header h3 {
+        font-size: 18px;
+    }
+    
+    .firebase-auto-create-body {
+        padding: 16px;
+        font-size: 14px;
+    }
+    
+    .option-buttons {
+        flex-direction: column;
+    }
+    
+    .option-buttons button {
+        min-width: auto;
+    }
+    
+    .firebase-auto-create-actions {
+        padding: 16px;
+        flex-direction: column;
+    }
+    
+    .firebase-auto-create-actions button {
+        width: 100%;
+    }
+}
+
+/* シンプルモードボタン */
+.simple-mode-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #ffeaa7;
+}
+
+.simple-mode-button {
+    background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    margin-bottom: 8px;
+}
+
+.simple-mode-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 184, 148, 0.4);
+}
+
+.simple-icon {
+    font-size: 16px;
+}
+
+.simple-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* シンプルモード切り替えモーダル */
+.simple-mode-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20003;
+    backdrop-filter: blur(5px);
+}
+
+.simple-mode-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideInUp 0.3s ease-out;
+}
+
+.simple-mode-header {
+    background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.simple-mode-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.simple-mode-indicator {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.simple-mode-body {
+    padding: 24px;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.simple-mode-body h4 {
+    color: #333;
+    margin: 20px 0 10px 0;
+    font-size: 18px;
+}
+
+.simple-mode-body ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.simple-mode-body li {
+    margin: 8px 0;
+}
+
+.simple-mode-actions {
+    padding: 20px 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    border-top: 1px solid #e9ecef;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .simple-mode-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .simple-mode-header {
+        padding: 16px;
+    }
+    
+    .simple-mode-header h3 {
+        font-size: 18px;
+    }
+    
+    .simple-mode-body {
+        padding: 16px;
+        font-size: 14px;
+    }
+    
+    .simple-mode-actions {
+        padding: 16px;
+        flex-direction: column;
+    }
+    
+    .simple-mode-actions button {
+        width: 100%;
+    }
+}
+
+/* シンプルモード表示 */
+.simple-mode-indicator-display {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+    animation: slideInRight 0.3s ease-out;
+}
+
+.indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.indicator-icon {
+    font-size: 16px;
+}
+
+.indicator-text {
+    font-weight: 600;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* プログレス表示 */
+.switch-progress {
+    margin: 20px 0;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #00b894;
+}
+
+.step-icon {
+    font-size: 20px;
+    color: #00b894;
+}
+
+.step-text {
+    font-weight: 500;
+    color: #333;
+}
+
+.backup-section {
+    margin: 20px 0;
+    padding: 16px;
+    background: #e8f5e8;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+}
+
+.backup-section h4 {
+    color: #155724;
+    margin: 0 0 12px 0;
+}
+
+.backup-section p {
+    color: #155724;
+    margin: 0 0 12px 0;
+}
+
+.simple-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 5px;
+    text-align: center;
+}
+
+.simple-firebase-section {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.simple-firebase-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.simple-firebase-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.simple-firebase-icon {
+    font-size: 16px;
+}
+
+.simple-firebase-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* Firebase設定修正モーダル */
+.firebase-config-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.firebase-config-section h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.config-display {
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.config-item {
+    margin: 5px 0;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.config-item strong {
+    color: #666;
+}
+
+#firebaseConfigModal .form-group {
+    margin-bottom: 15px;
+}
+
+#firebaseConfigModal label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+#firebaseConfigModal input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#firebaseConfigModal input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.firebase-fix-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.fix-hint {
+    margin: 0;
+    color: #856404;
+    font-size: 14px;
+}
+
+.fix-hint a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.fix-hint a:hover {
+    text-decoration: underline;
+}
+
+/* 電話認証関連 */
+.auth-toggle-link {
+    margin-top: 10px;
+}
+
+#recaptcha-container {
+    margin: 15px 0;
+    display: flex;
+    justify-content: center;
 } 

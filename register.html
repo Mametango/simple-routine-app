@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <title>新規登録 - My Routine</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="simple-firebase-setup.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <!-- 認証画面 -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 id="authTitle">新規登録</h1>
+                <p id="authSubtitle">新しいアカウントを作成します</p>
+            </div>
+
+            <form id="authForm" class="auth-form" accept-charset="UTF-8">
+                <div class="form-group">
+                    <label for="username">ユーザー名</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="user" class="input-icon"></i>
+                        <input type="text" id="username" name="username" placeholder="ユーザー名を入力" required class="form-input" autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group" id="emailGroup">
+                    <label for="email">メールアドレス</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="mail" class="input-icon"></i>
+                        <input type="email" id="email" name="email" placeholder="メールアドレスを入力" required class="form-input" autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="lock" class="input-icon"></i>
+                        <input type="password" id="password" name="password" placeholder="パスワードを入力" required class="form-input" autocomplete="new-password">
+                        <button type="button" id="togglePassword" class="password-toggle">
+                            <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="confirmPasswordGroup">
+                    <label for="confirmPassword">パスワード確認</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="lock" class="input-icon"></i>
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="パスワードを再入力" required class="form-input" autocomplete="new-password">
+                        <button type="button" id="toggleConfirmPassword" class="password-toggle">
+                            <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="error-message" id="authError" style="display: none;"></div>
+
+                <button type="submit" class="auth-button" id="authButton">登録する</button>
+
+                <!-- 認証エラーメッセージ -->
+                <div id="authError" class="auth-error" style="display: none;"></div>
+            </form>
+
+            <div class="auth-footer">
+                <p>
+                    <span id="toggleText">すでにアカウントをお持ちの方は</span>
+                    <a href="index.html" class="toggle-button">ログイン</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- メインアプリ（登録後は非表示） -->
+    <div class="app" id="mainApp" style="display: none;">
+    </div>
+
+    <script src="auto-firebase-setup.js"></script>
+    <script src="fix-firebase-config.js"></script>
+    <script src="auto-create-firebase.js"></script>
+    <script src="simple-auth.js"></script>
+    <script src="simple-storage.js"></script>
+    <script src="simple-firebase-setup.js"></script>
+    <script src="ai-features.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 
