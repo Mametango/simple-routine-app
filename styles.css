@@ -2223,4 +2223,85 @@ body {
     color: rgba(255, 255, 255, 0.7);
     margin-top: 5px;
     text-align: center;
+}
+
+/* Firebase設定修正モーダル */
+.firebase-config-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.firebase-config-section h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.config-display {
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.config-item {
+    margin: 5px 0;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.config-item strong {
+    color: #666;
+}
+
+#firebaseConfigModal .form-group {
+    margin-bottom: 15px;
+}
+
+#firebaseConfigModal label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+#firebaseConfigModal input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#firebaseConfigModal input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.firebase-fix-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.fix-hint {
+    margin: 0;
+    color: #856404;
+    font-size: 14px;
+}
+
+.fix-hint a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.fix-hint a:hover {
+    text-decoration: underline;
 } 
