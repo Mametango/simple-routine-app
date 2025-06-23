@@ -1,11 +1,11 @@
 // Firebase設定
 const firebaseConfig = {
-    apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    authDomain: "my-routine-app-xxxxx.firebaseapp.com",
-    projectId: "my-routine-app-xxxxx",
-    storageBucket: "my-routine-app-xxxxx.appspot.com",
+    apiKey: "AIzaSyBYBNysq-wY0LMsrvAgjnail9md2NJdYUo",
+    authDomain: "my-routine-app-a0708.firebaseapp.com",
+    projectId: "my-routine-app-a0708",
+    storageBucket: "my-routine-app-a0708.firebasestorage.app",
     messagingSenderId: "123456789012",
-    appId: "1:123456789012:web:abcdefghijklmnop"
+    appId: "47e91a320afba0459e558d"
 };
 
 // Firebase初期化
