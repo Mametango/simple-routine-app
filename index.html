@@ -166,6 +166,10 @@
                 <span class="ai-icon">💬</span>
                 自然言語入力
             </button>
+            <button class="ai-button" onclick="startFirebaseAutoSetup()" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);">
+                <span class="ai-icon">⚙️</span>
+                Firebase設定
+            </button>
         </div>
 
         <!-- 自然言語入力 -->
@@ -431,6 +435,7 @@
     <!-- ファイルインポート用の隠しinput -->
     <input type="file" id="importFile" accept=".json" style="display: none;">
 
+    <script src="auto-firebase-setup.js"></script>
     <script src="ai-features.js"></script>
     <script src="script.js"></script>
 </body>
