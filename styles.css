@@ -1029,6 +1029,32 @@ body {
     border-top: 1px solid #ddd;
 }
 
+/* ログアウトセクション */
+.logout-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    text-align: center;
+}
+
+.logout-btn-large {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    width: 100%;
+    max-width: 200px;
+    transition: background-color 0.3s ease;
+}
+
+.logout-btn-large:hover {
+    background-color: #c82333;
+}
+
 /* 認証モーダル */
 #authModal .modal-content {
     max-width: 400px;
