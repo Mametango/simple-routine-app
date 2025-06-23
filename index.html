@@ -61,43 +61,10 @@
                 </div>
             </form>
 
-            <form id="phoneAuthForm" class="auth-form" style="display: none;" novalidate>
-                <div class="form-group">
-                    <label for="phoneNumber">電話番号</label>
-                    <div class="input-wrapper">
-                        <i data-lucide="phone" class="input-icon"></i>
-                        <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="例: +818012345678" required class="form-input" autocomplete="tel">
-                    </div>
-                </div>
-
-                <!-- reCAPTCHAコンテナ -->
-                <div id="recaptcha-container"></div>
-                
-                <button type="button" class="auth-button" id="sendCodeButton">確認コードを送信</button>
-
-                <div id="verificationCodeSection" style="display: none;">
-                    <div class="form-group">
-                        <label for="verificationCode">確認コード</label>
-                        <div class="input-wrapper">
-                            <i data-lucide="key" class="input-icon"></i>
-                            <input type="text" id="verificationCode" name="verificationCode" placeholder="6桁のコードを入力" required class="form-input" autocomplete="one-time-code">
-                        </div>
-                    </div>
-                    <button type="button" class="auth-button" id="verifyCodeButton">認証してログイン</button>
-                </div>
-
-                 <!-- 認証エラーメッセージ -->
-                 <div class="error-message" id="phoneAuthError" style="display: none;"></div>
-            </form>
-
             <div class="auth-footer">
                 <p>
                     アカウントをお持ちでない方は
                     <a href="register.html" class="toggle-button">新規登録</a>
-                </p>
-                <p class="auth-toggle-link">
-                    <a href="#" id="toggleToPhone" class="toggle-button">電話番号でログイン</a>
-                    <a href="#" id="toggleToEmail" class="toggle-button" style="display: none;">メールアドレスでログイン</a>
                 </p>
             </div>
         </div>
