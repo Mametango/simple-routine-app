@@ -121,6 +121,82 @@ document.addEventListener('DOMContentLoaded', function() {
             event.target.style.display = 'none';
         }
     });
+
+    const isRegisterPage = window.location.pathname.includes('register.html');
+
+    if (authForm) {
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            authError.style.display = 'none'; // エラーメッセージを隠す
+
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            try {
+                if (isRegisterPage) {
+                    // --- 新規登録ページの処理 ---
+                    const usernameInput = document.getElementById('username');
+                    const confirmPasswordInput = document.getElementById('confirmPassword');
+                    const username = usernameInput.value;
+                    const confirmPassword = confirmPasswordInput.value;
+
+                    if (password !== confirmPassword) {
+                        throw { code: 'auth/password-mismatch' };
+                    }
+                    if (!username) {
+                         throw { code: 'auth/username-required' };
+                    }
+
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    await userCredential.user.updateProfile({ displayName: username });
+                    
+                    await db.collection('users').doc(userCredential.user.uid).set({
+                        username: username,
+                        email: email,
+                        createdAt: new Date()
+                    });
+                    // 登録成功後のリダイレクトはonAuthStateChangedに任せる
+
+                } else {
+                    // --- ログインページの処理 ---
+                    await auth.signInWithEmailAndPassword(email, password);
+                    // ログイン成功後の画面表示はonAuthStateChangedに任せる
+                }
+            } catch (error) {
+                console.error("Authentication error:", error);
+                authError.textContent = getFirebaseAuthErrorMessage(error.code);
+                authError.style.display = 'block';
+            }
+        });
+    }
+
+    // 認証状態の変更を監視
+    auth.onAuthStateChanged(user => {
+        const onAuthPage = window.location.pathname.includes('register.html') || window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
+        
+        if (user) {
+            // ユーザーがログインしている場合
+            // ログインページまたは登録ページにいれば、メインアプリ画面に遷移したかのように表示を切り替える
+             if (window.location.pathname.includes('register.html')) {
+                window.location.href = 'index.html'; // 登録ページからメインページへ
+            } else if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
+                const authContainer = document.getElementById('authContainer');
+                const mainApp = document.getElementById('mainApp');
+                if (authContainer) authContainer.style.display = 'none';
+                if (mainApp) mainApp.style.display = 'block';
+                initializeApp(user); // アプリのメイン機能を初期化
+            }
+        } else {
+            // ユーザーがログアウトしている場合
+            // ログインページまたは登録ページにいる場合は、フォームを表示したままにする
+            if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/')) {
+                 const authContainer = document.getElementById('authContainer');
+                 const mainApp = document.getElementById('mainApp');
+                 if (authContainer) authContainer.style.display = 'flex';
+                 if (mainApp) mainApp.style.display = 'none';
+            }
+        }
+    });
 });
 
 // 日本認入力の設定
@@ -1476,5 +1552,28 @@ function showSimpleModeIndicator() {
             </div>
         `;
         authContainer.appendChild(indicator);
+    }
+}
+
+function getFirebaseAuthErrorMessage(errorCode) {
+    switch (errorCode) {
+        case 'auth/invalid-email':
+            return '無効なメールアドレスです。';
+        case 'auth/user-disabled':
+            return 'このアカウントは無効化されています。';
+        case 'auth/user-not-found':
+            return 'ユーザーが見つかりませんでした。';
+        case 'auth/wrong-password':
+            return 'パスワードが間違っています。';
+        case 'auth/email-already-in-use':
+            return 'このメールアドレスは既に使用されています。';
+        case 'auth/weak-password':
+            return 'パスワードは6文字以上である必要があります。';
+        case 'auth/password-mismatch':
+            return 'パスワードが一致しません。';
+        case 'auth/username-required':
+            return 'ユーザー名を入力してください。';
+        default:
+            return '認証に失敗しました。もう一度お試しください。';
     }
 } 
