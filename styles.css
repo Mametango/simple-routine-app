@@ -2304,4 +2304,15 @@ body {
 
 .fix-hint a:hover {
     text-decoration: underline;
+}
+
+/* 電話認証関連 */
+.auth-toggle-link {
+    margin-top: 10px;
+}
+
+#recaptcha-container {
+    margin: 15px 0;
+    display: flex;
+    justify-content: center;
 } 
