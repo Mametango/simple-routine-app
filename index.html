@@ -88,6 +88,14 @@
                         </button>
                         <p class="auto-hint">Firebase設定が分からない場合はこちらをクリック</p>
                     </div>
+                    
+                    <div class="simple-mode-section">
+                        <button type="button" onclick="switchToSimpleMode()" class="simple-mode-button">
+                            <span class="simple-icon">⚡</span>
+                            シンプルモードに切り替え
+                        </button>
+                        <p class="simple-hint">Firebase不要！ローカルストレージで動作</p>
+                    </div>
                 </div>
             </form>
 
@@ -458,6 +466,8 @@
     <script src="auto-firebase-setup.js"></script>
     <script src="fix-firebase-config.js"></script>
     <script src="auto-create-firebase.js"></script>
+    <script src="simple-auth.js"></script>
+    <script src="simple-storage.js"></script>
     <script src="ai-features.js"></script>
     <script src="script.js"></script>
 </body>
