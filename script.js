@@ -632,7 +632,7 @@ function saveRoutine() {
 }
 
 function getSelectedWeekdays() {
-    const checkboxes = document.querySelectorAll('input[name="weekdays"]:checked');
+    const checkboxes = document.querySelectorAll('.weekday-input:checked');
     return Array.from(checkboxes).map(cb => parseInt(cb.value));
 }
 
@@ -665,7 +665,7 @@ function editRoutine(id) {
         editWeekdayInputs.forEach(cb => cb.checked = false);
         if (routine.weekdays) {
             routine.weekdays.forEach(day => {
-                const checkbox = document.querySelector(`#editWeeklyDaysRow input[name="weekdays"][value="${day}"]`);
+                const checkbox = document.querySelector(`#editWeeklyDaysRow .weekday-input[value="${day}"]`);
                 if (checkbox) checkbox.checked = true;
             });
         }
@@ -695,7 +695,7 @@ function saveEditRoutine() {
 }
 
 function getSelectedEditWeekdays() {
-    const checkboxes = document.querySelectorAll('#editWeeklyDaysRow input[name="weekdays"]:checked');
+    const checkboxes = document.querySelectorAll('#editWeeklyDaysRow .weekday-input:checked');
     return Array.from(checkboxes).map(cb => parseInt(cb.value));
 }
 
@@ -746,48 +746,61 @@ function updateStats() {
 }
 
 function displayRoutines() {
-    const routineList = document.getElementById('routineList');
-    const filter = document.querySelector('.tab.active') ? document.querySelector('.tab.active').getAttribute('data-filter') : 'all';
+    const filter = currentFilter;
     
     let filteredRoutines = routines;
     if (filter !== 'all') {
         filteredRoutines = routines.filter(r => r.frequency === filter);
     }
     
-    if (routineList) {
-        routineList.innerHTML = '';
+    if (routinesList) {
+        routinesList.innerHTML = '';
         
         if (filteredRoutines.length === 0) {
-            routineList.innerHTML = '<p class="no-routines">ルーティンがありません。</p>';
+            emptyState.style.display = 'block';
+            routinesList.style.display = 'none';
             return;
         }
+        
+        emptyState.style.display = 'none';
+        routinesList.style.display = 'block';
         
         filteredRoutines.forEach(routine => {
             const routineElement = document.createElement('div');
             routineElement.className = `routine-item ${routine.completed ? 'completed' : ''}`;
             
             const frequencyText = getFrequencyText(routine);
-            const timeText = routine.time ? ` ${routine.time}` : '';
             
             routineElement.innerHTML = `
                 <div class="routine-content">
                     <div class="routine-header">
-                        <span class="routine-title">${routine.title}</span>
-                        <span class="routine-frequency">${frequencyText}${timeText}</span>
+                        <h3 class="routine-title">${routine.title}</h3>
+                        <div class="routine-meta">
+                            <span class="routine-frequency">${frequencyText}</span>
+                            ${routine.time ? `<span class="routine-time">${routine.time}</span>` : ''}
+                        </div>
                     </div>
-                    ${routine.description ? `<div class="routine-description">${routine.description}</div>` : ''}
+                    ${routine.description ? `<p class="routine-description">${routine.description}</p>` : ''}
                     <div class="routine-actions">
-                        <button onclick="toggleRoutine(${routine.id})" class="toggle-btn ${routine.completed ? 'completed' : ''}">
-                            ${routine.completed ? '✓' : '○'}
+                        <button class="toggle-btn ${routine.completed ? 'completed' : ''}" onclick="toggleRoutine(${routine.id})">
+                            <i data-lucide="${routine.completed ? 'check-circle' : 'circle'}"></i>
+                            ${routine.completed ? '完了' : '未完了'}
                         </button>
-                        <button onclick="editRoutine(${routine.id})" class="edit-btn">編集</button>
-                        <button onclick="deleteRoutine(${routine.id})" class="delete-btn">削除</button>
+                        <button class="edit-btn" onclick="editRoutine(${routine.id})">
+                            <i data-lucide="edit-3"></i>
+                        </button>
+                        <button class="delete-btn" onclick="deleteRoutine(${routine.id})">
+                            <i data-lucide="trash-2"></i>
+                        </button>
                     </div>
                 </div>
             `;
             
-            routineList.appendChild(routineElement);
+            routinesList.appendChild(routineElement);
         });
+        
+        // Lucideアイコンを更新
+        lucide.createIcons();
     }
     
     updateStats();
