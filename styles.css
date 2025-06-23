@@ -1944,4 +1944,237 @@ body {
     .firebase-auto-create-actions button {
         width: 100%;
     }
+}
+
+/* シンプルモードボタン */
+.simple-mode-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #ffeaa7;
+}
+
+.simple-mode-button {
+    background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    margin-bottom: 8px;
+}
+
+.simple-mode-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 184, 148, 0.4);
+}
+
+.simple-icon {
+    font-size: 16px;
+}
+
+.simple-hint {
+    margin: 0;
+    font-size: 12px;
+    color: #00b894;
+    font-style: italic;
+}
+
+/* シンプルモード切り替えモーダル */
+.simple-mode-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20003;
+    backdrop-filter: blur(5px);
+}
+
+.simple-mode-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideInUp 0.3s ease-out;
+}
+
+.simple-mode-header {
+    background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.simple-mode-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.simple-mode-indicator {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.simple-mode-body {
+    padding: 24px;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.simple-mode-body h4 {
+    color: #333;
+    margin: 20px 0 10px 0;
+    font-size: 18px;
+}
+
+.simple-mode-body ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.simple-mode-body li {
+    margin: 8px 0;
+}
+
+.simple-mode-actions {
+    padding: 20px 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    border-top: 1px solid #e9ecef;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .simple-mode-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .simple-mode-header {
+        padding: 16px;
+    }
+    
+    .simple-mode-header h3 {
+        font-size: 18px;
+    }
+    
+    .simple-mode-body {
+        padding: 16px;
+        font-size: 14px;
+    }
+    
+    .simple-mode-actions {
+        padding: 16px;
+        flex-direction: column;
+    }
+    
+    .simple-mode-actions button {
+        width: 100%;
+    }
+}
+
+/* シンプルモード表示 */
+.simple-mode-indicator-display {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+    animation: slideInRight 0.3s ease-out;
+}
+
+.indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.indicator-icon {
+    font-size: 16px;
+}
+
+.indicator-text {
+    font-weight: 600;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* プログレス表示 */
+.switch-progress {
+    margin: 20px 0;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #00b894;
+}
+
+.step-icon {
+    font-size: 20px;
+    color: #00b894;
+}
+
+.step-text {
+    font-weight: 500;
+    color: #333;
+}
+
+.backup-section {
+    margin: 20px 0;
+    padding: 16px;
+    background: #e8f5e8;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+}
+
+.backup-section h4 {
+    color: #155724;
+    margin: 0 0 12px 0;
+}
+
+.backup-section p {
+    color: #155724;
+    margin: 0 0 12px 0;
 } 
