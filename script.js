@@ -751,7 +751,7 @@ function saveRoutine() {
         monthDay: frequency === 'monthly' ? parseInt(monthDay) : null,
         weekdays: frequency === 'weekly' ? weekdays : null,
         completed: false,
-        createdAt: new Date().toISOString()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
     
     // Firestoreに直接保存
