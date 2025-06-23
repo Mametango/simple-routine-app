@@ -68,10 +68,30 @@ const editCancelButton = document.getElementById('editCancelButton');
 // フィルター関連のDOM要素
 const tabButtons = document.querySelectorAll('.tab-button');
 
+// Firebase認証状態の監視
+auth.onAuthStateChanged(function(user) {
+    if (user) {
+        // ユーザーがログインしている
+        currentUser = {
+            id: user.uid,
+            username: user.email || user.displayName || 'ユーザー',
+            email: user.email
+        };
+        showMainApp();
+        loadRoutines();
+        displayRoutines();
+        initializeNotifications();
+    } else {
+        // ユーザーがログアウトしている
+        currentUser = null;
+        routines = [];
+        showAuthScreen();
+    }
+});
+
 // 初期化
 document.addEventListener('DOMContentLoaded', function() {
     loadSettings();
-    checkAuth();
     setupEventListeners();
     setupJapaneseInput();
     updateTheme();
@@ -97,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// 日本語入力の設定
+// 日本認入力の設定
 function setupJapaneseInput() {
     const textInputs = [titleInput, descriptionInput, editTitleInput, editDescriptionInput];
     
@@ -146,6 +166,15 @@ function setupJapaneseInput() {
             });
         }
     });
+}
+
+// 認証関連
+function showAuthScreen() {
+    // 認証画面を表示し、他の画面を非表示
+    document.getElementById('authContainer').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('authModal').style.display = 'none';
+    document.getElementById('settingsModal').style.display = 'none';
 }
 
 // 通知機能
@@ -302,14 +331,6 @@ function checkAuth() {
     }
 }
 
-function showAuthScreen() {
-    // 認証画面を表示し、他の画面を非表示
-    document.getElementById('authContainer').style.display = 'flex';
-    document.getElementById('mainApp').style.display = 'none';
-    document.getElementById('authModal').style.display = 'none';
-    document.getElementById('settingsModal').style.display = 'none';
-}
-
 function showMainApp() {
     // メインアプリを表示し、他の画面を非表示
     document.getElementById('authContainer').style.display = 'none';
@@ -323,26 +344,44 @@ function showMainApp() {
 }
 
 function logout() {
-    currentUser = null;
-    localStorage.removeItem('currentUser');
-    
-    // すべての画面を非表示にして認証画面を表示
-    document.getElementById('authContainer').style.display = 'flex';
-    document.getElementById('mainApp').style.display = 'none';
-    document.getElementById('authModal').style.display = 'none';
-    document.getElementById('settingsModal').style.display = 'none';
-    
-    routines = [];
-    hideAuthError();
+    auth.signOut()
+        .then(() => {
+            console.log('User logged out successfully');
+        })
+        .catch((error) => {
+            console.error('Logout error:', error);
+        });
 }
 
 // 設定関連
 function loadSettings() {
-    const savedSettings = localStorage.getItem('settings');
-    if (savedSettings) {
-        settings = { ...settings, ...JSON.parse(savedSettings) };
+    if (!currentUser) {
+        // ローカル設定を読み込み（デフォルト値）
+        const savedSettings = localStorage.getItem('settings');
+        if (savedSettings) {
+            settings = { ...settings, ...JSON.parse(savedSettings) };
+        }
+        applySettings();
+        return;
     }
-    applySettings();
+    
+    // Firestoreから設定を読み込み
+    db.collection('users').doc(currentUser.id).get()
+        .then((doc) => {
+            if (doc.exists && doc.data().settings) {
+                settings = { ...settings, ...doc.data().settings };
+            }
+            applySettings();
+        })
+        .catch((error) => {
+            console.error('Error loading settings:', error);
+            // エラーの場合はローカル設定を使用
+            const savedSettings = localStorage.getItem('settings');
+            if (savedSettings) {
+                settings = { ...settings, ...JSON.parse(savedSettings) };
+            }
+            applySettings();
+        });
 }
 
 function saveSettings() {
@@ -353,10 +392,28 @@ function saveSettings() {
     settings.theme = document.getElementById('themeSelect').value;
     settings.language = document.getElementById('languageSelect').value;
     
-    localStorage.setItem('settings', JSON.stringify(settings));
-    applySettings();
-    closeSettings();
-    alert('設定を保存しました。');
+    if (currentUser) {
+        // Firestoreに保存
+        db.collection('users').doc(currentUser.id).set({
+            settings: settings
+        }, { merge: true })
+        .then(() => {
+            console.log('Settings saved to Firestore');
+            applySettings();
+            closeSettings();
+            alert('設定を保存しました。');
+        })
+        .catch((error) => {
+            console.error('Error saving settings:', error);
+            alert('設定の保存に失敗しました。');
+        });
+    } else {
+        // ローカルに保存
+        localStorage.setItem('settings', JSON.stringify(settings));
+        applySettings();
+        closeSettings();
+        alert('設定を保存しました。');
+    }
 }
 
 function applySettings() {
@@ -502,13 +559,27 @@ function loadRoutines() {
         console.log('No current user, cannot load routines');
         return;
     }
-    const key = `routines_${currentUser.username}`;
-    const saved = localStorage.getItem(key);
-    console.log('Loading routines for user:', currentUser.username);
-    console.log('Storage key:', key);
-    console.log('Saved data:', saved);
-    routines = saved ? JSON.parse(saved) : [];
-    console.log('Loaded routines:', routines);
+    
+    console.log('Loading routines for user:', currentUser.id);
+    
+    // Firestoreからリアルタイムでデータを取得
+    db.collection('users').doc(currentUser.id).collection('routines')
+        .onSnapshot((snapshot) => {
+            routines = [];
+            snapshot.forEach((doc) => {
+                const routine = {
+                    id: doc.id,
+                    ...doc.data()
+                };
+                routines.push(routine);
+            });
+            
+            console.log('Loaded routines:', routines);
+            displayRoutines();
+            updateStats();
+        }, (error) => {
+            console.error('Error loading routines:', error);
+        });
 }
 
 function saveRoutines() {
@@ -516,11 +587,37 @@ function saveRoutines() {
         console.log('No current user, cannot save routines');
         return;
     }
-    const key = `routines_${currentUser.username}`;
-    console.log('Saving routines for user:', currentUser.username);
-    console.log('Storage key:', key);
+    
+    console.log('Saving routines for user:', currentUser.id);
     console.log('Routines to save:', routines);
-    localStorage.setItem(key, JSON.stringify(routines));
+    
+    // バッチ処理で一括更新
+    const batch = db.batch();
+    
+    // 既存のデータを削除
+    db.collection('users').doc(currentUser.id).collection('routines')
+        .get()
+        .then((snapshot) => {
+            snapshot.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+            
+            // 新しいデータを追加
+            routines.forEach((routine) => {
+                const routineRef = db.collection('users').doc(currentUser.id).collection('routines').doc();
+                const routineData = { ...routine };
+                delete routineData.id; // FirestoreのドキュメントIDは別途管理
+                batch.set(routineRef, routineData);
+            });
+            
+            return batch.commit();
+        })
+        .then(() => {
+            console.log('Routines saved successfully');
+        })
+        .catch((error) => {
+            console.error('Error saving routines:', error);
+        });
 }
 
 function showAddForm() {
@@ -564,7 +661,6 @@ function saveRoutine() {
     }
     
     const routine = {
-        id: Date.now(),
         title,
         description,
         frequency,
@@ -575,10 +671,17 @@ function saveRoutine() {
         createdAt: new Date().toISOString()
     };
     
-    routines.push(routine);
-    saveRoutines();
-    displayRoutines();
-    hideAddForm();
+    // Firestoreに直接保存
+    db.collection('users').doc(currentUser.id).collection('routines')
+        .add(routine)
+        .then((docRef) => {
+            console.log('Routine saved with ID:', docRef.id);
+            hideAddForm();
+        })
+        .catch((error) => {
+            console.error('Error saving routine:', error);
+            alert('ルーティンの保存に失敗しました。');
+        });
 }
 
 function getSelectedWeekdays() {
@@ -589,16 +692,23 @@ function getSelectedWeekdays() {
 function toggleRoutine(id) {
     const routine = routines.find(r => r.id === id);
     if (routine) {
-        routine.completed = !routine.completed;
+        const updatedRoutine = { ...routine, completed: !routine.completed };
         
         // 完了時に通知をリセット
-        if (routine.completed) {
+        if (updatedRoutine.completed) {
             const today = new Date().toDateString();
             localStorage.removeItem(`notification_${routine.id}_${today}`);
         }
         
-        saveRoutines();
-        displayRoutines();
+        // Firestoreで更新
+        db.collection('users').doc(currentUser.id).collection('routines').doc(id)
+            .update({ completed: updatedRoutine.completed })
+            .then(() => {
+                console.log('Routine toggled successfully');
+            })
+            .catch((error) => {
+                console.error('Error toggling routine:', error);
+            });
     }
 }
 
@@ -627,20 +737,30 @@ function editRoutine(id) {
 }
 
 function saveEditRoutine() {
-    const editId = parseInt(modalOverlay.getAttribute('data-edit-id'));
+    const editId = modalOverlay.getAttribute('data-edit-id');
     const routine = routines.find(r => r.id === editId);
     
     if (routine) {
-        routine.title = editTitleInput.value.trim();
-        routine.description = editDescriptionInput.value.trim();
-        routine.frequency = editFrequencyInput.value;
-        routine.time = editTimeInput.value;
-        routine.monthDay = routine.frequency === 'monthly' ? parseInt(editMonthlyDateInput.value) : null;
-        routine.weekdays = routine.frequency === 'weekly' ? getSelectedEditWeekdays() : null;
+        const updatedRoutine = {
+            title: editTitleInput.value.trim(),
+            description: editDescriptionInput.value.trim(),
+            frequency: editFrequencyInput.value,
+            time: editTimeInput.value,
+            monthDay: editFrequencyInput.value === 'monthly' ? parseInt(editMonthlyDateInput.value) : null,
+            weekdays: editFrequencyInput.value === 'weekly' ? getSelectedEditWeekdays() : null
+        };
         
-        saveRoutines();
-        displayRoutines();
-        hideModal();
+        // Firestoreで更新
+        db.collection('users').doc(currentUser.id).collection('routines').doc(editId)
+            .update(updatedRoutine)
+            .then(() => {
+                console.log('Routine updated successfully');
+                hideModal();
+            })
+            .catch((error) => {
+                console.error('Error updating routine:', error);
+                alert('ルーティンの更新に失敗しました。');
+            });
     }
 }
 
@@ -651,9 +771,16 @@ function getSelectedEditWeekdays() {
 
 function deleteRoutine(id) {
     if (confirm('このルーティンを削除しますか？')) {
-        routines = routines.filter(r => r.id !== id);
-        saveRoutines();
-        displayRoutines();
+        // Firestoreで削除
+        db.collection('users').doc(currentUser.id).collection('routines').doc(id)
+            .delete()
+            .then(() => {
+                console.log('Routine deleted successfully');
+            })
+            .catch((error) => {
+                console.error('Error deleting routine:', error);
+                alert('ルーティンの削除に失敗しました。');
+            });
     }
 }
 
@@ -944,9 +1071,8 @@ function handleAuthSubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(authForm);
-    const username = formData.get('username');
+    const email = formData.get('email') || formData.get('username');
     const password = formData.get('password');
-    const email = formData.get('email');
     const confirmPassword = formData.get('confirmPassword');
     
     if (isRegistering) {
@@ -961,52 +1087,59 @@ function handleAuthSubmit(e) {
             return;
         }
         
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const existingUser = users.find(user => user.username === username);
-        
-        if (existingUser) {
-            showAuthError('このユーザー名は既に使用されています');
-            return;
-        }
-        
-        const newUser = {
-            id: Date.now().toString(),
-            username,
-            email,
-            password: btoa(password), // 簡単な暗号化（実際のアプリではbcrypt等を使用）
-            createdAt: new Date().toISOString()
-        };
-        
-        users.push(newUser);
-        localStorage.setItem('users', JSON.stringify(users));
-        
-        // 自動ログイン
-        currentUser = { id: newUser.id, username: newUser.username };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
-        showMainApp();
-        initializeUserData();
-        loadRoutines();
-        displayRoutines();
-        initializeNotifications();
+        // Firebaseでユーザー登録
+        auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                console.log('User registered successfully:', user.uid);
+                
+                // 初期データを作成
+                initializeUserData();
+            })
+            .catch((error) => {
+                console.error('Registration error:', error);
+                let errorMessage = '登録に失敗しました';
+                
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'このメールアドレスは既に使用されています';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = '無効なメールアドレスです';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'パスワードが弱すぎます';
+                        break;
+                }
+                
+                showAuthError(errorMessage);
+            });
         
     } else {
         // ログイン
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const user = users.find(u => u.username === username && btoa(password) === u.password);
-        
-        if (!user) {
-            showAuthError('ユーザー名またはパスワードが正しくありません');
-            return;
-        }
-        
-        currentUser = { id: user.id, username: user.username };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
-        showMainApp();
-        loadRoutines();
-        displayRoutines();
-        initializeNotifications();
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                console.log('User logged in successfully:', user.uid);
+            })
+            .catch((error) => {
+                console.error('Login error:', error);
+                let errorMessage = 'ログインに失敗しました';
+                
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'ユーザーが見つかりません';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'パスワードが正しくありません';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = '無効なメールアドレスです';
+                        break;
+                }
+                
+                showAuthError(errorMessage);
+            });
     }
 }
 
@@ -1049,8 +1182,23 @@ function togglePasswordVisibility(fieldId) {
 
 // ユーザーデータ管理
 function initializeUserData() {
+    // 新しいユーザーの初期データを作成
     routines = [];
-    saveRoutines();
+    
+    // 初期設定をFirestoreに保存
+    if (currentUser) {
+        db.collection('users').doc(currentUser.id).set({
+            settings: settings,
+            createdAt: new Date().toISOString()
+        }, { merge: true })
+        .then(() => {
+            console.log('User data initialized in Firestore');
+        })
+        .catch((error) => {
+            console.error('Error initializing user data:', error);
+        });
+    }
+    
     updateDisplay();
 }
 
