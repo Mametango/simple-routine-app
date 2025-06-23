@@ -10,6 +10,7 @@
     <meta name="format-detection" content="telephone=no">
     <title>My Routine - 習慣管理アプリ</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="simple-firebase-setup.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     
     <!-- Firebase SDK -->
@@ -95,6 +96,14 @@
                             シンプルモードに切り替え
                         </button>
                         <p class="simple-hint">Firebase不要！ローカルストレージで動作</p>
+                    </div>
+                    
+                    <div class="simple-firebase-section">
+                        <button type="button" onclick="startSimpleFirebaseSetup()" class="simple-firebase-button">
+                            <span class="simple-firebase-icon">🔥</span>
+                            シンプルFirebase設定
+                        </button>
+                        <p class="simple-firebase-hint">簡単なインターフェースでFirebase設定</p>
                     </div>
                 </div>
             </form>
@@ -468,6 +477,7 @@
     <script src="auto-create-firebase.js"></script>
     <script src="simple-auth.js"></script>
     <script src="simple-storage.js"></script>
+    <script src="simple-firebase-setup.js"></script>
     <script src="ai-features.js"></script>
     <script src="script.js"></script>
 </body>
