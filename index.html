@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="format-detection" content="telephone=no">
-    <title>My Routine - 習慣管理アプリ</title>
+    <title>My Routine - ログイン</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="simple-firebase-setup.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -30,18 +30,10 @@
 
             <form id="authForm" class="auth-form" accept-charset="UTF-8">
                 <div class="form-group">
-                    <label for="username">ユーザー名</label>
-                    <div class="input-wrapper">
-                        <i data-lucide="user" class="input-icon"></i>
-                        <input type="text" id="username" name="username" placeholder="ユーザー名を入力" required class="form-input" autocomplete="username">
-                    </div>
-                </div>
-
-                <div class="form-group" id="emailGroup" style="display: none;">
                     <label for="email">メールアドレス</label>
                     <div class="input-wrapper">
                         <i data-lucide="mail" class="input-icon"></i>
-                        <input type="email" id="email" name="email" placeholder="メールアドレスを入力" class="form-input" autocomplete="email">
+                        <input type="email" id="email" name="email" placeholder="メールアドレスを入力" required class="form-input" autocomplete="email">
                     </div>
                 </div>
 
@@ -56,17 +48,6 @@
                     </div>
                 </div>
 
-                <div class="form-group" id="confirmPasswordGroup" style="display: none;">
-                    <label for="confirmPassword">パスワード確認</label>
-                    <div class="input-wrapper">
-                        <i data-lucide="lock" class="input-icon"></i>
-                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="パスワードを再入力" class="form-input" autocomplete="new-password">
-                        <button type="button" id="toggleConfirmPassword" class="password-toggle">
-                            <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
-                        </button>
-                    </div>
-                </div>
-
                 <div class="error-message" id="authError" style="display: none;"></div>
 
                 <button type="submit" class="auth-button" id="authButton">ログイン</button>
@@ -76,42 +57,14 @@
                 
                 <!-- Firebase設定修正ボタン -->
                 <div class="firebase-fix-section">
-                    <button type="button" onclick="fixFirebaseConfig()" class="firebase-fix-button">
-                        <span class="fix-icon">🔧</span>
-                        Firebase設定を修正
-                    </button>
-                    <p class="fix-hint">ログインに問題がある場合はこちらをクリック</p>
-                    
-                    <div class="firebase-auto-section">
-                        <button type="button" onclick="startFirebaseAutoCreation()" class="firebase-auto-button">
-                            <span class="auto-icon">🤖</span>
-                            Firebase自動作成
-                        </button>
-                        <p class="auto-hint">Firebase設定が分からない場合はこちらをクリック</p>
-                    </div>
-                    
-                    <div class="simple-mode-section">
-                        <button type="button" onclick="switchToSimpleMode()" class="simple-mode-button">
-                            <span class="simple-icon">⚡</span>
-                            シンプルモードに切り替え
-                        </button>
-                        <p class="simple-hint">Firebase不要！ローカルストレージで動作</p>
-                    </div>
-                    
-                    <div class="simple-firebase-section">
-                        <button type="button" onclick="startSimpleFirebaseSetup()" class="simple-firebase-button">
-                            <span class="simple-firebase-icon">🔥</span>
-                            シンプルFirebase設定
-                        </button>
-                        <p class="simple-firebase-hint">簡単なインターフェースでFirebase設定</p>
-                    </div>
+                    <p class="fix-hint">ログインに問題がある場合は<br><a href="#" onclick="fixFirebaseConfig()">Firebase設定を修正</a>してください</p>
                 </div>
             </form>
 
             <div class="auth-footer">
                 <p>
-                    <span id="toggleText">アカウントをお持ちでない方は</span>
-                    <button type="button" id="toggleAuth" class="toggle-button">会員登録</button>
+                    アカウントをお持ちでない方は
+                    <a href="register.html" class="toggle-button">新規登録</a>
                 </p>
             </div>
         </div>
