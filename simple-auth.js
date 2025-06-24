@@ -96,13 +96,21 @@ class SimpleAuth {
     // サインイン
     async signIn(email, password) {
         try {
+            console.log('シンプル認証: サインイン開始', { email });
+            
             const userData = this.users[email];
+            console.log('シンプル認証: ユーザーデータ検索結果', userData ? '見つかりました' : '見つかりませんでした');
             
             if (!userData) {
+                console.log('シンプル認証: ユーザーが見つかりません');
                 throw new Error('auth/user-not-found');
             }
 
-            if (!this.verifyPassword(password, userData.password)) {
+            const passwordValid = this.verifyPassword(password, userData.password);
+            console.log('シンプル認証: パスワード検証結果', passwordValid);
+            
+            if (!passwordValid) {
+                console.log('シンプル認証: パスワードが正しくありません');
                 throw new Error('auth/wrong-password');
             }
 
@@ -116,9 +124,12 @@ class SimpleAuth {
 
             this.currentUser = user;
             localStorage.setItem('simpleAuthCurrentUser', JSON.stringify(user));
+            
+            console.log('シンプル認証: サインイン成功', user);
 
             return { user: user };
         } catch (error) {
+            console.error('シンプル認証: サインインエラー', error);
             throw error;
         }
     }
