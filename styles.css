@@ -1364,4 +1364,35 @@ body.pull-to-refresh-active {
         margin: 0;
         border-radius: 0;
     }
+}
+
+.sync-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sync-btn:hover {
+    background: var(--hover-color);
+    color: var(--text-primary);
+}
+
+.sync-btn:active {
+    transform: scale(0.95);
+}
+
+.sync-btn.syncing {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 } 
