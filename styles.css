@@ -798,4 +798,172 @@ body {
 
 .ai-notification-info {
     border-left: 4px solid #3b82f6;
+}
+
+/* モバイルデバイス用の認証エラー表示 */
+.mobile-device .auth-error {
+    background-color: #fee;
+    border: 1px solid #fcc;
+    color: #c33;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+}
+
+.mobile-device .auth-error.show {
+    display: block;
+}
+
+/* モバイルでのフォーム改善 */
+.mobile-device .form-input {
+    font-size: 16px; /* iOSでズームを防ぐ */
+    padding: 15px 15px 15px 45px;
+    border-radius: 12px;
+    border: 2px solid #e1e5e9;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mobile-device .form-input:focus {
+    border-color: #007bff;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+/* モバイルでのボタン改善 */
+.mobile-device .auth-button {
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 20px;
+    min-height: 50px;
+}
+
+.mobile-device .auth-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.mobile-device .auth-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* モバイルでのパスワード表示切り替えボタン */
+.mobile-device .password-toggle {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.mobile-device .password-toggle:hover {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #495057;
+}
+
+/* モバイルでの入力ラッパー */
+.mobile-device .input-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.mobile-device .input-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    width: 20px;
+    height: 20px;
+}
+
+/* モバイルでのフォームグループ */
+.mobile-device .form-group {
+    margin-bottom: 25px;
+}
+
+.mobile-device .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+/* モバイルでの認証カード */
+.mobile-device .auth-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    margin: 20px auto;
+}
+
+/* モバイルでの認証ヘッダー */
+.mobile-device .auth-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.mobile-device .auth-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.mobile-device .auth-header p {
+    color: #6c757d;
+    font-size: 16px;
+    margin: 0;
+}
+
+/* モバイルでの認証フッター */
+.mobile-device .auth-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.mobile-device .auth-footer p {
+    color: #6c757d;
+    font-size: 14px;
+    margin: 0;
+}
+
+.mobile-device .auth-footer .toggle-button {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.mobile-device .auth-footer .toggle-button:hover {
+    text-decoration: underline;
 } 
