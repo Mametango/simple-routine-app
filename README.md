@@ -14,6 +14,10 @@ Next.jsで構築された美しいUIと優れたUXを持つ、毎日の習慣を
 - 🔄 **リアルタイムデータ同期**
 - 🔄 **頻度管理**: 毎日、毎週、毎月のルーティンを管理
 - 🔄 **フィルタリング**: 頻度別にルーティンを絞り込み
+- 🔐 **認証システム**: Firebase認証とシンプル認証の両方をサポート
+- ☁️ **複数ストレージ対応**: Firebase、Google Drive、ローカルストレージから選択可能
+- 📊 **進捗管理**: ルーティンの完了状況を追跡
+- 🎯 **柔軟な頻度設定**: 毎日、毎週、毎月のルーティンに対応
 
 ## 🛠 技術スタック
 
@@ -193,3 +197,91 @@ MIT License
 - 基本的なルーティン管理機能
 - モダンなUI/UX
 - レスポンシブデザイン 
+
+## 📦 ストレージオプション
+
+### 1. Firebase（推奨）
+- リアルタイム同期
+- 複数デバイス対応
+- 無料プランで十分な機能
+
+### 2. Google Drive
+- Googleアカウントで同期
+- プライバシー重視
+- 既存のGoogleアカウントで利用可能
+
+### 3. ローカル保存
+- このデバイスのみ
+- オフライン対応
+- プライバシー重視
+
+## 🔧 セットアップ
+
+### 1. Firebase設定（推奨）
+
+1. [Firebase Console](https://console.firebase.google.com/)でプロジェクトを作成
+2. Authenticationを有効化（メール/パスワード）
+3. Firestore Databaseを作成
+4. `firebase-config.js`に設定を記入
+
+### 2. Google Drive設定（オプション）
+
+1. [Google Cloud Console](https://console.cloud.google.com/)でプロジェクトを作成
+2. Google Drive APIを有効化
+3. 認証情報 > OAuth 2.0クライアントIDを作成
+4. 承認済みのJavaScriptオリジンを追加：
+   - `http://localhost:8000` (開発用)
+   - `https://your-domain.com` (本番用)
+5. `google-drive-config.js`にクライアントIDとAPIキーを記入
+
+### 3. ローカル開発
+
+```bash
+# 依存関係をインストール
+npm install
+
+# 開発サーバーを起動
+python -m http.server 8000
+# または
+npx http-server
+
+# ブラウザで http://localhost:8000 にアクセス
+```
+
+## 🔧 使用方法
+
+1. **ログイン**: メールアドレスとパスワードでログイン
+2. **ストレージ選択**: 設定ボタン（⚙️）から保存方法を選択
+3. **ルーティン追加**: 「追加」ボタンから新しいルーティンを作成
+4. **完了記録**: ルーティンの横のチェックボタンで完了を記録
+5. **同期**: 同期ボタンで手動同期、またはプルツーリフレッシュ（モバイル）
+
+## 🔧 ファイル構成
+
+```
+My routine/
+├── index.html              # メインHTMLファイル
+├── styles.css              # スタイルシート
+├── script.js               # メインJavaScript
+├── firebase-config.js      # Firebase設定
+├── google-drive-config.js  # Google Drive設定
+├── google-drive-storage.js # Google Drive実装
+├── auto-firebase-setup.js  # Firebase自動設定
+└── README.md              # このファイル
+```
+
+## 🎨 技術スタック
+
+- **フロントエンド**: HTML5, CSS3, JavaScript (ES6+)
+- **認証**: Firebase Authentication, カスタム認証
+- **データベース**: Firebase Firestore, Google Drive API, LocalStorage
+- **アイコン**: Lucide Icons
+- **デプロイ**: GitHub Pages
+
+## 🎨 ライセンス
+
+MIT License
+
+## 🤝 サポート
+
+問題や質問がある場合は、GitHubのIssuesでお知らせください。 

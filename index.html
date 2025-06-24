@@ -20,6 +20,15 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+
+    <!-- Google Drive API -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    
+    <!-- Google Drive Config -->
+    <script src="google-drive-config.js"></script>
+    
+    <!-- Google Drive Storage -->
+    <script src="google-drive-storage.js"></script>
 </head>
 <body>
     <!-- 認証画面 -->
@@ -95,7 +104,7 @@
                         <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
                     </button>
                     <button id="notificationBtn" class="notification-btn" onclick="requestNotificationPermission()">🔔</button>
-                    <button id="settingsBtn" class="settings-btn" onclick="openSettings()">⚙️</button>
+                    <button id="settingsBtn" class="settings-btn" onclick="showStorageModal()">⚙️</button>
                 </div>
             </div>
         </header>
@@ -548,6 +557,46 @@
 
     <!-- ファイルインポート用の隠しinput -->
     <input type="file" id="importFile" accept=".json" style="display: none;">
+
+    <!-- ストレージ選択モーダル -->
+    <div id="storageModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>データ保存方法を選択</h3>
+                <button class="modal-close" onclick="closeStorageModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="storage-option" onclick="selectStorage('firebase')">
+                    <div class="storage-icon">🔥</div>
+                    <div class="storage-info">
+                        <h4>Firebase（推奨）</h4>
+                        <p>リアルタイム同期、複数デバイス対応</p>
+                    </div>
+                    <div class="storage-check">✓</div>
+                </div>
+                <div class="storage-option" onclick="selectStorage('google-drive')">
+                    <div class="storage-icon">☁️</div>
+                    <div class="storage-info">
+                        <h4>Google Drive</h4>
+                        <p>Googleアカウントで同期、プライバシー重視</p>
+                    </div>
+                    <div class="storage-check">✓</div>
+                </div>
+                <div class="storage-option" onclick="selectStorage('local')">
+                    <div class="storage-icon">💾</div>
+                    <div class="storage-info">
+                        <h4>ローカル保存</h4>
+                        <p>このデバイスのみ、オフライン対応</p>
+                    </div>
+                    <div class="storage-check">✓</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="closeStorageModal()">キャンセル</button>
+                <button class="modal-btn primary" onclick="confirmStorageSelection()">選択</button>
+            </div>
+        </div>
+    </div>
 
     <script src="auto-firebase-setup.js"></script>
     <script src="fix-firebase-config.js"></script>
