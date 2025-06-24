@@ -966,4 +966,41 @@ body {
 
 .mobile-device .auth-footer .toggle-button:hover {
     text-decoration: underline;
+}
+
+/* 同期状態表示 */
+.sync-status-container {
+    margin: 0 15px;
+    display: flex;
+    align-items: center;
+}
+
+.sync-status {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.sync-status.server-sync {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.sync-status.local-sync {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* モバイルでの同期状態表示 */
+.mobile-device .sync-status-container {
+    margin: 0 10px;
+}
+
+.mobile-device .sync-status {
+    font-size: 11px;
+    padding: 3px 6px;
 } 
