@@ -9,12 +9,21 @@ const firebaseConfig = {
 };
 
 // Firebase初期化
-firebase.initializeApp(firebaseConfig);
-
-// FirestoreとAuthの初期化
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-// モバイル認証の設定
-auth.useDeviceLanguage();
-auth.settings.appVerificationDisabledForTesting = false;
+if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    
+    // FirestoreとAuthの初期化
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    
+    // モバイル認証の設定
+    auth.useDeviceLanguage();
+    auth.settings.appVerificationDisabledForTesting = false;
+    
+    // 永続化設定（デバイス間で認証状態を保持）
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    
+    console.log('Firebase設定完了:', firebaseConfig.projectId);
+} else {
+    console.error('Firebase SDKが読み込まれていません');
+}

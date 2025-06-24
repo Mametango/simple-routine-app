@@ -4,11 +4,15 @@ class SimpleAuth {
         this.users = JSON.parse(localStorage.getItem('simpleAuthUsers') || '{}');
         this.currentUser = JSON.parse(localStorage.getItem('simpleAuthCurrentUser') || 'null');
         this.isInitialized = false;
+        this.syncKey = 'simpleAuthSync';
     }
 
     // 初期化
     init() {
         if (this.isInitialized) return;
+        
+        // クラウド同期を試行
+        this.syncWithCloud();
         
         // 既存のFirebase認証を無効化
         this.disableFirebaseAuth();
@@ -17,7 +21,45 @@ class SimpleAuth {
         this.enableSimpleAuth();
         
         this.isInitialized = true;
-        console.log('SimpleAuth initialized');
+        console.log('SimpleAuth initialized with cloud sync');
+    }
+
+    // クラウド同期
+    async syncWithCloud() {
+        try {
+            // Firebase Firestoreが利用可能な場合は同期
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                const db = firebase.firestore();
+                const syncDoc = await db.collection('auth_sync').doc('users').get();
+                
+                if (syncDoc.exists) {
+                    const cloudUsers = syncDoc.data().users || {};
+                    console.log('クラウドからユーザーデータを同期:', Object.keys(cloudUsers).length, 'ユーザー');
+                    
+                    // ローカルとクラウドをマージ
+                    this.users = { ...this.users, ...cloudUsers };
+                    localStorage.setItem('simpleAuthUsers', JSON.stringify(this.users));
+                }
+            }
+        } catch (error) {
+            console.log('クラウド同期エラー（ローカル認証を使用）:', error.message);
+        }
+    }
+
+    // クラウドに保存
+    async saveToCloud() {
+        try {
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                const db = firebase.firestore();
+                await db.collection('auth_sync').doc('users').set({
+                    users: this.users,
+                    lastUpdated: new Date().toISOString()
+                });
+                console.log('ユーザーデータをクラウドに保存');
+            }
+        } catch (error) {
+            console.log('クラウド保存エラー:', error.message);
+        }
     }
 
     // Firebase認証を無効化
@@ -55,13 +97,17 @@ class SimpleAuth {
     // サインアップ
     async signUp(email, password) {
         try {
+            console.log('シンプル認証: サインアップ開始', { email });
+            
             // ユーザーが既に存在するかチェック
             if (this.users[email]) {
+                console.log('シンプル認証: ユーザーは既に存在します');
                 throw new Error('auth/email-already-in-use');
             }
 
             // パスワードの長さチェック
             if (password.length < 6) {
+                console.log('シンプル認証: パスワードが短すぎます');
                 throw new Error('auth/weak-password');
             }
 
@@ -82,13 +128,18 @@ class SimpleAuth {
 
             // ローカルストレージに保存
             localStorage.setItem('simpleAuthUsers', JSON.stringify(this.users));
+            
+            // クラウドに同期
+            await this.saveToCloud();
 
             // 現在のユーザーを設定
             this.currentUser = user;
             localStorage.setItem('simpleAuthCurrentUser', JSON.stringify(user));
 
+            console.log('シンプル認証: サインアップ成功', user);
             return { user: user };
         } catch (error) {
+            console.error('シンプル認証: サインアップエラー', error);
             throw error;
         }
     }
@@ -97,6 +148,9 @@ class SimpleAuth {
     async signIn(email, password) {
         try {
             console.log('シンプル認証: サインイン開始', { email });
+            
+            // クラウドから最新データを同期
+            await this.syncWithCloud();
             
             const userData = this.users[email];
             console.log('シンプル認証: ユーザーデータ検索結果', userData ? '見つかりました' : '見つかりませんでした');
