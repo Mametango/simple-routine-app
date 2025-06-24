@@ -140,67 +140,112 @@
             </button>
         </div>
 
-        <div class="actions">
-            <button class="add-button" id="addButton">
-                <i data-lucide="plus" class="button-icon"></i>
-                新しいルーティンを追加
-            </button>
+        <!-- ルーティン確認画面（メイン） -->
+        <div class="routines-view" id="routinesView">
+            <div class="routines-header">
+                <h2 class="routines-title">
+                    <i data-lucide="target" class="title-icon"></i>
+                    今日のルーティン
+                </h2>
+                <button class="add-routine-btn" id="addRoutineBtn" onclick="showAddRoutineScreen()">
+                    <i data-lucide="plus" class="button-icon"></i>
+                    追加
+                </button>
+            </div>
+
+            <div class="routines-container">
+                <div class="empty-state" id="emptyState">
+                    <i data-lucide="target" class="empty-icon"></i>
+                    <h3>まだルーティンがありません</h3>
+                    <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
+                    <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
+                        <i data-lucide="plus" class="button-icon"></i>
+                        最初のルーティンを追加
+                    </button>
+                </div>
+                <div class="routines-list" id="routinesList" style="display: none;"></div>
+                <div id="routinesContainer"></div>
+            </div>
         </div>
 
-        <div class="form-container" id="formContainer" style="display: none;">
-            <div class="form">
-                <input type="text" placeholder="ルーティンのタイトル" id="titleInput" class="form-input" autocomplete="off" inputmode="text">
-                <textarea placeholder="説明（オプション）" id="descriptionInput" class="form-textarea" autocomplete="off"></textarea>
-                <div class="form-row">
+        <!-- ルーティン追加画面（非表示） -->
+        <div class="add-routine-screen" id="addRoutineScreen" style="display: none;">
+            <div class="screen-header">
+                <button class="back-btn" onclick="showMainScreen()">
+                    <i data-lucide="arrow-left" class="button-icon"></i>
+                    戻る
+                </button>
+                <h2 class="screen-title">新しいルーティンを追加</h2>
+                <div class="header-spacer"></div>
+            </div>
+
+            <div class="form-container">
+                <div class="form">
                     <div class="form-group">
-                        <label for="frequencyInput" class="form-label">頻度</label>
-                        <select id="frequencyInput" class="form-select">
-                            <option value="daily">毎日</option>
-                            <option value="weekly">毎週</option>
-                            <option value="monthly">毎月</option>
-                        </select>
+                        <label for="titleInput" class="form-label">ルーティン名</label>
+                        <input type="text" placeholder="例：朝の散歩" id="titleInput" class="form-input" autocomplete="off" inputmode="text">
                     </div>
+                    
                     <div class="form-group">
-                        <label for="timeInput" class="form-label">時間</label>
-                        <input type="time" id="timeInput" class="form-input">
+                        <label for="descriptionInput" class="form-label">説明（オプション）</label>
+                        <textarea placeholder="ルーティンの詳細を入力" id="descriptionInput" class="form-textarea" autocomplete="off"></textarea>
                     </div>
-                </div>
-                <div class="form-row" id="weeklyDaysRow" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">曜日</label>
-                        <div class="weekday-checkboxes">
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="1" class="weekday-input"> 月
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="2" class="weekday-input"> 火
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="3" class="weekday-input"> 水
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="4" class="weekday-input"> 木
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="5" class="weekday-input"> 金
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="6" class="weekday-input"> 土
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="0" class="weekday-input"> 日
-                            </label>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="frequencyInput" class="form-label">頻度</label>
+                            <select id="frequencyInput" class="form-select">
+                                <option value="daily">毎日</option>
+                                <option value="weekly">毎週</option>
+                                <option value="monthly">毎月</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="timeInput" class="form-label">時間</label>
+                            <input type="time" id="timeInput" class="form-input">
                         </div>
                     </div>
-                </div>
-                <div class="form-row" id="monthlyDateRow" style="display: none;">
-                    <div class="form-group">
-                        <label for="monthlyDateInput" class="form-label">毎月の日付</label>
-                        <input type="number" id="monthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
+                    
+                    <div class="form-row" id="weeklyDaysRow" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">曜日</label>
+                            <div class="weekday-checkboxes">
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="1" class="weekday-input"> 月
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="2" class="weekday-input"> 火
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="3" class="weekday-input"> 水
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="4" class="weekday-input"> 木
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="5" class="weekday-input"> 金
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="6" class="weekday-input"> 土
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="0" class="weekday-input"> 日
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="form-buttons">
-                    <button class="save-button" id="saveButton">保存</button>
+                    
+                    <div class="form-row" id="monthlyDateRow" style="display: none;">
+                        <div class="form-group">
+                            <label for="monthlyDateInput" class="form-label">毎月の日付</label>
+                            <input type="number" id="monthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
+                        </div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button class="save-button" id="saveButton">保存</button>
+                        <button class="cancel-button" onclick="showMainScreen()">キャンセル</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -262,16 +307,6 @@
                     <button class="cancel-button" id="editCancelButton">キャンセル</button>
                 </div>
             </div>
-        </div>
-
-        <div class="routines-container">
-            <div class="empty-state" id="emptyState">
-                <i data-lucide="target" class="empty-icon"></i>
-                <h3>まだルーティンがありません</h3>
-                <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
-            </div>
-            <div class="routines-list" id="routinesList" style="display: none;"></div>
-            <div id="routinesContainer"></div>
         </div>
 
         <div class="modal-overlay" id="modalOverlay" style="display: none;">
