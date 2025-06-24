@@ -1465,4 +1465,78 @@ body.pull-to-refresh-active {
     .modal-btn {
         width: 100%;
     }
+}
+
+/* ソーシャルログイン */
+.social-login {
+    margin-top: 1.5rem;
+}
+
+.divider {
+    text-align: center;
+    margin: 1rem 0;
+    position: relative;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.divider span {
+    background: white;
+    padding: 0 1rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.google-login-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 1rem;
+}
+
+.google-login-btn:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.google-login-btn:active {
+    transform: translateY(0);
+}
+
+.google-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+    .google-login-btn {
+        padding: 0.875rem 1rem;
+        font-size: 1rem;
+    }
+    
+    .google-icon {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
 } 

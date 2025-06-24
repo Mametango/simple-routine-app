@@ -23,7 +23,21 @@ if (typeof firebase !== 'undefined') {
     // 永続化設定（デバイス間で認証状態を保持）
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     
+    // Google認証プロバイダーの設定
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+    googleProvider.addScope('email');
+    googleProvider.addScope('profile');
+    
+    // カスタムパラメータ（オプション）
+    googleProvider.setCustomParameters({
+        prompt: 'select_account'
+    });
+    
+    // グローバルに公開
+    window.googleAuthProvider = googleProvider;
+    
     console.log('Firebase設定完了:', firebaseConfig.projectId);
+    console.log('Google認証プロバイダー設定完了');
 } else {
     console.error('Firebase SDKが読み込まれていません');
 }
