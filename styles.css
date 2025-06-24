@@ -1,3 +1,24 @@
+/* CSS変数 */
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #3730a3;
+    --success-color: #10b981;
+    --success-hover: #059669;
+    --success-bg: #f0fdf4;
+    --error-color: #dc2626;
+    --warning-color: #f59e0b;
+    --info-color: #3b82f6;
+    
+    --background-color: #f8fafc;
+    --surface-color: #ffffff;
+    --border-color: #e5e7eb;
+    --hover-color: #f3f4f6;
+    
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+}
+
 /* 基本スタイル */
 * {
     margin: 0;
@@ -835,69 +856,11 @@ body.pull-to-refresh-active {
 }
 
 /* メイン画面レイアウト */
-.routines-view {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    max-width: 100%;
-}
-
-.routines-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    background: var(--surface-color);
-    border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.routines-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
-}
-
-.title-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: var(--primary-color);
-}
-
-.add-routine-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.add-routine-btn:hover {
-    background: var(--primary-hover);
-    transform: translateY(-1px);
-}
-
-.add-routine-btn:active {
-    transform: translateY(0);
-}
-
+.routines-view,
+.routines-header,
+.routines-title,
 .routines-container {
-    flex: 1;
-    padding: 1rem;
-    overflow-y: auto;
+    display: none;
 }
 
 /* ルーティン追加画面 */
@@ -1297,4 +1260,9 @@ body.pull-to-refresh-active {
     padding: 2rem 1rem;
     color: var(--text-secondary);
     font-size: 0.875rem;
+}
+
+.button-icon {
+    width: 1rem;
+    height: 1rem;
 } 
