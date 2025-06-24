@@ -23,15 +23,21 @@ const auth = firebase.auth();`;
     showConfigFixModal() {
         const modal = document.createElement('div');
         modal.className = 'firebase-config-fix-modal';
+
+        // 現在の設定を取得
+        let currentConfig = window.firebaseConfig || {};
+        let configDisplay = `API Key: ${currentConfig.apiKey || ''}\nAuth Domain: ${currentConfig.authDomain || ''}\nProject ID: ${currentConfig.projectId || ''}\nStorage Bucket: ${currentConfig.storageBucket || ''}\nMessaging Sender ID: ${currentConfig.messagingSenderId || ''}\nApp ID: ${currentConfig.appId || ''}`;
+
         modal.innerHTML = `
             <div class="firebase-config-fix-content">
                 <div class="firebase-config-fix-header">
-                    <h3>🔧 Firebase設定修正</h3>
+                    <h3>Firebase設定の修正</h3>
                     <span class="fix-indicator">ログイン問題の修正</span>
                 </div>
                 <div class="firebase-config-fix-body">
+                    <h4>現在の設定</h4>
+                    <pre>${configDisplay}</pre>
                     <p><strong>問題:</strong> 現在のFirebase設定がデフォルトのままのため、ログインできません。</p>
-                    
                     <h4>📋 修正手順:</h4>
                     <ol>
                         <li>Firebase Consoleにアクセス: <a href="https://console.firebase.google.com/" target="_blank">https://console.firebase.google.com/</a></li>
@@ -40,20 +46,11 @@ const auth = firebase.auth();`;
                         <li>「Webアプリ」セクションで設定オブジェクトをコピー</li>
                         <li>下記の入力欄に貼り付けてください</li>
                     </ol>
-                    
                     <div class="config-input-section">
                         <label for="firebaseConfigInput">Firebase設定オブジェクト:</label>
                         <textarea id="firebaseConfigInput" class="firebase-config-textarea" 
-                            placeholder="const firebaseConfig = {
-    apiKey: &quot;AIzaSyB...&quot;,
-    authDomain: &quot;your-project.firebaseapp.com&quot;,
-    projectId: &quot;your-project&quot;,
-    storageBucket: &quot;your-project.appspot.com&quot;,
-    messagingSenderId: &quot;123456789012&quot;,
-    appId: &quot;1:123456789012:web:abcdefghijklmnop&quot;
-};"></textarea>
+                            placeholder="const firebaseConfig = {\n    apiKey: &quot;AIzaSyB...&quot;,\n    authDomain: &quot;your-project.firebaseapp.com&quot;,\n    projectId: &quot;your-project&quot;,\n    storageBucket: &quot;your-project.appspot.com&quot;,\n    messagingSenderId: &quot;123456789012&quot;,\n    appId: &quot;1:123456789012:web:abcdefghijklmnop&quot;\n};"></textarea>
                     </div>
-                    
                     <div class="config-status">
                         <span id="configStatus" class="status-waiting">設定を入力してください</span>
                     </div>
