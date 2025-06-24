@@ -292,427 +292,181 @@ body {
     color: #666;
 }
 
-/* タブ */
+/* メインセクション */
+.today-section,
+.all-routines-section {
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.section-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--primary-color);
+}
+
+.add-routine-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-routine-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.add-routine-btn:active {
+    transform: translateY(0);
+}
+
+/* 今日のルーティン */
+.today-routines,
+.all-routines {
+    background: var(--surface-color);
+    border-radius: 0 0 0.5rem 0.5rem;
+    min-height: 200px;
+}
+
+.today-routines-list,
+.all-routines-list {
+    padding: 1rem;
+}
+
+/* 頻度タブ */
 .frequency-tabs {
     display: flex;
-    gap: 10px;
-    padding: 0 20px 20px;
-    overflow-x: auto;
+    background: var(--surface-color);
+    border-radius: 0.5rem 0.5rem 0 0;
+    overflow: hidden;
+    margin-bottom: 0;
 }
 
 .tab-button {
-    background: white;
-    border: 2px solid #e5e7eb;
-    padding: 10px 16px;
-    border-radius: 25px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #666;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+    flex: 1;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.tab-button:hover {
+    background: var(--hover-color);
+    color: var(--text-primary);
 }
 
 .tab-button.active {
-    background: #4f46e5;
-    border-color: #4f46e5;
+    background: var(--primary-color);
     color: white;
 }
 
 .tab-icon {
-    width: 16px;
-    height: 16px;
+    width: 1rem;
+    height: 1rem;
 }
 
-/* アクションボタン */
-.actions {
-    padding: 0 20px 20px;
-}
-
-.add-button {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    color: white;
-    border: none;
-    padding: 14px 20px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-}
-
-.add-button:hover {
-    transform: translateY(-2px);
-}
-
-.button-icon {
-    width: 20px;
-    height: 20px;
-}
-
-/* フォームコンテナ */
-.form-container {
-    padding: 20px;
-    background: white;
-    margin: 0 20px 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.form-textarea {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 16px;
-    resize: vertical;
-    min-height: 80px;
-    font-family: inherit;
-}
-
-.form-textarea:focus {
-    outline: none;
-    border-color: #4f46e5;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.form-label {
-    font-weight: 600;
-    color: #333;
-    font-size: 14px;
-}
-
-.form-select {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 16px;
-    background: white;
-}
-
-.form-select:focus {
-    outline: none;
-    border-color: #4f46e5;
-}
-
-.weekday-checkboxes {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-}
-
-.weekday-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.weekday-input {
-    width: 16px;
-    height: 16px;
-}
-
-.form-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.save-button {
-    background: #4f46e5;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    flex: 1;
-}
-
-.cancel-button {
-    background: #6b7280;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    flex: 1;
-}
-
-/* ルーティンコンテナ */
-.routines-container {
-    padding: 0 20px 20px;
-}
-
+/* 空の状態 */
 .empty-state {
     text-align: center;
-    padding: 40px 20px;
-    color: #666;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
 }
 
 .empty-icon {
-    width: 48px;
-    height: 48px;
-    color: #d1d5db;
-    margin-bottom: 16px;
+    width: 3rem;
+    height: 3rem;
+    margin: 0 auto 1rem;
+    color: var(--border-color);
 }
 
 .empty-state h3 {
-    font-size: 18px;
-    margin-bottom: 8px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+    color: var(--text-primary);
 }
 
 .empty-state p {
-    font-size: 14px;
-}
-
-/* ルーティンアイテム */
-.routine-item {
-    background: white;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.routine-content {
-    padding: 20px;
-}
-
-.routine-content.completed {
-    opacity: 0.7;
-}
-
-.routine-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 12px;
-}
-
-.routine-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
-    margin: 0;
-}
-
-.routine-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.action-btn {
-    background: none;
-    border: none;
-    padding: 6px;
-    border-radius: 6px;
-    cursor: pointer;
-    color: #666;
-    transition: background-color 0.2s ease;
-}
-
-.action-btn:hover {
-    background: #f3f4f6;
-}
-
-.edit-btn:hover {
-    color: #4f46e5;
-}
-
-.delete-btn:hover {
-    color: #dc2626;
-}
-
-.routine-description {
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 12px;
+    margin: 0 0 1.5rem;
     line-height: 1.5;
+    font-size: 0.875rem;
 }
 
-.routine-meta {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-}
-
-.frequency-badge {
-    background: #f3f4f6;
-    color: #374151;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.frequency-badge.daily {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.frequency-badge.weekly {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.frequency-badge.monthly {
-    background: #e0e7ff;
-    color: #3730a3;
-}
-
-.time-badge {
-    background: #f3f4f6;
-    color: #374151;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.complete-btn {
-    background: #f3f4f6;
-    color: #374151;
-    border: 2px solid #e5e7eb;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+.add-first-routine-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
 }
 
-.complete-btn:hover {
-    background: #e5e7eb;
+.add-first-routine-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
 }
 
-.complete-btn.completed {
-    background: #10b981;
-    border-color: #10b981;
-    color: white;
-}
-
-.complete-btn.completed:hover {
-    background: #059669;
-}
-
-/* レスポンシブデザイン */
+/* レスポンシブ対応 */
 @media (max-width: 768px) {
-    .auth-card {
-        padding: 30px 20px;
-        margin: 10px;
+    .section-header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
     }
     
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-    
-    .stats {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        padding: 15px;
-    }
-    
-    .stat-card {
-        padding: 15px;
-    }
-    
-    .stat-number {
-        font-size: 20px;
+    .add-routine-btn {
+        align-self: flex-end;
     }
     
     .frequency-tabs {
-        padding: 0 15px 15px;
+        flex-wrap: wrap;
     }
     
     .tab-button {
-        padding: 8px 12px;
-        font-size: 13px;
-    }
-    
-    .form-container {
-        margin: 0 15px 15px;
-        padding: 15px;
-    }
-    
-    .routines-container {
-        padding: 0 15px 15px;
-    }
-    
-    .routine-content {
-        padding: 15px;
-    }
-    
-    .routine-title {
-        font-size: 16px;
-    }
-    
-    .weekday-checkboxes {
-        grid-template-columns: repeat(4, 1fr);
-    }
-}
-
-@media (max-width: 480px) {
-    .auth-card {
-        padding: 25px 15px;
-    }
-    
-    .stats {
-        grid-template-columns: 1fr;
-    }
-    
-    .frequency-tabs {
-        flex-direction: column;
-    }
-    
-    .tab-button {
-        justify-content: center;
-    }
-    
-    .weekday-checkboxes {
-        grid-template-columns: repeat(7, 1fr);
-    }
-    
-    .routine-actions {
-        flex-direction: column;
-        gap: 4px;
+        min-width: 50%;
     }
 }
 
@@ -1395,4 +1149,152 @@ body.pull-to-refresh-active {
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* ルーティンアイテム */
+.routine-item {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.routine-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.routine-item.completed {
+    opacity: 0.7;
+    background: var(--success-bg);
+}
+
+.routine-content {
+    padding: 1rem;
+}
+
+.routine-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.routine-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    flex: 1;
+}
+
+.routine-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: var(--hover-color);
+    color: var(--text-primary);
+}
+
+.edit-btn:hover {
+    color: var(--primary-color);
+}
+
+.delete-btn:hover {
+    color: var(--error-color);
+}
+
+.action-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.routine-description {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+.routine-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.routine-frequency,
+.routine-time {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--surface-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.meta-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+.completion-btn {
+    width: 100%;
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.completion-btn:hover {
+    background: var(--hover-color);
+    color: var(--text-primary);
+}
+
+.completion-btn.completed {
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+.completion-btn.completed:hover {
+    background: var(--success-hover);
+}
+
+.completion-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* メッセージ */
+.no-routines-message {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
 } 

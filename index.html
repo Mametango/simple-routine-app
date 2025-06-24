@@ -100,54 +100,11 @@
             </div>
         </header>
 
-        <div class="stats">
-            <div class="stat-card">
-                <i data-lucide="calendar" class="stat-icon"></i>
-                <div class="stat-info">
-                    <span class="stat-number" id="totalCount">0</span>
-                    <span class="stat-label">総ルーティン</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i data-lucide="check" class="stat-icon completed"></i>
-                <div class="stat-info">
-                    <span class="stat-number" id="completedCount">0</span>
-                    <span class="stat-label">完了済み</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i data-lucide="clock" class="stat-icon"></i>
-                <div class="stat-info">
-                    <span class="stat-number" id="completionRate">0%</span>
-                    <span class="stat-label">達成率</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="frequency-tabs">
-            <button class="tab-button active" data-frequency="all">
-                <i data-lucide="list" class="tab-icon"></i>
-                全て
-            </button>
-            <button class="tab-button" data-frequency="daily">
-                <i data-lucide="sun" class="tab-icon"></i>
-                毎日
-            </button>
-            <button class="tab-button" data-frequency="weekly">
-                <i data-lucide="calendar-days" class="tab-icon"></i>
-                毎週
-            </button>
-            <button class="tab-button" data-frequency="monthly">
-                <i data-lucide="calendar" class="tab-icon"></i>
-                毎月
-            </button>
-        </div>
-
-        <!-- ルーティン確認画面（メイン） -->
-        <div class="routines-view" id="routinesView">
-            <div class="routines-header">
-                <h2 class="routines-title">
-                    <i data-lucide="target" class="title-icon"></i>
+        <!-- 今日のルーティンセクション -->
+        <section class="today-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i data-lucide="calendar" class="section-icon"></i>
                     今日のルーティン
                 </h2>
                 <button class="add-routine-btn" id="addRoutineBtn" onclick="showAddRoutineScreen()">
@@ -155,21 +112,58 @@
                     追加
                 </button>
             </div>
-
-            <div class="routines-container">
-                <div class="empty-state" id="emptyState">
+            
+            <div class="today-routines" id="todayRoutines">
+                <div class="empty-state" id="todayEmptyState">
                     <i data-lucide="target" class="empty-icon"></i>
-                    <h3>まだルーティンがありません</h3>
+                    <h3>今日のルーティンはありません</h3>
                     <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
                     <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
                         <i data-lucide="plus" class="button-icon"></i>
                         最初のルーティンを追加
                     </button>
                 </div>
-                <div class="routines-list" id="routinesList" style="display: none;"></div>
-                <div id="routinesContainer"></div>
+                <div class="today-routines-list" id="todayRoutinesList" style="display: none;"></div>
             </div>
-        </div>
+        </section>
+
+        <!-- 全ルーティンセクション -->
+        <section class="all-routines-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i data-lucide="list" class="section-icon"></i>
+                    すべてのルーティン
+                </h2>
+            </div>
+            
+            <div class="frequency-tabs">
+                <button class="tab-button active" data-frequency="all">
+                    <i data-lucide="list" class="tab-icon"></i>
+                    全て
+                </button>
+                <button class="tab-button" data-frequency="daily">
+                    <i data-lucide="sun" class="tab-icon"></i>
+                    毎日
+                </button>
+                <button class="tab-button" data-frequency="weekly">
+                    <i data-lucide="calendar-days" class="tab-icon"></i>
+                    毎週
+                </button>
+                <button class="tab-button" data-frequency="monthly">
+                    <i data-lucide="calendar" class="tab-icon"></i>
+                    毎月
+                </button>
+            </div>
+            
+            <div class="all-routines" id="allRoutines">
+                <div class="empty-state" id="allEmptyState">
+                    <i data-lucide="list" class="empty-icon"></i>
+                    <h3>まだルーティンがありません</h3>
+                    <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
+                </div>
+                <div class="all-routines-list" id="allRoutinesList" style="display: none;"></div>
+            </div>
+        </section>
 
         <!-- ルーティン追加画面（非表示） -->
         <div class="add-routine-screen" id="addRoutineScreen" style="display: none;">
