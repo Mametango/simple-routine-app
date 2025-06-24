@@ -5,23 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="format-detection" content="telephone=no">
     <title>My Routine - ログイン</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="simple-firebase-setup.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="auto-firebase-setup.js"></script>
-    <script src="auto-create-firebase.js"></script>
-    <script src="simple-auth.js"></script>
-    <script src="simple-storage.js"></script>
-    <script src="ai-features.js"></script>
-    <script src="script.js"></script>
 </head>
 <body>
     <!-- 認証画面 -->
@@ -31,6 +27,7 @@
                 <h1 id="authTitle">ログイン</h1>
                 <p id="authSubtitle">アカウントにログインしてください</p>
             </div>
+
             <form id="authForm" class="auth-form" accept-charset="UTF-8">
                 <div class="form-group">
                     <label for="email">メールアドレス</label>
@@ -39,6 +36,7 @@
                         <input type="email" id="email" name="email" placeholder="メールアドレスを入力" required class="form-input" autocomplete="email">
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label for="password">パスワード</label>
                     <div class="input-wrapper">
@@ -49,13 +47,20 @@
                         </button>
                     </div>
                 </div>
+
                 <div class="error-message" id="authError" style="display: none;"></div>
+
                 <button type="submit" class="auth-button" id="authButton">ログイン</button>
+
+                <!-- 認証エラーメッセージ -->
+                <div id="authError" class="auth-error" style="display: none;"></div>
+                
                 <!-- Firebase設定修正ボタン -->
                 <div class="firebase-fix-section">
                     <p class="fix-hint">ログインに問題がある場合は<br><a href="#" onclick="fixFirebaseConfig()">Firebase設定を修正</a>してください</p>
                 </div>
             </form>
+
             <div class="auth-footer">
                 <p>
                     アカウントをお持ちでない方は
@@ -64,6 +69,7 @@
             </div>
         </div>
     </div>
+
     <!-- メインアプリ -->
     <div class="app" id="mainApp" style="display: none;">
         <header class="header">
@@ -80,15 +86,12 @@
                     <span id="currentUser">ユーザー</span>
                 </div>
                 <div class="header-buttons">
-                    <button id="logoutButton" class="logout-btn" onclick="logout()">
-                        <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
-                        ログアウト
-                    </button>
-                    <button id="notificationButton" class="notification-btn" onclick="requestNotificationPermission()">🔔</button>
-                    <button class="settings-button" onclick="openSettings()">⚙️</button>
+                    <button id="notificationBtn" class="notification-btn" onclick="requestNotificationPermission()">🔔</button>
+                    <button id="settingsBtn" class="settings-btn" onclick="openSettings()">⚙️</button>
                 </div>
             </div>
         </header>
+
         <div class="stats">
             <div class="stat-card">
                 <i data-lucide="calendar" class="stat-icon"></i>
@@ -112,6 +115,7 @@
                 </div>
             </div>
         </div>
+
         <div class="frequency-tabs">
             <button class="tab-button active" data-frequency="all">
                 <i data-lucide="list" class="tab-icon"></i>
@@ -130,12 +134,14 @@
                 毎月
             </button>
         </div>
+
         <div class="actions">
             <button class="add-button" id="addButton">
                 <i data-lucide="plus" class="button-icon"></i>
                 新しいルーティンを追加
             </button>
         </div>
+
         <div class="form-container" id="formContainer" style="display: none;">
             <div class="form">
                 <input type="text" placeholder="ルーティンのタイトル" id="titleInput" class="form-input" autocomplete="off" inputmode="text">
@@ -193,25 +199,21 @@
                 </div>
             </div>
         </div>
+
         <div class="routines-container">
-            <div class="empty-state" id="emptyState" style="display: none;">
-                <i data-lucide="plus-circle" class="empty-icon"></i>
-                <h3>ルーティンがありません</h3>
-                <p>新しいルーティンを追加して、習慣を始めましょう</p>
+            <div class="empty-state" id="emptyState">
+                <i data-lucide="target" class="empty-icon"></i>
+                <h3>まだルーティンがありません</h3>
+                <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
             </div>
-            <div class="routines-list" id="routinesList"></div>
+            <div class="routines-list" id="routinesList" style="display: none;"></div>
         </div>
-    </div>
-    <!-- 編集モーダル -->
-    <div class="modal-overlay" id="modalOverlay" style="display: none;">
-        <div class="modal">
-            <div class="modal-header">
+
+        <div class="modal-overlay" id="modalOverlay" style="display: none;">
+            <div class="modal">
                 <h3>ルーティンを編集</h3>
-                <button class="close" onclick="hideModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <input type="text" placeholder="ルーティンのタイトル" id="editTitleInput" class="form-input">
-                <textarea placeholder="説明（オプション）" id="editDescriptionInput" class="form-textarea"></textarea>
+                <input type="text" placeholder="ルーティンのタイトル" id="editTitleInput" class="form-input" autocomplete="off" inputmode="text">
+                <textarea placeholder="説明（オプション）" id="editDescriptionInput" class="form-textarea" autocomplete="off"></textarea>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="editFrequencyInput" class="form-label">頻度</label>
@@ -260,43 +262,202 @@
                         <input type="number" id="editMonthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="editCancelButton">キャンセル</button>
-                <button class="btn-primary" id="editSaveButton">保存</button>
+                <div class="modal-buttons">
+                    <button class="save-button" id="editSaveButton">保存</button>
+                    <button class="cancel-button" id="editCancelButton">キャンセル</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- 認証モーダル -->
+    <div id="authModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="loginForm">
+                <h2>ログイン</h2>
+                <input type="text" id="loginUsername" placeholder="ユーザー名" required>
+                <input type="password" id="loginPassword" placeholder="パスワード" required>
+                <button onclick="login()">ログイン</button>
+                <p>アカウントをお持ちでない方は <a href="#" onclick="showRegister()">新規登録</a></p>
+            </div>
+            <div id="registerForm" style="display: none;">
+                <h2>新規登録</h2>
+                <input type="text" id="registerUsername" placeholder="ユーザー名" required>
+                <input type="password" id="registerPassword" placeholder="パスワード" required>
+                <input type="password" id="confirmPassword" placeholder="パスワード確認" required>
+                <button onclick="register()">登録</button>
+                <p>既にアカウントをお持ちの方は <a href="#" onclick="showLogin()">ログイン</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase設定修正モーダル -->
+    <div id="firebaseConfigModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Firebase設定の修正</h2>
+            <p>ログインに問題がある場合、Firebase設定を確認・修正してください。</p>
+            
+            <div class="firebase-config-section">
+                <h3>現在の設定</h3>
+                <div id="currentConfig" class="config-display">
+                    <p>設定を読み込み中...</p>
+                </div>
+            </div>
+            
+            <div class="firebase-config-section">
+                <h3>新しい設定を入力</h3>
+                <p>Firebaseコンソールから取得した設定を入力してください：</p>
+                
+                <div class="form-group">
+                    <label for="newApiKey">API Key:</label>
+                    <input type="text" id="newApiKey" placeholder="AIzaSy...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newAuthDomain">Auth Domain:</label>
+                    <input type="text" id="newAuthDomain" placeholder="your-app.firebaseapp.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newProjectId">Project ID:</label>
+                    <input type="text" id="newProjectId" placeholder="your-project-id">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newStorageBucket">Storage Bucket:</label>
+                    <input type="text" id="newStorageBucket" placeholder="your-app.appspot.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newMessagingSenderId">Messaging Sender ID:</label>
+                    <input type="text" id="newMessagingSenderId" placeholder="123456789012">
+                </div>
+                
+                <div class="form-group">
+                    <label for="newAppId">App ID:</label>
+                    <input type="text" id="newAppId" placeholder="1:123456789012:web:abcdefghijklmnop">
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button onclick="validateAndUpdateFirebaseConfig()" class="primary-btn">設定を更新</button>
+                <button onclick="closeFirebaseConfigModal()" class="secondary-btn">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 設定モーダル -->
     <div id="settingsModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>設定</h3>
-                <span class="close">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="setting-group">
+        <div class="modal-content settings-content">
+            <span class="close">&times;</span>
+            <h2>設定</h2>
+            
+            <!-- 通知設定 -->
+            <div class="settings-section">
+                <h3>🔔 通知設定</h3>
+                <div class="setting-item">
                     <label>
-                        <input type="checkbox" id="enableNotifications"> 通知を有効にする
+                        <input type="checkbox" id="enableNotifications" checked>
+                        通知を有効にする
                     </label>
                 </div>
-                <div class="setting-group">
-                    <label for="defaultNotificationTime">デフォルト通知時間:</label>
+                <div class="setting-item">
+                    <label>デフォルト通知時刻（時間指定なしの場合）:</label>
                     <input type="time" id="defaultNotificationTime" value="08:00">
                 </div>
-                <div class="setting-group">
-                    <label for="themeSelect">テーマ:</label>
-                    <select id="themeSelect">
-                        <option value="light">ライト</option>
-                        <option value="dark">ダーク</option>
+                <div class="setting-item">
+                    <label>通知音:</label>
+                    <select id="notificationSound">
+                        <option value="default">デフォルト</option>
+                        <option value="gentle">優しい音</option>
+                        <option value="alert">アラート音</option>
+                        <option value="none">音なし</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>通知の表示時間:</label>
+                    <select id="notificationDuration">
+                        <option value="5">5秒</option>
+                        <option value="10" selected>10秒</option>
+                        <option value="15">15秒</option>
+                        <option value="30">30秒</option>
                     </select>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button onclick="saveSettings()" class="btn-primary">保存</button>
-                <button onclick="closeSettings()" class="btn-secondary">キャンセル</button>
+
+            <!-- アカウント設定 -->
+            <div class="settings-section">
+                <h3>👤 アカウント設定</h3>
+                <div class="setting-item">
+                    <label>現在のユーザー名:</label>
+                    <span id="currentUsername" class="current-value"></span>
+                </div>
+                <div class="setting-item">
+                    <label>パスワード変更:</label>
+                    <input type="password" id="newPassword" placeholder="新しいパスワード">
+                    <input type="password" id="confirmNewPassword" placeholder="新しいパスワード確認">
+                    <button onclick="changePassword()" class="small-btn">パスワード変更</button>
+                </div>
+                <div class="setting-item">
+                    <button onclick="deleteAccount()" class="danger-btn">アカウント削除</button>
+                </div>
+            </div>
+
+            <!-- データ管理 -->
+            <div class="settings-section">
+                <h3>💾 データ管理</h3>
+                <div class="setting-item">
+                    <button onclick="exportData()" class="small-btn">データをエクスポート</button>
+                    <button onclick="importData()" class="small-btn">データをインポート</button>
+                </div>
+                <div class="setting-item">
+                    <button onclick="clearAllData()" class="danger-btn">全データを削除</button>
+                </div>
+            </div>
+
+            <!-- 表示設定 -->
+            <div class="settings-section">
+                <h3>🎨 表示設定</h3>
+                <div class="setting-item">
+                    <label>テーマ:</label>
+                    <select id="themeSelect">
+                        <option value="light" selected>ライト</option>
+                        <option value="dark">ダーク</option>
+                        <option value="auto">自動</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>言語:</label>
+                    <select id="languageSelect">
+                        <option value="ja" selected>日本語</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button onclick="saveSettings()" class="primary-btn">設定を保存</button>
+                <button onclick="closeSettings()" class="secondary-btn">キャンセル</button>
+            </div>
+            
+            <!-- ログアウトボタン -->
+            <div class="logout-section">
+                <button onclick="logout()" class="logout-btn-large">ログアウト</button>
             </div>
         </div>
     </div>
+
+    <!-- ファイルインポート用の隠しinput -->
+    <input type="file" id="importFile" accept=".json" style="display: none;">
+
+    <script src="auto-firebase-setup.js"></script>
+    <script src="fix-firebase-config.js"></script>
+    <script src="auto-create-firebase.js"></script>
+    <script src="simple-auth.js"></script>
+    <script src="simple-storage.js"></script>
+    <script src="simple-firebase-setup.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

@@ -149,5 +149,4 @@ function checkSimpleMode() {
 function toggleSimpleMode() {
     const currentMode = checkSimpleMode();
     localStorage.setItem('simpleMode', (!currentMode).toString());
-    location.reload();
-} 
+    location.reload(); 
