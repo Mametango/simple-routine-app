@@ -36,9 +36,15 @@ class AIFeatures {
             },
             {
                 title: '週末の掃除',
-                description: '週末の整理整頓',
+                description: '週末の大掃除',
                 frequency: 'weekly',
                 time: '10:00'
+            },
+            {
+                title: '月次振り返り',
+                description: '月の目標達成度を確認',
+                frequency: 'monthly',
+                time: '19:00'
             }
         ];
 
@@ -46,20 +52,21 @@ class AIFeatures {
     }
 
     // 自動カテゴリ分類
-    categorizeRoutine(title, description) {
+    categorizeRoutine(routine) {
         if (!this.isEnabled || !this.features.autoCategorization) {
             return 'general';
         }
 
-        const text = (title + ' ' + description).toLowerCase();
-        
-        if (text.includes('運動') || text.includes('ジム') || text.includes('ランニング')) {
+        const title = routine.title.toLowerCase();
+        const description = (routine.description || '').toLowerCase();
+
+        if (title.includes('運動') || title.includes('筋トレ') || title.includes('ジム')) {
             return 'health';
-        } else if (text.includes('読書') || text.includes('学習') || text.includes('勉強')) {
+        } else if (title.includes('読書') || title.includes('勉強') || title.includes('学習')) {
             return 'education';
-        } else if (text.includes('掃除') || text.includes('整理') || text.includes('片付け')) {
+        } else if (title.includes('掃除') || title.includes('洗濯') || title.includes('料理')) {
             return 'household';
-        } else if (text.includes('仕事') || text.includes('業務') || text.includes('会議')) {
+        } else if (title.includes('仕事') || title.includes('会議') || title.includes('報告')) {
             return 'work';
         } else {
             return 'general';
@@ -67,38 +74,62 @@ class AIFeatures {
     }
 
     // 進捗分析
-    analyzeProgress(routines, completions) {
+    analyzeProgress(completions, routines) {
         if (!this.isEnabled || !this.features.progressAnalysis) {
             return null;
         }
 
-        const analysis = {
+        const today = new Date();
+        const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const lastMonth = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        const weeklyCompletions = completions.filter(c => {
+            const completionDate = new Date(c.date);
+            return completionDate >= lastWeek;
+        });
+
+        const monthlyCompletions = completions.filter(c => {
+            const completionDate = new Date(c.date);
+            return completionDate >= lastMonth;
+        });
+
+        const weeklyRate = routines.length > 0 ? (weeklyCompletions.length / (routines.length * 7)) * 100 : 0;
+        const monthlyRate = routines.length > 0 ? (monthlyCompletions.length / (routines.length * 30)) * 100 : 0;
+
+        return {
+            weeklyRate: Math.round(weeklyRate),
+            monthlyRate: Math.round(monthlyRate),
             totalRoutines: routines.length,
-            completedToday: 0,
-            completionRate: 0,
-            streak: 0,
-            suggestions: []
+            weeklyCompletions: weeklyCompletions.length,
+            monthlyCompletions: monthlyCompletions.length
         };
+    }
 
-        // 今日の完了数を計算
-        const today = new Date().toDateString();
-        analysis.completedToday = completions.filter(c => 
-            new Date(c.timestamp).toDateString() === today
-        ).length;
+    // モチベーション向上のメッセージを生成
+    generateMotivationalMessage(progress) {
+        if (!this.isEnabled) return null;
 
-        // 完了率を計算
-        if (routines.length > 0) {
-            analysis.completionRate = Math.round((analysis.completedToday / routines.length) * 100);
+        if (progress.weeklyRate >= 80) {
+            return {
+                message: '素晴らしい！今週は高い達成率を維持しています。',
+                type: 'success'
+            };
+        } else if (progress.weeklyRate >= 60) {
+            return {
+                message: '良い調子です！もう少し頑張れば目標達成です。',
+                type: 'info'
+            };
+        } else if (progress.weeklyRate >= 40) {
+            return {
+                message: '少しペースが落ちていますが、焦らずに続けましょう。',
+                type: 'warning'
+            };
+        } else {
+            return {
+                message: '今週は達成率が低めです。小さな目標から始めてみませんか？',
+                type: 'warning'
+            };
         }
-
-        // 提案を生成
-        if (analysis.completionRate < 50) {
-            analysis.suggestions.push('今日の目標達成率が低いです。優先順位を決めて取り組みましょう。');
-        } else if (analysis.completionRate >= 80) {
-            analysis.suggestions.push('素晴らしい進捗です！この調子で続けましょう。');
-        }
-
-        return analysis;
     }
 
     // 機能を有効/無効にする
@@ -125,28 +156,54 @@ class AIFeatures {
     }
 }
 
-// グローバルインスタンス
+// グローバルAI機能インスタンス
 const aiFeatures = new AIFeatures();
 
-// 初期化
-document.addEventListener('DOMContentLoaded', () => {
-    // 保存された設定を読み込み
-    const savedSettings = localStorage.getItem('aiFeaturesSettings');
-    if (savedSettings) {
-        aiFeatures.saveSettings(JSON.parse(savedSettings));
-    }
-    
-    aiFeatures.init();
-});
-
-// シンプルモードチェック関数
+// シンプルモードのチェック
 function checkSimpleMode() {
     const simpleMode = localStorage.getItem('simpleMode') === 'true';
     return simpleMode;
 }
 
-// シンプルモードを有効/無効にする
+// シンプルモードの切り替え
 function toggleSimpleMode() {
     const currentMode = checkSimpleMode();
-    localStorage.setItem('simpleMode', (!currentMode).toString());
-    location.reload(); 
+    const newMode = !currentMode;
+    localStorage.setItem('simpleMode', newMode.toString());
+    
+    if (typeof showAINotification === 'function') {
+        showAINotification(
+            newMode ? 'シンプルモードが有効になりました' : 'シンプルモードが無効になりました',
+            'info'
+        );
+    }
+    
+    // ページをリロードして変更を反映
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
+
+// AI機能を初期化
+function initAIFeatures() {
+    aiFeatures.init();
+    console.log('AI機能が初期化されました');
+}
+
+// ページ読み込み時にAI機能を初期化
+document.addEventListener('DOMContentLoaded', function() {
+    initAIFeatures();
+    
+    // シンプルモードの状態をチェック
+    if (checkSimpleMode()) {
+        console.log('シンプルモードが有効です');
+        // シンプルモード用のUI調整
+        document.body.classList.add('simple-mode');
+    }
+});
+
+// エクスポート
+window.AIFeatures = AIFeatures;
+window.aiFeatures = aiFeatures;
+window.checkSimpleMode = checkSimpleMode;
+window.toggleSimpleMode = toggleSimpleMode; 
