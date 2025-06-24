@@ -1539,4 +1539,36 @@ body.pull-to-refresh-active {
         width: 1.5rem;
         height: 1.5rem;
     }
+}
+
+/* 自動選択情報ボックス */
+.auto-selection-info {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.info-box {
+    background: var(--success-bg);
+    border: 1px solid var(--success-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.info-box h4 {
+    margin: 0 0 0.75rem;
+    color: var(--success-color);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.info-box p {
+    margin: 0.25rem 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.info-box strong {
+    color: var(--text-primary);
 } 
