@@ -1,5 +1,5 @@
 // Firebase設定
-const firebaseConfig = {
+window.firebaseConfig = {
     apiKey: "AIzaSyBYBNysq-wY0LMsrvAgjnail9md2NJdYUo",
     authDomain: "my-routine-app-a0708.firebaseapp.com",
     projectId: "my-routine-app-a0708",
@@ -9,7 +9,7 @@ const firebaseConfig = {
 };
 
 // Firebase初期化
-firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(window.firebaseConfig);
 
 // FirestoreとAuthの初期化
 const db = firebase.firestore();
