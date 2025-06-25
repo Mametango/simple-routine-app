@@ -1,7 +1,17 @@
 // 洗練されたログイン画面用のJavaScript
+
+// グローバル変数の定義
+let currentUserInfo = null;
+let currentStorage = 'local';
+let routines = [];
+let completions = [];
+
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
     console.log('ページ読み込み完了');
+    
+    // データの初期化
+    initializeData();
     
     // Lucideアイコンの初期化
     if (typeof lucide !== 'undefined') {
@@ -20,6 +30,42 @@ document.addEventListener('DOMContentLoaded', function() {
     // モバイルデバイス検出
     detectMobileDevice();
 });
+
+// データの初期化
+function initializeData() {
+    console.log('データ初期化開始');
+    
+    try {
+        // ルーティンデータの読み込み
+        const savedRoutines = localStorage.getItem('routines');
+        if (savedRoutines) {
+            routines = JSON.parse(savedRoutines);
+            console.log('ルーティンデータ読み込み完了:', routines.length);
+        }
+        
+        // 完了データの読み込み
+        const savedCompletions = localStorage.getItem('completions');
+        if (savedCompletions) {
+            completions = JSON.parse(savedCompletions);
+            console.log('完了データ読み込み完了:', completions.length);
+        }
+        
+        // ストレージタイプの読み込み
+        const storageType = localStorage.getItem('storageType');
+        if (storageType) {
+            currentStorage = storageType;
+            console.log('ストレージタイプ設定:', currentStorage);
+        }
+        
+        console.log('データ初期化完了');
+    } catch (error) {
+        console.error('データ初期化エラー:', error);
+        // エラーが発生した場合はデフォルト値を使用
+        routines = [];
+        completions = [];
+        currentStorage = 'local';
+    }
+}
 
 // イベントリスナーの設定
 function setupEventListeners() {
@@ -48,6 +94,24 @@ function setupEventListeners() {
     if (rememberMe) {
         rememberMe.addEventListener('change', handlePersistenceChange);
     }
+    
+    // ルーティン追加フォーム
+    const routineForm = document.getElementById('routineForm');
+    if (routineForm) {
+        routineForm.addEventListener('submit', handleRoutineFormSubmit);
+    }
+    
+    // 頻度ボタン
+    const frequencyButtons = document.querySelectorAll('.frequency-btn');
+    frequencyButtons.forEach(button => {
+        button.addEventListener('click', handleFrequencyButtonClick);
+    });
+    
+    // タブボタン
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', handleTabButtonClick);
+    });
     
     console.log('イベントリスナー設定完了');
 }
@@ -125,6 +189,15 @@ function handleAuthStateChange(user) {
 function setUserInfo(user) {
     console.log('ユーザー情報設定:', user.email);
     
+    // currentUserInfoを設定
+    currentUserInfo = {
+        email: user.email,
+        displayName: user.displayName || user.email,
+        uid: user.uid || null,
+        id: user.id || Date.now().toString(),
+        isGoogleUser: user.uid ? true : false
+    };
+    
     // グローバル変数に保存
     window.currentUser = {
         email: user.email,
@@ -136,6 +209,7 @@ function setUserInfo(user) {
     
     // ローカルストレージに保存
     localStorage.setItem('userData', JSON.stringify(window.currentUser));
+    localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
     
     // ユーザータイプの設定
     setUserType(window.currentUser);
@@ -145,8 +219,10 @@ function setUserInfo(user) {
 function clearUserInfo() {
     console.log('ユーザー情報クリア');
     
+    currentUserInfo = null;
     window.currentUser = null;
     localStorage.removeItem('userData');
+    localStorage.removeItem('userInfo');
     localStorage.removeItem('userType');
 }
 
@@ -716,90 +792,14 @@ function handleAuthSubmit(event) {
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const rememberMe = document.getElementById('rememberMe');
-    const persistence = rememberMe && rememberMe.checked ? 'LOCAL' : 'SESSION';
     
     if (!email || !password) {
         showNotification('メールアドレスとパスワードを入力してください', 'error');
         return;
     }
     
-    try {
-        // まずローカル認証を試行
-        const localAuthResult = handleLocalAuth(email, password, persistence);
-        if (localAuthResult) {
-            return; // ローカル認証が成功した場合
-        }
-        
-        // ローカル認証が失敗した場合、Firebase認証を試行
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            firebase.auth().setPersistence(persistence === 'LOCAL' ? 
-                firebase.auth.Auth.Persistence.LOCAL : 
-                firebase.auth.Auth.Persistence.SESSION
-            ).then(() => {
-                return firebase.auth().signInWithEmailAndPassword(email, password);
-            }).then((result) => {
-                console.log('Firebaseログイン成功:', result.user.email);
-                
-                // ストレージを自動的にFirebaseに設定
-                setStorageType('firebase');
-                showNotification('FirebaseログインでFirebaseストレージが自動選択されました', 'info');
-                
-            }).catch((error) => {
-                console.error('Firebaseログインエラー:', error);
-                showNotification('ログインに失敗しました: ' + error.message, 'error');
-            });
-        } else {
-            showNotification('メールアドレスまたはパスワードが正しくありません', 'error');
-        }
-    } catch (error) {
-        console.error('認証処理エラー:', error);
-        showNotification('ログインに失敗しました', 'error');
-    }
-}
-
-// ローカル認証処理
-function handleLocalAuth(email, password, persistence) {
-    console.log('ローカル認証処理:', email);
-    
-    try {
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (user) {
-            console.log('ローカル認証成功:', user.email);
-            
-            // 永続性の設定
-            if (persistence === 'LOCAL') {
-                localStorage.setItem('rememberMe', 'true');
-            } else {
-                sessionStorage.setItem('rememberMe', 'true');
-            }
-            
-            // ユーザー情報を設定
-            const userData = {
-                email: user.email,
-                displayName: user.displayName || user.email,
-                uid: user.id,
-                isAdmin: user.email === 'yasnaries@gmail.com',
-                authType: 'local'
-            };
-            
-            handleAuthStateChange(userData);
-            
-            // ストレージを自動的にローカルに設定
-            setStorageType('local');
-            showNotification('ローカルストレージが自動選択されました', 'info');
-            
-            return true; // 認証成功
-        } else {
-            console.log('ローカル認証失敗: ユーザーが見つかりません');
-            return false; // 認証失敗
-        }
-    } catch (error) {
-        console.error('ローカル認証エラー:', error);
-        return false; // 認証失敗
-    }
+    // 通常ログイン処理を実行
+    handleRegularLogin(email, password);
 }
 
 // パスワード表示切り替え
@@ -1122,4 +1122,377 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-}); 
+});
+
+// データを保存する関数
+function saveData() {
+    console.log('データ保存開始');
+    
+    try {
+        // ルーティンデータを保存
+        localStorage.setItem('routines', JSON.stringify(routines));
+        
+        // 完了データを保存
+        localStorage.setItem('completions', JSON.stringify(completions));
+        
+        // ストレージタイプを保存
+        localStorage.setItem('storageType', currentStorage);
+        
+        console.log('データ保存完了');
+        
+        // 同期状態を更新
+        updateSyncStatus();
+        
+    } catch (error) {
+        console.error('データ保存エラー:', error);
+        showNotification('データの保存に失敗しました', 'error');
+    }
+}
+
+// ルーティンを追加する関数
+function addRoutine(routineData) {
+    console.log('ルーティン追加:', routineData.title);
+    
+    const newRoutine = {
+        id: Date.now().toString(),
+        title: routineData.title,
+        description: routineData.description || '',
+        frequency: routineData.frequency,
+        time: routineData.time || null,
+        weeklyDays: routineData.weeklyDays || [],
+        monthlyDate: routineData.monthlyDate || null,
+        createdAt: new Date().toISOString(),
+        userId: currentUserInfo ? currentUserInfo.id : 'unknown'
+    };
+    
+    routines.push(newRoutine);
+    saveData();
+    
+    // 表示を更新
+    displayTodayRoutines();
+    displayAllRoutines();
+    
+    showNotification('ルーティンが追加されました', 'success');
+    
+    return newRoutine;
+}
+
+// ルーティンを編集する関数
+function editRoutine(routineId) {
+    console.log('ルーティン編集:', routineId);
+    
+    const routine = routines.find(r => r.id === routineId);
+    if (!routine) {
+        showNotification('ルーティンが見つかりません', 'error');
+        return;
+    }
+    
+    // 編集フォームを表示
+    showEditForm(routine);
+}
+
+// ルーティンを削除する関数
+function deleteRoutine(routineId) {
+    console.log('ルーティン削除:', routineId);
+    
+    if (confirm('このルーティンを削除しますか？')) {
+        routines = routines.filter(r => r.id !== routineId);
+        
+        // 関連する完了データも削除
+        completions = completions.filter(c => c.routineId !== routineId);
+        
+        saveData();
+        
+        // 表示を更新
+        displayTodayRoutines();
+        displayAllRoutines();
+        
+        showNotification('ルーティンが削除されました', 'success');
+    }
+}
+
+// 編集フォームを表示する関数
+function showEditForm(routine) {
+    const editFormContainer = document.getElementById('editFormContainer');
+    if (!editFormContainer) {
+        console.error('編集フォームコンテナが見つかりません');
+        return;
+    }
+    
+    // フォームに値を設定
+    const titleInput = document.getElementById('editTitleInput');
+    const descriptionInput = document.getElementById('editDescriptionInput');
+    const frequencyInput = document.getElementById('editFrequencyInput');
+    const timeInput = document.getElementById('editTimeInput');
+    
+    if (titleInput) titleInput.value = routine.title;
+    if (descriptionInput) descriptionInput.value = routine.description || '';
+    if (frequencyInput) frequencyInput.value = routine.frequency;
+    if (timeInput) timeInput.value = routine.time || '';
+    
+    // 頻度に応じたオプションを表示
+    showFrequencyOptions('edit', routine.frequency);
+    
+    // フォームを表示
+    editFormContainer.style.display = 'block';
+    
+    // 保存ボタンのイベントリスナーを設定
+    const saveButton = document.getElementById('editSaveButton');
+    if (saveButton) {
+        saveButton.onclick = () => saveEditedRoutine(routine.id);
+    }
+    
+    // キャンセルボタンのイベントリスナーを設定
+    const cancelButton = document.getElementById('editCancelButton');
+    if (cancelButton) {
+        cancelButton.onclick = hideEditForm;
+    }
+}
+
+// 編集されたルーティンを保存する関数
+function saveEditedRoutine(routineId) {
+    const titleInput = document.getElementById('editTitleInput');
+    const descriptionInput = document.getElementById('editDescriptionInput');
+    const frequencyInput = document.getElementById('editFrequencyInput');
+    const timeInput = document.getElementById('editTimeInput');
+    
+    const routine = routines.find(r => r.id === routineId);
+    if (!routine) {
+        showNotification('ルーティンが見つかりません', 'error');
+        return;
+    }
+    
+    // 値を更新
+    routine.title = titleInput.value;
+    routine.description = descriptionInput.value;
+    routine.frequency = frequencyInput.value;
+    routine.time = timeInput.value;
+    
+    // 頻度に応じたデータを更新
+    if (routine.frequency === 'weekly') {
+        const weekdayInputs = document.querySelectorAll('.edit-weekday-input:checked');
+        routine.weeklyDays = Array.from(weekdayInputs).map(input => parseInt(input.value));
+    } else if (routine.frequency === 'monthly') {
+        const monthlyDateInput = document.getElementById('editMonthlyDateInput');
+        routine.monthlyDate = parseInt(monthlyDateInput.value);
+    }
+    
+    saveData();
+    
+    // 表示を更新
+    displayTodayRoutines();
+    displayAllRoutines();
+    
+    // 編集フォームを非表示
+    hideEditForm();
+    
+    showNotification('ルーティンが更新されました', 'success');
+}
+
+// 編集フォームを非表示にする関数
+function hideEditForm() {
+    const editFormContainer = document.getElementById('editFormContainer');
+    if (editFormContainer) {
+        editFormContainer.style.display = 'none';
+    }
+}
+
+// 頻度オプションを表示する関数
+function showFrequencyOptions(formType, selectedFrequency) {
+    const weeklyDaysRow = document.getElementById(formType + 'WeeklyDaysRow');
+    const monthlyDateRow = document.getElementById(formType + 'MonthlyDateRow');
+    
+    if (weeklyDaysRow) {
+        weeklyDaysRow.style.display = selectedFrequency === 'weekly' ? 'block' : 'none';
+    }
+    
+    if (monthlyDateRow) {
+        monthlyDateRow.style.display = selectedFrequency === 'monthly' ? 'block' : 'none';
+    }
+}
+
+// ルーティン追加フォーム送信処理
+function handleRoutineFormSubmit(event) {
+    event.preventDefault();
+    console.log('ルーティン追加フォーム送信');
+    
+    const title = document.getElementById('routineName').value;
+    const description = document.getElementById('routineDescription').value;
+    const selectedFrequency = document.querySelector('.frequency-btn.active');
+    
+    if (!title) {
+        showNotification('ルーティン名を入力してください', 'error');
+        return;
+    }
+    
+    if (!selectedFrequency) {
+        showNotification('頻度を選択してください', 'error');
+        return;
+    }
+    
+    const frequency = selectedFrequency.dataset.frequency;
+    let weeklyDays = [];
+    let monthlyDate = null;
+    
+    // 頻度に応じたデータを取得
+    if (frequency === 'weekly') {
+        const weekdayInputs = document.querySelectorAll('.weekday-input:checked');
+        weeklyDays = Array.from(weekdayInputs).map(input => parseInt(input.value));
+        
+        if (weeklyDays.length === 0) {
+            showNotification('曜日を選択してください', 'error');
+            return;
+        }
+    } else if (frequency === 'monthly') {
+        const monthlyDateInput = document.getElementById('monthlyDateInput');
+        monthlyDate = parseInt(monthlyDateInput.value);
+        
+        if (!monthlyDate || monthlyDate < 1 || monthlyDate > 31) {
+            showNotification('有効な日付を入力してください（1-31）', 'error');
+            return;
+        }
+    }
+    
+    // ルーティンを追加
+    const routineData = {
+        title: title,
+        description: description,
+        frequency: frequency,
+        weeklyDays: weeklyDays,
+        monthlyDate: monthlyDate
+    };
+    
+    addRoutine(routineData);
+    
+    // フォームをリセット
+    event.target.reset();
+    
+    // 頻度ボタンのアクティブ状態をクリア
+    document.querySelectorAll('.frequency-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // 頻度オプションを非表示
+    const frequencyOptions = document.getElementById('frequencyOptions');
+    if (frequencyOptions) {
+        frequencyOptions.style.display = 'none';
+    }
+    
+    // メイン画面に戻る
+    showMainScreen();
+}
+
+// 頻度ボタンクリック処理
+function handleFrequencyButtonClick(event) {
+    const button = event.target;
+    const frequency = button.dataset.frequency;
+    
+    // 他のボタンのアクティブ状態をクリア
+    document.querySelectorAll('.frequency-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // クリックされたボタンをアクティブにする
+    button.classList.add('active');
+    
+    // 頻度オプションを表示
+    showFrequencyOptionsForAdd(frequency);
+}
+
+// 追加フォーム用の頻度オプション表示
+function showFrequencyOptionsForAdd(frequency) {
+    const frequencyOptions = document.getElementById('frequencyOptions');
+    if (!frequencyOptions) return;
+    
+    if (frequency === 'weekly') {
+        frequencyOptions.innerHTML = `
+            <div class="form-group">
+                <label class="form-label">曜日</label>
+                <div class="weekday-checkboxes">
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="1" class="weekday-input"> 月
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="2" class="weekday-input"> 火
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="3" class="weekday-input"> 水
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="4" class="weekday-input"> 木
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="5" class="weekday-input"> 金
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="6" class="weekday-input"> 土
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="0" class="weekday-input"> 日
+                    </label>
+                </div>
+            </div>
+        `;
+        frequencyOptions.style.display = 'block';
+    } else if (frequency === 'monthly') {
+        frequencyOptions.innerHTML = `
+            <div class="form-group">
+                <label for="monthlyDateInput" class="form-label">毎月の日付</label>
+                <input type="number" id="monthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
+            </div>
+        `;
+        frequencyOptions.style.display = 'block';
+    } else {
+        frequencyOptions.style.display = 'none';
+    }
+}
+
+// タブボタンクリック処理
+function handleTabButtonClick(event) {
+    const button = event.target;
+    const frequency = button.dataset.frequency;
+    
+    // 他のタブのアクティブ状態をクリア
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // クリックされたタブをアクティブにする
+    button.classList.add('active');
+    
+    // ルーティンをフィルタリングして表示
+    filterRoutinesByFrequency(frequency);
+}
+
+// 頻度でルーティンをフィルタリング
+function filterRoutinesByFrequency(frequency) {
+    const allRoutinesList = document.getElementById('allRoutinesList');
+    if (!allRoutinesList) return;
+    
+    let filteredRoutines = routines;
+    
+    if (frequency !== 'all') {
+        filteredRoutines = routines.filter(routine => routine.frequency === frequency);
+    }
+    
+    if (filteredRoutines.length === 0) {
+        allRoutinesList.innerHTML = `
+            <div class="empty-state">
+                <i data-lucide="list" class="empty-icon"></i>
+                <h3>${getFrequencyText(frequency)}のルーティンはありません</h3>
+                <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
+                <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
+                    <i data-lucide="plus" class="button-icon"></i>
+                    ルーティンを追加
+                </button>
+            </div>
+        `;
+    } else {
+        allRoutinesList.innerHTML = filteredRoutines.map(routine => createRoutineHTML(routine)).join('');
+    }
+    
+    // Lucideアイコンを初期化
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+} 
