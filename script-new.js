@@ -20,28 +20,33 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('=== ページ読み込み完了 ===');
     console.log('script-new.js が正常に読み込まれました');
     
-    // データの初期化
+    // データ初期化
     initializeData();
     
-    // Lucideアイコンの初期化
+    // Lucideアイコン初期化
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
         console.log('Lucideアイコン初期化完了');
-    } else {
-        console.warn('Lucideライブラリが見つかりません');
     }
     
-    // 認証状態の確認
-    checkAuthState();
+    // 認証状態チェック
+    const isLoggedIn = checkAuthState();
     
-    // ログイン状態保持の復元
-    restorePersistenceState();
+    if (!isLoggedIn) {
+        // ログインしていない場合は認証画面を表示
+        console.log('未ログイン - 認証画面を表示');
+        showAuthScreen();
+    } else {
+        // ログイン済みの場合はメインアプリを表示
+        console.log('ログイン済み - メインアプリを表示');
+        showMainApp();
+    }
     
-    // イベントリスナーの設定
+    // イベントリスナー設定
     setupEventListeners();
     
-    // モバイルデバイス検出
-    detectMobileDevice();
+    // アプリ初期化
+    initializeApp();
     
     console.log('=== 初期化完了 ===');
 });
@@ -133,48 +138,49 @@ function setupEventListeners() {
 
 // 認証状態の確認
 function checkAuthState() {
-    try {
-        // まずローカル認証を確認
-        const localUser = checkLocalAuth();
-        if (localUser) {
-            handleAuthStateChange(localUser);
-            return;
-        }
-        
-        // Firebase認証状態の確認
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            firebase.auth().onAuthStateChanged(function(user) {
-                console.log('Firebase認証状態変更:', user ? 'ログイン済み' : '未ログイン');
-                if (user) {
-                    handleAuthStateChange(user);
-                } else {
-                    showAuthScreen();
-                }
-            });
-        } else {
-            showAuthScreen();
-        }
-    } catch (error) {
-        console.error('認証状態確認エラー:', error);
-        showAuthScreen();
+    console.log('認証状態確認開始');
+    
+    // ローカル認証を確認
+    const isLoggedIn = checkLocalAuth();
+    
+    if (isLoggedIn) {
+        console.log('ローカル認証済み');
+        return true;
     }
+    
+    // Firebase認証を確認（Googleログインのみ）
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        const currentUser = firebase.auth().currentUser;
+        if (currentUser) {
+            console.log('Firebase認証済み:', currentUser.email);
+            // Firebase認証状態変更ハンドラーで処理される
+            return true;
+        }
+    }
+    
+    console.log('未認証');
+    return false;
 }
 
 // ローカル認証の確認
 function checkLocalAuth() {
     console.log('ローカル認証確認');
     
-    try {
-        const userData = localStorage.getItem('userData');
-        if (userData) {
-            const user = JSON.parse(userData);
-            console.log('ローカルユーザー発見:', user.email);
-            return user;
-        }
-    } catch (error) {
-        console.error('ローカル認証確認エラー:', error);
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null');
+    
+    if (isLoggedIn && userInfo) {
+        console.log('ローカルユーザー発見:', userInfo.email);
+        currentUserInfo = userInfo;
+        currentStorage = localStorage.getItem('storageType') || 'local';
+        
+        // 認証状態変更処理を実行
+        handleAuthStateChange(userInfo);
+        return true;
     }
-    return null;
+    
+    console.log('ローカル認証なし');
+    return false;
 }
 
 // 認証状態変更の処理
@@ -245,11 +251,13 @@ function clearUserInfo() {
 function showMainApp() {
     console.log('showMainApp called');
     
-    // ログイン画面を非表示
-    const loginContainer = document.getElementById('loginContainer');
-    if (loginContainer) {
-        loginContainer.style.display = 'none';
-        console.log('Login container hidden');
+    // 認証画面を非表示
+    const authContainer = document.getElementById('authContainer');
+    if (authContainer) {
+        authContainer.style.display = 'none';
+        console.log('Auth container hidden');
+    } else {
+        console.error('Auth container not found');
     }
     
     // メインアプリを表示
@@ -262,8 +270,12 @@ function showMainApp() {
         // 背景色を強制設定
         document.body.style.background = '#f8fafc';
         app.style.background = '#f8fafc';
+        
+        // ページタイトルを更新
+        document.title = 'My Routine - ルーティン管理';
     } else {
         console.error('App element not found');
+        return;
     }
     
     // ユーザー情報を更新
@@ -277,6 +289,13 @@ function showMainApp() {
     
     // 広告を表示（一般ユーザーのみ）
     showAdsIfNeeded();
+    
+    // 成功通知を表示
+    if (currentUserInfo) {
+        const userTypeText = currentUserInfo.email === 'yasnaries@gmail.com' ? '（管理者）' : '';
+        const storageText = currentStorage === 'firebase' ? 'サーバー同期' : 'ローカル保存';
+        showNotification(`ログインに成功しました！${userTypeText}（${storageText}モード）`, 'success');
+    }
     
     console.log('showMainApp completed');
 }
@@ -529,11 +548,21 @@ function showAuthScreen() {
     
     if (authContainer) {
         authContainer.style.display = 'flex';
+        console.log('Auth container displayed');
+    } else {
+        console.error('Auth container not found');
     }
     
     if (app) {
         app.style.display = 'none';
+        app.classList.remove('app-active');
+        console.log('Main app hidden');
+    } else {
+        console.error('App element not found');
     }
+    
+    // ページタイトルを更新
+    document.title = 'My Routine - ログイン';
 }
 
 // Googleログイン処理
