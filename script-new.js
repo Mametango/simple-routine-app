@@ -446,42 +446,265 @@ function showAuthScreen() {
 }
 
 // Googleログイン処理
-function handleGoogleLogin() {
+async function handleGoogleLogin() {
     console.log('Googleログイン開始');
     
-    const rememberMe = document.getElementById('rememberMe');
-    const persistence = rememberMe && rememberMe.checked ? 'LOCAL' : 'SESSION';
+    try {
+        // Firebase Google認証
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await firebase.auth().signInWithPopup(provider);
+        
+        if (result.user) {
+            console.log('Googleログイン成功:', result.user.email);
+            
+            // ユーザー情報を設定
+            currentUserInfo = {
+                email: result.user.email,
+                displayName: result.user.displayName,
+                uid: result.user.uid,
+                isGoogleUser: true
+            };
+            
+            // ローカルアカウントも作成（通常ログイン用）
+            await createLocalAccountForGoogleUser(result.user);
+            
+            // ストレージをFirebaseに設定
+            currentStorage = 'firebase';
+            localStorage.setItem('storageType', 'firebase');
+            
+            // ログイン状態を保存
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
+            
+            // メインアプリを表示
+            showMainApp();
+            
+            // 成功通知
+            showNotification('Googleログインに成功しました！通常のログインでもアクセスできます。', 'success');
+            
+        } else {
+            console.error('Googleログイン失敗: ユーザー情報が取得できません');
+            showNotification('Googleログインに失敗しました。', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Googleログインエラー:', error);
+        
+        if (error.code === 'auth/popup-closed-by-user') {
+            showNotification('ログインがキャンセルされました。', 'info');
+        } else if (error.code === 'auth/unauthorized-domain') {
+            showNotification('このドメインは認証されていません。管理者に連絡してください。', 'error');
+        } else {
+            showNotification('Googleログインに失敗しました: ' + error.message, 'error');
+        }
+    }
+}
+
+// Googleユーザー用のローカルアカウントを作成
+async function createLocalAccountForGoogleUser(googleUser) {
+    console.log('Googleユーザー用ローカルアカウント作成開始');
     
     try {
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            // Firebase Google認証
-            const provider = new firebase.auth.GoogleAuthProvider();
+        // 既存のローカルアカウントをチェック
+        const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        const existingUser = existingUsers.find(user => user.email === googleUser.email);
+        
+        if (!existingUser) {
+            // 新しいローカルアカウントを作成
+            const localUser = {
+                id: Date.now().toString(),
+                email: googleUser.email,
+                displayName: googleUser.displayName || googleUser.email,
+                password: generateSecurePassword(), // ランダムパスワード生成
+                createdAt: new Date().toISOString(),
+                isGoogleLinked: true,
+                googleUid: googleUser.uid
+            };
             
-            // 永続性の設定
-            firebase.auth().setPersistence(persistence === 'LOCAL' ? 
-                firebase.auth.Auth.Persistence.LOCAL : 
-                firebase.auth.Auth.Persistence.SESSION
-            ).then(() => {
-                return firebase.auth().signInWithPopup(provider);
-            }).then((result) => {
-                console.log('Googleログイン成功:', result.user.email);
-                
-                // ストレージを自動的にFirebaseに設定
-                setStorageType('firebase');
-                showNotification('GoogleログインでFirebaseストレージが自動選択されました', 'info');
-                
-            }).catch((error) => {
-                console.error('Googleログインエラー:', error);
-                showNotification('Googleログインに失敗しました: ' + error.message, 'error');
-            });
+            // ローカルユーザーリストに追加
+            existingUsers.push(localUser);
+            localStorage.setItem('users', JSON.stringify(existingUsers));
+            
+            console.log('Googleユーザー用ローカルアカウント作成完了:', localUser.email);
+            
+            // ユーザーに通知
+            showNotification(
+                `通常ログイン用のアカウントが作成されました。\nメール: ${googleUser.email}\nパスワード: ${localUser.password}\n\nこの情報を保存してください。`,
+                'info',
+                10000 // 10秒間表示
+            );
+            
         } else {
-            console.log('Firebase未利用、ローカル認証を使用');
-            // ローカル認証のデモユーザー作成
-            createDemoUser();
+            console.log('既存のローカルアカウントが見つかりました:', existingUser.email);
+            
+            // 既存アカウントをGoogleアカウントとリンク
+            existingUser.isGoogleLinked = true;
+            existingUser.googleUid = googleUser.uid;
+            existingUser.displayName = googleUser.displayName || existingUser.displayName;
+            
+            // 更新を保存
+            const updatedUsers = existingUsers.map(user => 
+                user.email === googleUser.email ? existingUser : user
+            );
+            localStorage.setItem('users', JSON.stringify(updatedUsers));
+            
+            console.log('既存アカウントをGoogleアカウントとリンク完了');
         }
+        
     } catch (error) {
-        console.error('Googleログイン処理エラー:', error);
-        showNotification('Googleログインに失敗しました', 'error');
+        console.error('ローカルアカウント作成エラー:', error);
+        showNotification('ローカルアカウントの作成に失敗しました。', 'error');
+    }
+}
+
+// セキュアなパスワードを生成
+function generateSecurePassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
+
+// 通常ログイン処理（Googleアカウント対応）
+async function handleRegularLogin(email, password) {
+    console.log('通常ログイン開始:', email);
+    
+    try {
+        // ローカルユーザーをチェック
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = users.find(u => u.email === email);
+        
+        if (!user) {
+            throw new Error('ユーザーが見つかりません');
+        }
+        
+        if (user.password !== password) {
+            throw new Error('パスワードが正しくありません');
+        }
+        
+        // ユーザー情報を設定
+        currentUserInfo = {
+            email: user.email,
+            displayName: user.displayName,
+            id: user.id,
+            isGoogleUser: user.isGoogleLinked || false
+        };
+        
+        // Googleアカウントとリンクされている場合はFirebase認証も試行
+        if (user.isGoogleLinked && user.googleUid) {
+            try {
+                // Firebase認証状態をチェック
+                const firebaseUser = firebase.auth().currentUser;
+                if (firebaseUser && firebaseUser.uid === user.googleUid) {
+                    // 既にFirebaseでログイン済み
+                    currentStorage = 'firebase';
+                    localStorage.setItem('storageType', 'firebase');
+                    console.log('Firebase認証済み - サーバー同期モード');
+                } else {
+                    // Firebase認証が必要
+                    console.log('Googleアカウントとの再認証が必要です');
+                    showNotification('Googleアカウントとの再認証が必要です。Googleログインを使用してください。', 'warning');
+                    return;
+                }
+            } catch (firebaseError) {
+                console.log('Firebase認証エラー - ローカルモードで続行:', firebaseError);
+                currentStorage = 'local';
+                localStorage.setItem('storageType', 'local');
+            }
+        } else {
+            // 通常のローカルアカウント
+            currentStorage = 'local';
+            localStorage.setItem('storageType', 'local');
+        }
+        
+        // ログイン状態を保存
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
+        
+        // メインアプリを表示
+        showMainApp();
+        
+        // 成功通知
+        const storageText = currentStorage === 'firebase' ? 'サーバー同期' : 'ローカル保存';
+        showNotification(`ログインに成功しました！（${storageText}モード）`, 'success');
+        
+    } catch (error) {
+        console.error('通常ログインエラー:', error);
+        showNotification('ログインに失敗しました: ' + error.message, 'error');
+    }
+}
+
+// ログイン状態チェック（Googleアカウント対応）
+function checkLoginStatus() {
+    console.log('ログイン状態チェック開始');
+    
+    try {
+        // ローカルログイン状態をチェック
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null');
+        
+        if (isLoggedIn && userInfo) {
+            console.log('ローカルログイン状態を検出:', userInfo.email);
+            currentUserInfo = userInfo;
+            
+            // ストレージタイプを取得
+            currentStorage = localStorage.getItem('storageType') || 'local';
+            
+            // Googleアカウントの場合はFirebase認証状態もチェック
+            if (userInfo.isGoogleUser) {
+                const firebaseUser = firebase.auth().currentUser;
+                if (firebaseUser && firebaseUser.uid === userInfo.uid) {
+                    console.log('Firebase認証状態も確認済み');
+                    currentStorage = 'firebase';
+                    localStorage.setItem('storageType', 'firebase');
+                } else {
+                    console.log('Firebase認証状態が不一致 - ローカルモードで続行');
+                    currentStorage = 'local';
+                    localStorage.setItem('storageType', 'local');
+                }
+            }
+            
+            // メインアプリを表示
+            showMainApp();
+            return true;
+        }
+        
+        // Firebase認証状態をチェック
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                console.log('Firebase認証状態を検出:', user.email);
+                
+                // ローカルアカウントをチェック
+                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                const localUser = users.find(u => u.email === user.email);
+                
+                if (localUser) {
+                    currentUserInfo = {
+                        email: user.email,
+                        displayName: user.displayName || localUser.displayName,
+                        uid: user.uid,
+                        id: localUser.id,
+                        isGoogleUser: true
+                    };
+                    
+                    currentStorage = 'firebase';
+                    localStorage.setItem('storageType', 'firebase');
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
+                    
+                    showMainApp();
+                    return true;
+                }
+            }
+        });
+        
+        return false;
+        
+    } catch (error) {
+        console.error('ログイン状態チェックエラー:', error);
+        return false;
     }
 }
 
@@ -788,45 +1011,114 @@ function fixFirebaseConfig() {
     }, 2000);
 }
 
-// ログアウト機能
-function logout() {
+// ログアウト処理
+async function logout() {
     console.log('ログアウト開始');
     
     try {
-        // 現在のユーザー情報を取得
-        const currentUser = window.currentUser;
-        
-        if (currentUser && currentUser.authType === 'firebase') {
-            // Firebaseログアウト
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                firebase.auth().signOut().then(() => {
-                    console.log('Firebaseログアウト成功');
-                    clearUserInfo();
-                    showAuthScreen();
-                    showNotification('ログアウトしました', 'info');
-                }).catch((error) => {
-                    console.error('Firebaseログアウトエラー:', error);
-                    // エラーが発生してもローカル情報をクリア
-                    clearUserInfo();
-                    showAuthScreen();
-                    showNotification('ログアウトしました', 'info');
-                });
-            } else {
-                clearUserInfo();
-                showAuthScreen();
-                showNotification('ログアウトしました', 'info');
-            }
-        } else {
-            // ローカルログアウト
-            clearUserInfo();
-            showAuthScreen();
-            showNotification('ログアウトしました', 'info');
+        // Firebase認証からログアウト
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            await firebase.auth().signOut();
+            console.log('Firebase認証からログアウト完了');
         }
+        
+        // ローカルログイン状態をクリア
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('storageType');
+        
+        // ユーザー情報をリセット
+        currentUserInfo = null;
+        currentStorage = 'local';
+        
+        // メインアプリを非表示
+        const app = document.getElementById('app');
+        if (app) {
+            app.style.display = 'none';
+            app.classList.remove('app-active');
+        }
+        
+        // ログイン画面を表示
+        const loginContainer = document.getElementById('loginContainer');
+        if (loginContainer) {
+            loginContainer.style.display = 'flex';
+        }
+        
+        // フォームをリセット
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.reset();
+        }
+        
+        console.log('ログアウト完了');
+        showNotification('ログアウトしました。', 'info');
+        
     } catch (error) {
         console.error('ログアウトエラー:', error);
-        // エラーが発生してもローカル情報をクリア
-        clearUserInfo();
-        showAuthScreen();
-        showNotification('ログアウトしました', 'info');
+        showNotification('ログアウト中にエラーが発生しました。', 'error');
     }
-} 
+}
+
+// ログインフォーム送信処理
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe');
+            
+            if (!email || !password) {
+                showNotification('メールアドレスとパスワードを入力してください。', 'error');
+                return;
+            }
+            
+            // ログインボタンを無効化
+            const authButton = document.getElementById('authButton');
+            if (authButton) {
+                authButton.disabled = true;
+                authButton.innerHTML = '<i data-lucide="loader-2" class="button-icon spinning"></i>ログイン中...';
+            }
+            
+            try {
+                // 通常ログインを実行
+                await handleRegularLogin(email, password);
+                
+            } catch (error) {
+                console.error('ログインエラー:', error);
+                showNotification('ログインに失敗しました: ' + error.message, 'error');
+            } finally {
+                // ログインボタンを復元
+                if (authButton) {
+                    authButton.disabled = false;
+                    authButton.innerHTML = '<i data-lucide="log-in" class="button-icon"></i>ログイン';
+                }
+            }
+        });
+    }
+    
+    // Googleログインボタンのイベントリスナー
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // ボタンを無効化
+            googleLoginBtn.disabled = true;
+            googleLoginBtn.innerHTML = '<i data-lucide="loader-2" class="button-icon spinning"></i>ログイン中...';
+            
+            try {
+                await handleGoogleLogin();
+            } catch (error) {
+                console.error('Googleログインエラー:', error);
+                showNotification('Googleログインに失敗しました。', 'error');
+            } finally {
+                // ボタンを復元
+                googleLoginBtn.disabled = false;
+                googleLoginBtn.innerHTML = '<i data-lucide="chrome" class="button-icon"></i>Googleでログイン';
+            }
+        });
+    }
+}); 
