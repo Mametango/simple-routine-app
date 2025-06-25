@@ -282,6 +282,9 @@ class SimpleAuth {
             this.currentUser = user;
             localStorage.setItem('simpleAuthCurrentUser', JSON.stringify(user));
             
+            // 最終ログイン時間を更新
+            this.updateLastLogin(user.uid);
+            
             // 認証状態変更を通知
             this.notifyAuthStateChange(user);
             
@@ -372,12 +375,45 @@ class SimpleAuth {
 
     // 全ユーザーを取得（管理者用）
     getAllUsers() {
-        const users = {};
+        const users = [];
         for (const email in this.users) {
-            users[email] = { ...this.users[email] };
-            delete users[email].password;
+            const userData = this.users[email];
+            // パスワードは除外してユーザー情報のみ返す
+            const user = {
+                uid: userData.uid,
+                email: userData.email,
+                displayName: userData.displayName,
+                createdAt: userData.createdAt,
+                lastLogin: userData.lastLogin || null
+            };
+            
+            // ユーザーのルーティンと完了データを取得
+            try {
+                const userRoutines = JSON.parse(localStorage.getItem(`routines_${userData.uid}`)) || [];
+                const userCompletions = JSON.parse(localStorage.getItem(`completions_${userData.uid}`)) || [];
+                
+                user.routines = userRoutines;
+                user.completions = userCompletions;
+            } catch (error) {
+                console.error('ユーザーデータ取得エラー:', error);
+                user.routines = [];
+                user.completions = [];
+            }
+            
+            users.push(user);
         }
         return users;
+    }
+
+    // ユーザーの最終ログイン時間を更新
+    updateLastLogin(userId) {
+        for (const email in this.users) {
+            if (this.users[email].uid === userId) {
+                this.users[email].lastLogin = new Date().toISOString();
+                localStorage.setItem('simpleAuthUsers', JSON.stringify(this.users));
+                break;
+            }
+        }
     }
 
     // データをエクスポート
