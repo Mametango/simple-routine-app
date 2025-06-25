@@ -122,6 +122,7 @@
                 <div class="user-info">
                     <i data-lucide="user" style="width: 16px; height: 16px;"></i>
                     <span id="currentUser">ユーザー</span>
+                    <div id="userTypeDisplay" class="user-type-display"></div>
                 </div>
                 <div class="sync-status-container">
                     <span id="syncStatus" class="sync-status">🟡 同期中...</span>
@@ -140,32 +141,58 @@
             </div>
         </header>
 
-        <!-- 今日のルーティンセクション -->
-        <section class="today-section">
-            <div class="section-header">
-                <h2 class="section-title">
-                    <i data-lucide="calendar" class="section-icon"></i>
-                    今日のルーティン
-                </h2>
-                <button class="add-routine-btn" id="addRoutineBtn" onclick="showAddRoutineScreen()">
-                    <i data-lucide="plus" class="button-icon"></i>
-                    追加
-                </button>
-            </div>
-            
-            <div class="today-routines" id="todayRoutines">
-                <div class="empty-state" id="todayEmptyState">
-                    <i data-lucide="target" class="empty-icon"></i>
-                    <h3>今日のルーティンはありません</h3>
-                    <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
-                    <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
-                        <i data-lucide="plus" class="button-icon"></i>
-                        最初のルーティンを追加
+        <!-- メインコンテンツ -->
+        <main id="mainContent" class="main-content">
+            <!-- 今日のルーティン画面 -->
+            <div id="mainScreen" class="screen active">
+                <div class="screen-header">
+                    <h1>今日のルーティン</h1>
+                    <button id="addRoutineBtn" class="add-routine-btn" onclick="showAddRoutineScreen()">
+                        <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
                     </button>
                 </div>
-                <div class="today-routines-list" id="todayRoutinesList" style="display: none;"></div>
+                <div id="todayRoutines" class="routines-container">
+                    <!-- ルーティンがここに表示されます -->
+                </div>
             </div>
-        </section>
+
+            <!-- ルーティン追加画面 -->
+            <div id="addRoutineScreen" class="screen">
+                <div class="screen-header">
+                    <button class="back-btn" onclick="showMainScreen()">
+                        <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                    </button>
+                    <h1>ルーティンを追加</h1>
+                </div>
+                <form id="routineForm" class="routine-form">
+                    <div class="form-group">
+                        <label for="routineName">ルーティン名</label>
+                        <input type="text" id="routineName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="routineDescription">説明（任意）</label>
+                        <textarea id="routineDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>頻度</label>
+                        <div class="frequency-buttons">
+                            <button type="button" class="frequency-btn" data-frequency="daily">毎日</button>
+                            <button type="button" class="frequency-btn" data-frequency="weekly">毎週</button>
+                            <button type="button" class="frequency-btn" data-frequency="monthly">毎月</button>
+                        </div>
+                    </div>
+                    <div id="frequencyOptions" class="frequency-options" style="display: none;">
+                        <!-- 頻度オプションが動的に追加されます -->
+                    </div>
+                    <button type="submit" class="save-btn">保存</button>
+                </form>
+            </div>
+        </main>
+
+        <!-- 広告エリア -->
+        <div id="adContainer" class="ad-container" style="display: none;">
+            <!-- 広告がここに表示されます -->
+        </div>
 
         <!-- 全ルーティンセクション -->
         <section class="all-routines-section">
@@ -204,88 +231,6 @@
                 <div class="all-routines-list" id="allRoutinesList" style="display: none;"></div>
             </div>
         </section>
-
-        <!-- ルーティン追加画面（非表示） -->
-        <div class="add-routine-screen" id="addRoutineScreen" style="display: none;">
-            <div class="screen-header">
-                <button class="back-btn" onclick="showMainScreen()">
-                    <i data-lucide="arrow-left" class="button-icon"></i>
-                    戻る
-                </button>
-                <h2 class="screen-title">新しいルーティンを追加</h2>
-                <div class="header-spacer"></div>
-            </div>
-
-            <div class="form-container">
-                <div class="form">
-                    <div class="form-group">
-                        <label for="titleInput" class="form-label">ルーティン名</label>
-                        <input type="text" placeholder="例：朝の散歩" id="titleInput" class="form-input" autocomplete="off" inputmode="text">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="descriptionInput" class="form-label">説明（オプション）</label>
-                        <textarea placeholder="ルーティンの詳細を入力" id="descriptionInput" class="form-textarea" autocomplete="off"></textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="frequencyInput" class="form-label">頻度</label>
-                            <select id="frequencyInput" class="form-select">
-                                <option value="daily">毎日</option>
-                                <option value="weekly">毎週</option>
-                                <option value="monthly">毎月</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="timeInput" class="form-label">時間</label>
-                            <input type="time" id="timeInput" class="form-input">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row" id="weeklyDaysRow" style="display: none;">
-                        <div class="form-group">
-                            <label class="form-label">曜日</label>
-                            <div class="weekday-checkboxes">
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="1" class="weekday-input"> 月
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="2" class="weekday-input"> 火
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="3" class="weekday-input"> 水
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="4" class="weekday-input"> 木
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="5" class="weekday-input"> 金
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="6" class="weekday-input"> 土
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="0" class="weekday-input"> 日
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row" id="monthlyDateRow" style="display: none;">
-                        <div class="form-group">
-                            <label for="monthlyDateInput" class="form-label">毎月の日付</label>
-                            <input type="number" id="monthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
-                        </div>
-                    </div>
-                    
-                    <div class="form-buttons">
-                        <button class="save-button" id="saveButton">保存</button>
-                        <button class="cancel-button" onclick="showMainScreen()">キャンセル</button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <div class="form-container" id="editFormContainer" style="display: none;">
             <div class="form">
