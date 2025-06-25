@@ -450,11 +450,9 @@ function getFrequencyText(frequency) {
 
 // 今日ルーティンが完了しているかチェック
 function isRoutineCompletedToday(routineId) {
-    const today = new Date().toDateString();
-    return completions.some(completion => 
-        completion.routineId === routineId && 
-        completion.date === today
-    );
+    const today = new Date().toISOString().split('T')[0];
+    const completionKey = `completion_${routineId}_${today}`;
+    return localStorage.getItem(completionKey) === 'true';
 }
 
 // ルーティン完了を切り替え
@@ -1101,36 +1099,180 @@ function manualSync() {
     const syncBtn = document.getElementById('syncBtn');
     if (syncBtn) {
         syncBtn.classList.add('syncing');
+        syncBtn.disabled = true; // ボタンを無効化
+        console.log('同期ボタンを無効化');
     }
     
-    // 同期処理をシミュレート
-    setTimeout(() => {
+    // 実際の同期処理
+    const syncPromise = performActualSync();
+    
+    syncPromise.then(() => {
         console.log('手動同期完了');
         
         if (syncBtn) {
             syncBtn.classList.remove('syncing');
+            syncBtn.disabled = false; // ボタンを再有効化
+            console.log('同期ボタンを再有効化');
         }
         
         showNotification('同期が完了しました', 'success');
         updateSyncStatus();
-    }, 2000);
+    }).catch((error) => {
+        console.error('同期エラー:', error);
+        
+        if (syncBtn) {
+            syncBtn.classList.remove('syncing');
+            syncBtn.disabled = false; // ボタンを再有効化
+            console.log('同期ボタンを再有効化（エラー時）');
+        }
+        
+        showNotification('同期エラーが発生しました', 'error');
+        updateSyncStatus();
+    });
 }
 
-// 通知許可要求
-function requestNotificationPermission() {
-    console.log('通知許可要求');
+// 実際の同期処理
+async function performActualSync() {
+    console.log('実際の同期処理開始');
     
-    if ('Notification' in window) {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                showNotification('通知が有効になりました', 'success');
-            } else {
-                showNotification('通知が拒否されました', 'info');
-            }
-        });
-    } else {
-        showNotification('このブラウザは通知をサポートしていません', 'warning');
+    try {
+        switch (currentStorage) {
+            case 'firebase':
+                await syncWithFirebase();
+                break;
+            case 'google-drive':
+                await syncWithGoogleDrive();
+                break;
+            default:
+                await syncWithLocalStorage();
+                break;
+        }
+        
+        console.log('同期処理完了');
+        return Promise.resolve();
+    } catch (error) {
+        console.error('同期処理エラー:', error);
+        return Promise.reject(error);
     }
+}
+
+// Firebaseとの同期
+async function syncWithFirebase() {
+    console.log('Firebase同期開始');
+    
+    if (typeof firebase === 'undefined' || !firebase.firestore) {
+        throw new Error('Firebaseが利用できません');
+    }
+    
+    const db = firebase.firestore();
+    const userId = currentUserInfo?.id || 'unknown';
+    
+    // データをFirebaseに保存
+    const data = {
+        routines: routines,
+        completions: completions,
+        lastUpdated: new Date().toISOString()
+    };
+    
+    await db.collection('users').doc(userId).set({
+        data: data,
+        updatedAt: new Date()
+    });
+    
+    console.log('Firebase同期完了');
+}
+
+// Google Driveとの同期
+async function syncWithGoogleDrive() {
+    console.log('Google Drive同期開始');
+    
+    // Google Drive同期は未実装のため、ローカルストレージにフォールバック
+    await syncWithLocalStorage();
+    console.log('Google Drive同期完了（ローカルフォールバック）');
+}
+
+// ローカルストレージとの同期
+async function syncWithLocalStorage() {
+    console.log('ローカルストレージ同期開始');
+    
+    // 現在のデータをローカルストレージに保存
+    const data = {
+        routines: routines,
+        completions: completions,
+        lastUpdated: new Date().toISOString()
+    };
+    
+    localStorage.setItem('appData', JSON.stringify(data));
+    
+    // 少し待機して同期感を演出
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log('ローカルストレージ同期完了');
+}
+
+// 通知表示機能
+function showNotification(message, type = 'info') {
+    console.log('通知表示:', message, type);
+    
+    // 既存の通知を削除
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    // 通知要素を作成
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    
+    // アイコンを設定
+    let icon = 'info';
+    switch (type) {
+        case 'success':
+            icon = 'check-circle';
+            break;
+        case 'error':
+            icon = 'alert-circle';
+            break;
+        case 'warning':
+            icon = 'alert-triangle';
+            break;
+        default:
+            icon = 'info';
+    }
+    
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i data-lucide="${icon}" class="notification-icon"></i>
+            <span class="notification-message">${message}</span>
+        </div>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i data-lucide="x"></i>
+        </button>
+    `;
+    
+    // 通知を表示
+    document.body.appendChild(notification);
+    
+    // Lucideアイコンを初期化
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+    
+    // アニメーション効果
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // 自動で非表示（成功とエラーは5秒、その他は3秒）
+    const autoHideTime = (type === 'success' || type === 'error') ? 5000 : 3000;
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+    }, autoHideTime);
 }
 
 // ストレージモーダル関連
@@ -1643,5 +1785,80 @@ async function logout() {
     } catch (error) {
         console.error('ログアウトエラー:', error);
         showNotification('ログアウトエラーが発生しました', 'error');
+    }
+}
+
+// ユーザータイプの設定
+function setUserType(user) {
+    console.log('ユーザータイプ設定開始:', user.email);
+    
+    let userType = 'general'; // デフォルトは一般ユーザー
+    
+    // 管理者チェック
+    if (user.email === 'yasnaries@gmail.com') {
+        userType = 'admin';
+        console.log('管理者として設定:', user.email);
+    } else {
+        // 友達リストをチェック
+        const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+        if (friendsList.includes(user.email)) {
+            userType = 'friend';
+            console.log('友達として設定:', user.email);
+        }
+    }
+    
+    // ユーザータイプを保存
+    localStorage.setItem('userType', userType);
+    
+    // currentUserInfoにユーザータイプを追加
+    if (currentUserInfo) {
+        currentUserInfo.userType = userType;
+        localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
+    }
+    
+    console.log('ユーザータイプ設定完了:', userType);
+}
+
+// ユーザータイプの取得
+function getUserType() {
+    if (!currentUserInfo) {
+        console.log('ユーザー情報がありません');
+        return 'general';
+    }
+    
+    const userType = localStorage.getItem('userType') || 'general';
+    console.log('ユーザータイプ取得:', userType);
+    return userType;
+}
+
+// 管理者かどうかチェック
+function isAdmin() {
+    return getUserType() === 'admin';
+}
+
+// 友達かどうかチェック
+function isFriend() {
+    return getUserType() === 'friend';
+}
+
+// 一般ユーザーかどうかチェック
+function isGeneralUser() {
+    return getUserType() === 'general';
+}
+
+// 通知許可要求
+function requestNotificationPermission() {
+    console.log('通知許可要求');
+    
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showNotification('通知が有効になりました', 'success');
+            } else {
+                showNotification('通知が拒否されました', 'info');
+            }
+        });
+    } else {
+        showNotification('このブラウザは通知をサポートしていません', 'warning');
     }
 } 
