@@ -1047,6 +1047,22 @@ body {
     border: 1px solid #ffeaa7;
 }
 
+.sync-status.synced {
+    color: var(--success-color);
+    background: var(--success-bg);
+}
+
+.sync-status.local {
+    color: var(--warning-color);
+    background: #fef3c7;
+}
+
+.sync-status.syncing {
+    color: var(--info-color);
+    background: #dbeafe;
+    animation: pulse 2s infinite;
+}
+
 .sync-btn {
     background: var(--primary-color);
     color: white;
@@ -1102,6 +1118,15 @@ body {
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
 }
 
 /* ルーティンアイテム */

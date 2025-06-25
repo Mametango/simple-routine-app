@@ -332,7 +332,15 @@ function checkLocalAuth() {
     if (isLoggedIn && userInfo) {
         console.log('ローカルユーザー発見:', userInfo.email);
         currentUserInfo = userInfo;
-        currentStorage = localStorage.getItem('storageType') || 'local';
+        
+        // Googleユーザーの場合はFirebaseストレージを強制設定
+        if (userInfo.isGoogleUser || userInfo.uid) {
+            console.log('Googleユーザー検出、Firebaseストレージを設定');
+            currentStorage = 'firebase';
+            localStorage.setItem('storageType', 'firebase');
+        } else {
+            currentStorage = localStorage.getItem('storageType') || 'local';
+        }
         
         // 認証状態変更処理を実行
         handleAuthStateChange(userInfo);
@@ -348,6 +356,13 @@ function handleAuthStateChange(user) {
     console.log('認証状態変更処理開始:', user ? user.email : 'なし');
     
     if (user) {
+        // Googleユーザーの場合はFirebaseストレージを強制設定
+        if (user.isGoogleUser || user.uid) {
+            console.log('Googleユーザー検出、Firebaseストレージを設定');
+            currentStorage = 'firebase';
+            localStorage.setItem('storageType', 'firebase');
+        }
+        
         // ユーザー情報の設定
         setUserInfo(user);
         
@@ -356,6 +371,14 @@ function handleAuthStateChange(user) {
         
         // アプリの初期化
         initializeApp();
+        
+        // サーバー接続時にオンライン同期を実行
+        if (currentStorage === 'firebase') {
+            console.log('Firebase同期を開始');
+            setTimeout(() => {
+                performActualSync();
+            }, 1000);
+        }
         
         // ログイン成功通知
         showNotification('ログインに成功しました', 'success');
@@ -669,16 +692,19 @@ function updateSyncStatus() {
     
     switch (currentStorage) {
         case 'firebase':
-            syncStatus.textContent = '🟢 サーバー同期';
+            syncStatus.textContent = '🟢 オンライン同期';
             syncStatus.className = 'sync-status synced';
+            syncStatus.title = 'Firebaseサーバーと同期中';
             break;
         case 'google-drive':
             syncStatus.textContent = '🟢 Google Drive同期';
             syncStatus.className = 'sync-status synced';
+            syncStatus.title = 'Google Driveと同期中';
             break;
         default:
             syncStatus.textContent = '🟡 ローカル保存';
             syncStatus.className = 'sync-status local';
+            syncStatus.title = 'ローカルストレージに保存中';
             break;
     }
 }
@@ -792,14 +818,23 @@ async function handleGoogleLogin() {
         // ローカルアカウントとリンク
         await linkWithLocalAccount(user);
         
-        // Firebaseストレージを使用
+        // Firebaseストレージを強制設定
         currentStorage = 'firebase';
         localStorage.setItem('storageType', 'firebase');
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
         
+        // 同期状態を即座に更新
+        updateSyncStatus();
+        
         // メインアプリを表示
         showMainApp();
+        
+        // Firebase同期を実行
+        setTimeout(() => {
+            console.log('Googleログイン後のFirebase同期を開始');
+            performActualSync();
+        }, 1000);
         
         // 成功通知（詳細版）
         const userTypeText = user.email === 'yasnaries@gmail.com' ? '（管理者）' : '';
@@ -1324,22 +1359,65 @@ async function syncWithFirebase() {
         throw new Error('Firebaseが利用できません');
     }
     
+    if (!currentUserInfo || !currentUserInfo.id) {
+        throw new Error('ユーザー情報が不足しています');
+    }
+    
     const db = firebase.firestore();
-    const userId = currentUserInfo?.id || 'unknown';
+    const userId = currentUserInfo.id;
     
-    // データをFirebaseに保存
-    const data = {
-        routines: routines,
-        completions: completions,
-        lastUpdated: new Date().toISOString()
-    };
+    console.log('Firebase同期 - ユーザーID:', userId);
     
-    await db.collection('users').doc(userId).set({
-        data: data,
-        updatedAt: new Date()
-    });
-    
-    console.log('Firebase同期完了');
+    try {
+        // 同期状態を「同期中」に更新
+        const syncStatus = document.getElementById('syncStatus');
+        if (syncStatus) {
+            syncStatus.textContent = '🔄 同期中...';
+            syncStatus.className = 'sync-status syncing';
+            syncStatus.title = 'Firebaseサーバーと同期中...';
+        }
+        
+        // データをFirebaseに保存
+        const data = {
+            routines: routines || [],
+            completions: completions || [],
+            lastUpdated: new Date().toISOString(),
+            userInfo: {
+                email: currentUserInfo.email,
+                displayName: currentUserInfo.displayName,
+                isGoogleUser: currentUserInfo.isGoogleUser || false
+            }
+        };
+        
+        console.log('Firebase同期 - 保存データ:', data);
+        
+        await db.collection('users').doc(userId).set({
+            data: data,
+            updatedAt: new Date(),
+            userEmail: currentUserInfo.email
+        });
+        
+        console.log('Firebase同期完了');
+        
+        // 同期状態を「オンライン同期」に更新
+        updateSyncStatus();
+        
+        // 成功通知
+        showNotification('Firebase同期が完了しました', 'success');
+        
+    } catch (error) {
+        console.error('Firebase同期エラー:', error);
+        
+        // 同期状態を「ローカル保存」に戻す
+        currentStorage = 'local';
+        localStorage.setItem('storageType', 'local');
+        updateSyncStatus();
+        
+        // エラー通知
+        showNotification(`Firebase同期エラー: ${error.message}`, 'error');
+        
+        throw error;
+    }
 }
 
 // Google Driveとの同期
