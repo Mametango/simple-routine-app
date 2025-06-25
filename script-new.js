@@ -73,7 +73,9 @@ function initializeData() {
         const storageType = localStorage.getItem('storageType');
         if (storageType) {
             currentStorage = storageType;
-            console.log('ストレージタイプ設定:', currentStorage);
+            console.log('initializeData - 保存されたストレージタイプを設定:', currentStorage);
+        } else {
+            console.log('initializeData - 保存されたストレージタイプなし、デフォルト値を使用:', currentStorage);
         }
         
         console.log('データ初期化完了');
@@ -335,12 +337,15 @@ function checkLocalAuth() {
         
         // Googleユーザーの場合はFirebaseストレージを強制設定
         if (userInfo.isGoogleUser || userInfo.uid) {
-            console.log('Googleユーザー検出、Firebaseストレージを設定');
+            console.log('checkLocalAuth - Googleユーザー検出、Firebaseストレージを設定');
             currentStorage = 'firebase';
             localStorage.setItem('storageType', 'firebase');
         } else {
+            console.log('checkLocalAuth - 通常ユーザー、保存されたストレージタイプを使用');
             currentStorage = localStorage.getItem('storageType') || 'local';
         }
+        
+        console.log('checkLocalAuth - 最終的なcurrentStorage:', currentStorage);
         
         // 認証状態変更処理を実行
         handleAuthStateChange(userInfo);
@@ -354,13 +359,24 @@ function checkLocalAuth() {
 // 認証状態変更の処理
 function handleAuthStateChange(user) {
     console.log('認証状態変更処理開始:', user ? user.email : 'なし');
+    console.log('handleAuthStateChange - user object:', user);
     
     if (user) {
         // Googleユーザーの場合はFirebaseストレージを強制設定
-        if (user.isGoogleUser || user.uid) {
+        const isGoogleUser = user.isGoogleUser || user.uid || (user.providerData && user.providerData.length > 0 && user.providerData[0].providerId === 'google.com');
+        console.log('handleAuthStateChange - isGoogleUser check:', {
+            userIsGoogleUser: user.isGoogleUser,
+            userUid: user.uid,
+            providerData: user.providerData,
+            isGoogleUser: isGoogleUser
+        });
+        
+        if (isGoogleUser) {
             console.log('Googleユーザー検出、Firebaseストレージを設定');
             currentStorage = 'firebase';
             localStorage.setItem('storageType', 'firebase');
+        } else {
+            console.log('通常ユーザー、現在のストレージタイプを維持:', currentStorage);
         }
         
         // ユーザー情報の設定
@@ -456,6 +472,7 @@ function showMainApp() {
     loadRoutines();
     
     // 同期状態を更新
+    console.log('showMainApp - updateSyncStatus前のcurrentStorage:', currentStorage);
     updateSyncStatus();
     
     // 広告を表示（一般ユーザーのみ）
@@ -465,6 +482,7 @@ function showMainApp() {
     if (currentUserInfo) {
         const userTypeText = currentUserInfo.email === 'yasnaries@gmail.com' ? '（管理者）' : '';
         const storageText = currentStorage === 'firebase' ? 'サーバー同期' : 'ローカル保存';
+        console.log('showMainApp - 通知用storageText:', storageText, 'currentStorage:', currentStorage);
         showNotification(`ログインに成功しました！${userTypeText}（${storageText}モード）`, 'success');
     }
     
@@ -688,20 +706,28 @@ function showMainScreen() {
 // 同期状態を更新
 function updateSyncStatus() {
     const syncStatus = document.getElementById('syncStatus');
-    if (!syncStatus) return;
+    if (!syncStatus) {
+        console.error('syncStatus要素が見つかりません');
+        return;
+    }
+    
+    console.log('updateSyncStatus called - currentStorage:', currentStorage);
     
     switch (currentStorage) {
         case 'firebase':
+            console.log('Firebase同期状態に設定');
             syncStatus.textContent = '🟢 オンライン同期';
             syncStatus.className = 'sync-status synced';
             syncStatus.title = 'Firebaseサーバーと同期中';
             break;
         case 'google-drive':
+            console.log('Google Drive同期状態に設定');
             syncStatus.textContent = '🟢 Google Drive同期';
             syncStatus.className = 'sync-status synced';
             syncStatus.title = 'Google Driveと同期中';
             break;
         default:
+            console.log('ローカル保存状態に設定 (currentStorage:', currentStorage, ')');
             syncStatus.textContent = '🟡 ローカル保存';
             syncStatus.className = 'sync-status local';
             syncStatus.title = 'ローカルストレージに保存中';
@@ -819,10 +845,12 @@ async function handleGoogleLogin() {
         await linkWithLocalAccount(user);
         
         // Firebaseストレージを強制設定
+        console.log('handleGoogleLogin - Firebaseストレージを設定前のcurrentStorage:', currentStorage);
         currentStorage = 'firebase';
         localStorage.setItem('storageType', 'firebase');
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
+        console.log('handleGoogleLogin - Firebaseストレージ設定後のcurrentStorage:', currentStorage);
         
         // 同期状態を即座に更新
         updateSyncStatus();
