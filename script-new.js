@@ -664,7 +664,42 @@ async function handleRegularLogin(email, password) {
         const user = users.find(u => u.email === email);
         
         if (!user) {
-            throw new Error('ユーザーが見つかりません');
+            // ユーザーが見つからない場合、新規ユーザーとして作成
+            console.log('新規ユーザーとして作成:', email);
+            
+            const newUser = {
+                id: Date.now().toString(),
+                email: email,
+                displayName: email.split('@')[0], // メールアドレスの@前を表示名として使用
+                password: password,
+                createdAt: new Date().toISOString(),
+                isGoogleLinked: false
+            };
+            
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            // ユーザー情報を設定
+            currentUserInfo = {
+                email: newUser.email,
+                displayName: newUser.displayName,
+                id: newUser.id,
+                isGoogleUser: false
+            };
+            
+            // ローカルストレージを使用
+            currentStorage = 'local';
+            localStorage.setItem('storageType', 'local');
+            
+            // ログイン状態を保存
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
+            
+            // メインアプリを表示
+            showMainApp();
+            
+            showNotification('新規ユーザーとして登録されました', 'success');
+            return;
         }
         
         if (user.password !== password) {
@@ -924,32 +959,249 @@ function setStorageType(type) {
     localStorage.setItem('storageType', type);
 }
 
-// ユーザータイプの設定
+// ユーザータイプ関連の関数
+function getUserType() {
+    if (!currentUserInfo) {
+        return 'general';
+    }
+    
+    // 管理者チェック
+    if (currentUserInfo.email === 'yasnaries@gmail.com') {
+        return 'admin';
+    }
+    
+    // ローカルストレージからユーザータイプを取得
+    const userType = localStorage.getItem(`userType_${currentUserInfo.id}`);
+    if (userType) {
+        return userType;
+    }
+    
+    // デフォルトは一般ユーザー
+    return 'general';
+}
+
 function setUserType(user) {
     console.log('ユーザータイプ設定:', user.email);
     
-    let userType = 'regular';
+    let userType = 'general';
     
-    if (user.isAdmin) {
+    // 管理者チェック
+    if (user.email === 'yasnaries@gmail.com') {
         userType = 'admin';
-    } else if (user.email.includes('friend') || user.email.includes('友達')) {
-        userType = 'friend';
+    } else {
+        // ローカルストレージからユーザータイプを取得
+        const savedUserType = localStorage.getItem(`userType_${user.id || user.uid}`);
+        if (savedUserType) {
+            userType = savedUserType;
+        }
     }
     
-    localStorage.setItem('userType', userType);
+    // ユーザータイプを保存
+    if (user.id || user.uid) {
+        localStorage.setItem(`userType_${user.id || user.uid}`, userType);
+    }
+    
+    // 表示を更新
     updateUserTypeDisplay(userType);
+    
+    console.log('ユーザータイプ設定完了:', userType);
 }
 
-// ユーザータイプ表示の更新
 function updateUserTypeDisplay(userType) {
-    const userTypeDisplay = document.querySelector('.user-type-display');
+    const userTypeDisplay = document.getElementById('userTypeDisplay');
     if (userTypeDisplay) {
-        userTypeDisplay.innerHTML = `
-            <span class="user-type-badge ${userType}">
-                ${userType === 'admin' ? '管理者' : 
-                  userType === 'friend' ? '友達' : '一般ユーザー'}
-            </span>
-        `;
+        userTypeDisplay.textContent = userType;
+        userTypeDisplay.className = `user-type-display user-type-${userType}`;
+    }
+}
+
+function isAdmin() {
+    return getUserType() === 'admin';
+}
+
+// 管理者ダッシュボード関連の関数
+function showAdminDashboard() {
+    console.log('管理者ダッシュボード表示');
+    
+    // 管理者ダッシュボードのHTMLを作成
+    const dashboardHTML = `
+        <div class="admin-dashboard" id="adminDashboard">
+            <div class="dashboard-header">
+                <h2>管理者ダッシュボード</h2>
+                <button class="close-btn" onclick="hideAdminDashboard()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="dashboard-content">
+                <div class="dashboard-tabs">
+                    <button class="tab-btn active" onclick="showAdminTab('users')">ユーザー管理</button>
+                    <button class="tab-btn" onclick="showAdminTab('friends')">友達管理</button>
+                    <button class="tab-btn" onclick="showAdminTab('stats')">統計</button>
+                </div>
+                <div class="tab-content" id="adminTabContent">
+                    <!-- タブコンテンツがここに表示されます -->
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // ダッシュボードを表示
+    const app = document.getElementById('app');
+    if (app) {
+        app.insertAdjacentHTML('beforeend', dashboardHTML);
+        
+        // 最初のタブを表示
+        showAdminTab('users');
+        
+        // Lucideアイコンを初期化
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+}
+
+function hideAdminDashboard() {
+    const dashboard = document.getElementById('adminDashboard');
+    if (dashboard) {
+        dashboard.remove();
+    }
+}
+
+function showAdminTab(tabName) {
+    console.log('管理者タブ表示:', tabName);
+    
+    // タブボタンのアクティブ状態を更新
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    
+    const activeTabBtn = document.querySelector(`[onclick="showAdminTab('${tabName}')"]`);
+    if (activeTabBtn) {
+        activeTabBtn.classList.add('active');
+    }
+    
+    // タブコンテンツを更新
+    const tabContent = document.getElementById('adminTabContent');
+    if (!tabContent) return;
+    
+    switch (tabName) {
+        case 'users':
+            tabContent.innerHTML = `
+                <div class="admin-section">
+                    <h3>ユーザー管理</h3>
+                    <p>ユーザー管理機能は開発中です。</p>
+                </div>
+            `;
+            break;
+        case 'friends':
+            tabContent.innerHTML = `
+                <div class="admin-section">
+                    <h3>友達管理</h3>
+                    <p>友達管理機能は開発中です。</p>
+                </div>
+            `;
+            break;
+        case 'stats':
+            tabContent.innerHTML = `
+                <div class="admin-section">
+                    <h3>統計</h3>
+                    <p>統計機能は開発中です。</p>
+                </div>
+            `;
+            break;
+    }
+}
+
+// 手動同期機能
+function manualSync() {
+    console.log('手動同期開始');
+    
+    const syncBtn = document.getElementById('syncBtn');
+    if (syncBtn) {
+        syncBtn.classList.add('syncing');
+    }
+    
+    // 同期処理をシミュレート
+    setTimeout(() => {
+        console.log('手動同期完了');
+        
+        if (syncBtn) {
+            syncBtn.classList.remove('syncing');
+        }
+        
+        showNotification('同期が完了しました', 'success');
+        updateSyncStatus();
+    }, 2000);
+}
+
+// 通知許可要求
+function requestNotificationPermission() {
+    console.log('通知許可要求');
+    
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showNotification('通知が有効になりました', 'success');
+            } else {
+                showNotification('通知が拒否されました', 'info');
+            }
+        });
+    } else {
+        showNotification('このブラウザは通知をサポートしていません', 'warning');
+    }
+}
+
+// ストレージモーダル関連
+function showStorageModal() {
+    const storageModal = document.getElementById('storageModal');
+    if (storageModal) {
+        storageModal.style.display = 'block';
+    }
+}
+
+function hideStorageModal() {
+    const storageModal = document.getElementById('storageModal');
+    if (storageModal) {
+        storageModal.style.display = 'none';
+    }
+}
+
+function selectStorage(storageType) {
+    console.log('ストレージ選択:', storageType);
+    
+    // 選択状態を更新
+    const storageOptions = document.querySelectorAll('.storage-option');
+    storageOptions.forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    const selectedOption = document.querySelector(`[onclick="selectStorage('${storageType}')"]`);
+    if (selectedOption) {
+        selectedOption.classList.add('selected');
+    }
+    
+    // 選択されたストレージタイプを保存
+    localStorage.setItem('selectedStorage', storageType);
+}
+
+function confirmStorageSelection() {
+    const selectedStorage = localStorage.getItem('selectedStorage') || 'local';
+    console.log('ストレージ選択確認:', selectedStorage);
+    
+    currentStorage = selectedStorage;
+    localStorage.setItem('storageType', selectedStorage);
+    
+    hideStorageModal();
+    updateSyncStatus();
+    
+    showNotification(`${getStorageDisplayName(selectedStorage)}が選択されました`, 'success');
+}
+
+function getStorageDisplayName(storageType) {
+    switch (storageType) {
+        case 'local': return 'ローカルストレージ';
+        case 'firebase': return 'Firebase';
+        case 'google-drive': return 'Google Drive';
+        default: return 'ローカルストレージ';
     }
 }
 
