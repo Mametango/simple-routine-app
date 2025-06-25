@@ -402,6 +402,142 @@
                 </div>
             </div>
         </div>
+
+        <!-- 管理者ダッシュボード画面 -->
+        <div id="adminDashboardScreen" class="admin-dashboard-screen" style="display: none;">
+            <div class="screen-header">
+                <button class="back-btn" id="adminBackBtn">
+                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                    戻る
+                </button>
+                <h1 class="screen-title">管理者ダッシュボード</h1>
+                <div class="header-spacer"></div>
+            </div>
+            
+            <div class="admin-content">
+                <div class="admin-tabs">
+                    <button class="admin-tab-btn active" data-tab="users">
+                        <i data-lucide="users" class="tab-icon"></i>
+                        ユーザー管理
+                    </button>
+                    <button class="admin-tab-btn" data-tab="friends">
+                        <i data-lucide="heart" class="tab-icon"></i>
+                        友達管理
+                    </button>
+                    <button class="admin-tab-btn" data-tab="stats">
+                        <i data-lucide="bar-chart-3" class="tab-icon"></i>
+                        統計
+                    </button>
+                </div>
+                
+                <div class="admin-tab-content">
+                    <!-- ユーザー管理タブ -->
+                    <div id="usersTab" class="admin-tab-panel active">
+                        <div class="admin-section">
+                            <div class="section-header">
+                                <h3>ユーザー一覧</h3>
+                                <div class="search-box">
+                                    <i data-lucide="search" class="search-icon"></i>
+                                    <input type="text" id="userSearchInput" placeholder="ユーザーを検索..." class="search-input">
+                                </div>
+                            </div>
+                            
+                            <div class="users-list" id="usersList">
+                                <!-- ユーザーリストがここに表示されます -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 友達管理タブ -->
+                    <div id="friendsTab" class="admin-tab-panel">
+                        <div class="admin-section">
+                            <div class="section-header">
+                                <h3>友達リスト</h3>
+                                <button class="add-friend-btn" id="addFriendBtn">
+                                    <i data-lucide="user-plus" class="btn-icon"></i>
+                                    友達を追加
+                                </button>
+                            </div>
+                            
+                            <div class="friends-list" id="friendsList">
+                                <!-- 友達リストがここに表示されます -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 統計タブ -->
+                    <div id="statsTab" class="admin-tab-panel">
+                        <div class="admin-section">
+                            <h3>アプリ統計</h3>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i data-lucide="users"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4>総ユーザー数</h4>
+                                        <p id="totalUsersCount">0</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i data-lucide="heart"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4>友達数</h4>
+                                        <p id="friendsCount">0</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i data-lucide="list"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4>総ルーティン数</h4>
+                                        <p id="totalRoutinesCount">0</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i data-lucide="check-circle"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h4>完了率</h4>
+                                        <p id="completionRate">0%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 友達追加モーダル -->
+        <div id="addFriendModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>友達を追加</h3>
+                    <button class="modal-close" id="closeAddFriendModal">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="friendEmail" class="form-label">メールアドレス</label>
+                        <input type="email" id="friendEmail" class="form-input" placeholder="friend@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="friendName" class="form-label">表示名（任意）</label>
+                        <input type="text" id="friendName" class="form-input" placeholder="友達の名前">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn secondary" id="cancelAddFriend">キャンセル</button>
+                    <button class="modal-btn primary" id="confirmAddFriend">追加</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 認証モーダル -->

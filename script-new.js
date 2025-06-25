@@ -246,6 +246,53 @@ function setupEventListeners() {
         });
     }
     
+    // 管理者ダッシュボード関連
+    const adminBackBtn = document.getElementById('adminBackBtn');
+    if (adminBackBtn) {
+        adminBackBtn.addEventListener('click', hideAdminDashboard);
+    }
+    
+    // 管理者タブボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.admin-tab-btn')) {
+            const tabName = event.target.closest('.admin-tab-btn').dataset.tab;
+            if (tabName) {
+                showAdminTab(tabName);
+            }
+        }
+    });
+    
+    // 友達追加ボタン
+    const addFriendBtn = document.getElementById('addFriendBtn');
+    if (addFriendBtn) {
+        addFriendBtn.addEventListener('click', showAddFriendModal);
+    }
+    
+    // 友達追加モーダル関連
+    const closeAddFriendModal = document.getElementById('closeAddFriendModal');
+    if (closeAddFriendModal) {
+        closeAddFriendModal.addEventListener('click', hideAddFriendModal);
+    }
+    
+    const cancelAddFriend = document.getElementById('cancelAddFriend');
+    if (cancelAddFriend) {
+        cancelAddFriend.addEventListener('click', hideAddFriendModal);
+    }
+    
+    const confirmAddFriend = document.getElementById('confirmAddFriend');
+    if (confirmAddFriend) {
+        confirmAddFriend.addEventListener('click', addFriend);
+    }
+    
+    // ユーザー検索
+    const userSearchInput = document.getElementById('userSearchInput');
+    if (userSearchInput) {
+        userSearchInput.addEventListener('input', function(event) {
+            const searchTerm = event.target.value.toLowerCase();
+            filterUsers(searchTerm);
+        });
+    }
+    
     console.log('イベントリスナー設定完了');
 }
 
@@ -1443,39 +1490,26 @@ function getStorageDisplayName(storageType) {
     }
 }
 
-// 管理者ダッシュボード関連
+// 管理者ダッシュボード表示
 function showAdminDashboard() {
     console.log('管理者ダッシュボード表示');
     
-    // 管理者ダッシュボードのHTMLを作成
-    const dashboardHTML = `
-        <div class="admin-dashboard" id="adminDashboard">
-            <div class="dashboard-header">
-                <h2>管理者ダッシュボード</h2>
-                <button class="close-btn" onclick="hideAdminDashboard()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="dashboard-content">
-                <div class="dashboard-tabs">
-                    <button class="tab-btn active" onclick="showAdminTab('users')">ユーザー管理</button>
-                    <button class="tab-btn" onclick="showAdminTab('friends')">友達管理</button>
-                    <button class="tab-btn" onclick="showAdminTab('stats')">統計</button>
-                </div>
-                <div class="tab-content" id="adminTabContent">
-                    <!-- タブコンテンツがここに表示されます -->
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // ダッシュボードを表示
+    // メインアプリを非表示
     const app = document.getElementById('app');
     if (app) {
-        app.insertAdjacentHTML('beforeend', dashboardHTML);
+        app.style.display = 'none';
+    }
+    
+    // 管理者ダッシュボードを表示
+    const adminDashboard = document.getElementById('adminDashboardScreen');
+    if (adminDashboard) {
+        adminDashboard.style.display = 'block';
         
         // 最初のタブを表示
         showAdminTab('users');
+        
+        // データを読み込み
+        loadAdminData();
         
         // Lucideアイコンを初期化
         if (window.lucide) {
@@ -1484,55 +1518,405 @@ function showAdminDashboard() {
     }
 }
 
+// 管理者ダッシュボード非表示
 function hideAdminDashboard() {
-    const dashboard = document.getElementById('adminDashboard');
-    if (dashboard) {
-        dashboard.remove();
+    console.log('管理者ダッシュボード非表示');
+    
+    const adminDashboard = document.getElementById('adminDashboardScreen');
+    if (adminDashboard) {
+        adminDashboard.style.display = 'none';
+    }
+    
+    // メインアプリを表示
+    const app = document.getElementById('app');
+    if (app) {
+        app.style.display = 'block';
     }
 }
 
+// 管理者タブ表示
 function showAdminTab(tabName) {
     console.log('管理者タブ表示:', tabName);
     
     // タブボタンのアクティブ状態を更新
-    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabButtons = document.querySelectorAll('.admin-tab-btn');
     tabButtons.forEach(btn => btn.classList.remove('active'));
     
-    const activeTabBtn = document.querySelector(`[onclick="showAdminTab('${tabName}')"]`);
+    const activeTabBtn = document.querySelector(`[data-tab="${tabName}"]`);
     if (activeTabBtn) {
         activeTabBtn.classList.add('active');
     }
     
-    // タブコンテンツを更新
-    const tabContent = document.getElementById('adminTabContent');
-    if (!tabContent) return;
+    // タブパネルの表示を更新
+    const tabPanels = document.querySelectorAll('.admin-tab-panel');
+    tabPanels.forEach(panel => panel.classList.remove('active'));
     
+    const activePanel = document.getElementById(`${tabName}Tab`);
+    if (activePanel) {
+        activePanel.classList.add('active');
+    }
+    
+    // タブに応じたデータを読み込み
     switch (tabName) {
         case 'users':
-            tabContent.innerHTML = `
-                <div class="admin-section">
-                    <h3>ユーザー管理</h3>
-                    <p>ユーザー管理機能は開発中です。</p>
-                </div>
-            `;
+            loadUsersList();
             break;
         case 'friends':
-            tabContent.innerHTML = `
-                <div class="admin-section">
-                    <h3>友達管理</h3>
-                    <p>友達管理機能は開発中です。</p>
-                </div>
-            `;
+            loadFriendsList();
             break;
         case 'stats':
-            tabContent.innerHTML = `
-                <div class="admin-section">
-                    <h3>統計</h3>
-                    <p>統計機能は開発中です。</p>
-                </div>
-            `;
+            loadAdminStats();
             break;
     }
+}
+
+// 管理者データの読み込み
+function loadAdminData() {
+    console.log('管理者データ読み込み開始');
+    
+    // ユーザーリストを読み込み
+    loadUsersList();
+    
+    // 友達リストを読み込み
+    loadFriendsList();
+    
+    // 統計を読み込み
+    loadAdminStats();
+}
+
+// ユーザーリストの読み込み
+function loadUsersList() {
+    console.log('ユーザーリスト読み込み');
+    
+    const usersList = document.getElementById('usersList');
+    if (!usersList) return;
+    
+    // ローカルストレージからユーザーデータを取得
+    const users = getAllUsers();
+    
+    if (users.length === 0) {
+        usersList.innerHTML = `
+            <div class="empty-state">
+                <i data-lucide="users" class="empty-icon"></i>
+                <h3>ユーザーが見つかりません</h3>
+                <p>まだユーザーが登録されていません</p>
+            </div>
+        `;
+    } else {
+        usersList.innerHTML = users.map(user => createUserItemHTML(user)).join('');
+    }
+    
+    // Lucideアイコンを初期化
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+// すべてのユーザーを取得
+function getAllUsers() {
+    const users = [];
+    
+    // ローカルストレージからユーザー情報を取得
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null');
+    if (userInfo) {
+        users.push({
+            email: userInfo.email,
+            displayName: userInfo.displayName,
+            userType: getUserType(),
+            isCurrentUser: true
+        });
+    }
+    
+    // 友達リストを取得
+    const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+    friendsList.forEach(email => {
+        if (!users.find(u => u.email === email)) {
+            users.push({
+                email: email,
+                displayName: email.split('@')[0],
+                userType: 'friend',
+                isCurrentUser: false
+            });
+        }
+    });
+    
+    return users;
+}
+
+// ユーザーアイテムのHTML生成
+function createUserItemHTML(user) {
+    const userTypeText = getUserTypeText(user.userType);
+    const userTypeClass = user.userType;
+    const isFriend = user.userType === 'friend';
+    
+    return `
+        <div class="user-item" data-email="${user.email}">
+            <div class="user-info">
+                <div class="user-avatar">
+                    ${user.displayName.charAt(0).toUpperCase()}
+                </div>
+                <div class="user-details">
+                    <div class="user-name">${user.displayName}</div>
+                    <div class="user-email">${user.email}</div>
+                    <span class="user-type ${userTypeClass}">
+                        <i data-lucide="${getUserTypeIcon(user.userType)}"></i>
+                        ${userTypeText}
+                    </span>
+                </div>
+            </div>
+            <div class="user-actions">
+                ${!isFriend ? `
+                    <button class="action-btn primary" onclick="markAsFriend('${user.email}')">
+                        <i data-lucide="heart"></i>
+                        友達にする
+                    </button>
+                ` : `
+                    <button class="action-btn secondary" onclick="removeFriend('${user.email}')">
+                        <i data-lucide="user-minus"></i>
+                        友達解除
+                    </button>
+                `}
+                ${user.isCurrentUser ? `
+                    <span class="action-btn secondary">現在のユーザー</span>
+                ` : `
+                    <button class="action-btn danger" onclick="removeUser('${user.email}')">
+                        <i data-lucide="trash"></i>
+                        削除
+                    </button>
+                `}
+            </div>
+        </div>
+    `;
+}
+
+// ユーザータイプのテキスト取得
+function getUserTypeText(userType) {
+    switch (userType) {
+        case 'admin': return '管理者';
+        case 'friend': return '友達';
+        case 'general': return '一般ユーザー';
+        default: return '一般ユーザー';
+    }
+}
+
+// ユーザータイプのアイコン取得
+function getUserTypeIcon(userType) {
+    switch (userType) {
+        case 'admin': return 'shield';
+        case 'friend': return 'heart';
+        case 'general': return 'user';
+        default: return 'user';
+    }
+}
+
+// 友達としてマーク
+function markAsFriend(email) {
+    console.log('友達としてマーク:', email);
+    
+    const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+    if (!friendsList.includes(email)) {
+        friendsList.push(email);
+        localStorage.setItem('friendsList', JSON.stringify(friendsList));
+        
+        showNotification(`${email}を友達に追加しました`, 'success');
+        loadUsersList(); // リストを更新
+    }
+}
+
+// 友達解除
+function removeFriend(email) {
+    console.log('友達解除:', email);
+    
+    if (confirm(`${email}を友達リストから削除しますか？`)) {
+        const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+        const updatedList = friendsList.filter(friend => friend !== email);
+        localStorage.setItem('friendsList', JSON.stringify(updatedList));
+        
+        showNotification(`${email}を友達リストから削除しました`, 'info');
+        loadUsersList(); // リストを更新
+        loadFriendsList(); // 友達リストも更新
+    }
+}
+
+// ユーザー削除
+function removeUser(email) {
+    console.log('ユーザー削除:', email);
+    
+    if (confirm(`${email}を削除しますか？この操作は取り消せません。`)) {
+        // 友達リストからも削除
+        const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+        const updatedList = friendsList.filter(friend => friend !== email);
+        localStorage.setItem('friendsList', JSON.stringify(updatedList));
+        
+        showNotification(`${email}を削除しました`, 'success');
+        loadUsersList(); // リストを更新
+    }
+}
+
+// 友達リストの読み込み
+function loadFriendsList() {
+    console.log('友達リスト読み込み');
+    
+    const friendsList = document.getElementById('friendsList');
+    if (!friendsList) return;
+    
+    const friends = JSON.parse(localStorage.getItem('friendsList') || '[]');
+    
+    if (friends.length === 0) {
+        friendsList.innerHTML = `
+            <div class="empty-state">
+                <i data-lucide="heart" class="empty-icon"></i>
+                <h3>友達がいません</h3>
+                <p>友達を追加して、一緒にルーティンを管理しましょう！</p>
+            </div>
+        `;
+    } else {
+        friendsList.innerHTML = friends.map(email => createFriendItemHTML(email)).join('');
+    }
+    
+    // Lucideアイコンを初期化
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+// 友達アイテムのHTML生成
+function createFriendItemHTML(email) {
+    const displayName = email.split('@')[0];
+    
+    return `
+        <div class="friend-item" data-email="${email}">
+            <div class="user-info">
+                <div class="user-avatar">
+                    ${displayName.charAt(0).toUpperCase()}
+                </div>
+                <div class="user-details">
+                    <div class="user-name">${displayName}</div>
+                    <div class="user-email">${email}</div>
+                    <span class="user-type friend">
+                        <i data-lucide="heart"></i>
+                        友達
+                    </span>
+                </div>
+            </div>
+            <div class="user-actions">
+                <button class="action-btn secondary" onclick="removeFriend('${email}')">
+                    <i data-lucide="user-minus"></i>
+                    友達解除
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// 管理者統計の読み込み
+function loadAdminStats() {
+    console.log('管理者統計読み込み');
+    
+    // ユーザー数
+    const users = getAllUsers();
+    const totalUsersCount = document.getElementById('totalUsersCount');
+    if (totalUsersCount) {
+        totalUsersCount.textContent = users.length;
+    }
+    
+    // 友達数
+    const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+    const friendsCount = document.getElementById('friendsCount');
+    if (friendsCount) {
+        friendsCount.textContent = friendsList.length;
+    }
+    
+    // ルーティン数
+    const totalRoutinesCount = document.getElementById('totalRoutinesCount');
+    if (totalRoutinesCount) {
+        totalRoutinesCount.textContent = routines.length;
+    }
+    
+    // 完了率
+    const completionRate = document.getElementById('completionRate');
+    if (completionRate) {
+        const today = new Date().toISOString().split('T')[0];
+        const completedToday = routines.filter(routine => {
+            const completionKey = `completion_${routine.id}_${today}`;
+            return localStorage.getItem(completionKey) === 'true';
+        }).length;
+        
+        const rate = routines.length > 0 ? Math.round((completedToday / routines.length) * 100) : 0;
+        completionRate.textContent = `${rate}%`;
+    }
+}
+
+// 友達追加モーダル表示
+function showAddFriendModal() {
+    console.log('友達追加モーダル表示');
+    
+    const modal = document.getElementById('addFriendModal');
+    if (modal) {
+        modal.style.display = 'block';
+        
+        // フォームをリセット
+        document.getElementById('friendEmail').value = '';
+        document.getElementById('friendName').value = '';
+    }
+}
+
+// 友達追加モーダル非表示
+function hideAddFriendModal() {
+    console.log('友達追加モーダル非表示');
+    
+    const modal = document.getElementById('addFriendModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// 友達追加処理
+function addFriend() {
+    console.log('友達追加処理');
+    
+    const email = document.getElementById('friendEmail').value.trim();
+    const name = document.getElementById('friendName').value.trim();
+    
+    if (!email) {
+        showNotification('メールアドレスを入力してください', 'error');
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        showNotification('有効なメールアドレスを入力してください', 'error');
+        return;
+    }
+    
+    const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+    if (friendsList.includes(email)) {
+        showNotification('このユーザーは既に友達リストに含まれています', 'warning');
+        return;
+    }
+    
+    // 友達リストに追加
+    friendsList.push(email);
+    localStorage.setItem('friendsList', JSON.stringify(friendsList));
+    
+    // 表示名も保存（任意）
+    if (name) {
+        const friendNames = JSON.parse(localStorage.getItem('friendNames') || '{}');
+        friendNames[email] = name;
+        localStorage.setItem('friendNames', JSON.stringify(friendNames));
+    }
+    
+    hideAddFriendModal();
+    showNotification(`${email}を友達に追加しました`, 'success');
+    
+    // リストを更新
+    loadUsersList();
+    loadFriendsList();
+}
+
+// メールアドレスの妥当性チェック
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
 }
 
 // ルーティンの編集
@@ -2043,5 +2427,36 @@ function fixFirebaseConfig() {
                 currentConfig.innerHTML = '<p>設定が見つかりません</p>';
             }
         }
+    }
+}
+
+// ユーザー検索機能
+function filterUsers(searchTerm) {
+    console.log('ユーザー検索:', searchTerm);
+    
+    const usersList = document.getElementById('usersList');
+    if (!usersList) return;
+    
+    const users = getAllUsers();
+    const filteredUsers = users.filter(user => 
+        user.email.toLowerCase().includes(searchTerm) ||
+        user.displayName.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filteredUsers.length === 0) {
+        usersList.innerHTML = `
+            <div class="empty-state">
+                <i data-lucide="search" class="empty-icon"></i>
+                <h3>検索結果が見つかりません</h3>
+                <p>"${searchTerm}"に一致するユーザーはいません</p>
+            </div>
+        `;
+    } else {
+        usersList.innerHTML = filteredUsers.map(user => createUserItemHTML(user)).join('');
+    }
+    
+    // Lucideアイコンを初期化
+    if (window.lucide) {
+        lucide.createIcons();
     }
 } 
