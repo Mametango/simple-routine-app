@@ -443,6 +443,119 @@ class SimpleAuth {
         localStorage.removeItem('simpleAuthUsers');
         localStorage.removeItem('simpleAuthCurrentUser');
     }
+
+    // 管理者ユーザーを作成
+    createAdminUser(email, password) {
+        try {
+            console.log('管理者ユーザー作成開始:', email);
+            
+            // 既に存在するかチェック
+            if (this.users[email]) {
+                console.log('ユーザーは既に存在します。管理者権限を付与します。');
+                this.users[email].isAdmin = true;
+                this.users[email].role = 'admin';
+                this.users[email].adminCreatedAt = new Date().toISOString();
+                localStorage.setItem('simpleAuthUsers', JSON.stringify(this.users));
+                console.log('管理者権限を付与しました:', email);
+                return { success: true, message: '管理者権限を付与しました' };
+            }
+            
+            // 新しい管理者ユーザーを作成
+            const userId = this.generateUserId();
+            const hashedPassword = this.hashPassword(password);
+            
+            this.users[email] = {
+                uid: userId,
+                email: email,
+                displayName: email.split('@')[0], // メールアドレスの@前を表示名として使用
+                password: hashedPassword,
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString(),
+                isAdmin: true,
+                role: 'admin',
+                adminCreatedAt: new Date().toISOString(),
+                emailVerified: true,
+                profile: {
+                    displayName: email.split('@')[0],
+                    photoURL: null
+                }
+            };
+            
+            // ローカルストレージに保存
+            localStorage.setItem('simpleAuthUsers', JSON.stringify(this.users));
+            
+            // クラウドに同期
+            this.saveToCloud();
+            
+            console.log('管理者ユーザーを作成しました:', email);
+            console.log('ユーザーID:', userId);
+            console.log('管理者権限: 有効');
+            
+            return { 
+                success: true, 
+                message: '管理者ユーザーを作成しました',
+                user: this.users[email]
+            };
+            
+        } catch (error) {
+            console.error('管理者ユーザー作成エラー:', error);
+            return { 
+                success: false, 
+                message: '管理者ユーザーの作成に失敗しました: ' + error.message 
+            };
+        }
+    }
+    
+    // 管理者ユーザーかどうかをチェック
+    isAdminUser(email) {
+        const user = this.users[email];
+        return user && user.isAdmin === true;
+    }
+    
+    // 管理者ユーザーでログイン
+    async signInAsAdmin(email, password) {
+        try {
+            console.log('管理者ログイン試行:', email);
+            
+            // ユーザーが存在するかチェック
+            if (!this.users[email]) {
+                throw new Error('ユーザーが見つかりません');
+            }
+            
+            // 管理者権限をチェック
+            if (!this.isAdminUser(email)) {
+                throw new Error('管理者権限がありません');
+            }
+            
+            // パスワードを検証
+            if (!this.verifyPassword(password, this.users[email].password)) {
+                throw new Error('パスワードが正しくありません');
+            }
+            
+            // ログイン成功
+            this.currentUser = this.users[email];
+            localStorage.setItem('simpleAuthCurrentUser', JSON.stringify(this.currentUser));
+            
+            // 最終ログイン時間を更新
+            this.updateLastLogin(this.currentUser.uid);
+            
+            console.log('管理者ログイン成功:', email);
+            this.notifyAuthStateChange(this.currentUser);
+            
+            return { 
+                success: true, 
+                message: '管理者としてログインしました',
+                user: this.currentUser
+            };
+            
+        } catch (error) {
+            console.error('管理者ログインエラー:', error);
+            return { 
+                success: false, 
+                message: error.message 
+            };
+        }
+    }
 }
 
 // グローバルインスタンス

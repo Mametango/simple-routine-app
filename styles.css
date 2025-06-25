@@ -246,6 +246,33 @@ body {
     transform: translateY(0);
 }
 
+/* 管理者ログインボタン */
+.admin-login-btn {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    margin-top: 10px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.admin-login-btn:hover {
+    transform: translateY(-2px);
+}
+
+.admin-login-btn:active {
+    transform: translateY(0);
+}
+
 /* メインアプリ */
 .app {
     display: none;
