@@ -5,11 +5,16 @@ class SimpleAuth {
         this.currentUser = JSON.parse(localStorage.getItem('simpleAuthCurrentUser') || 'null');
         this.isInitialized = false;
         this.syncKey = 'simpleAuthSync';
+        this.authStateCallbacks = [];
     }
 
     // 初期化
     init() {
         if (this.isInitialized) return;
+        
+        console.log('SimpleAuth初期化開始...');
+        console.log('保存されたユーザー数:', Object.keys(this.users).length);
+        console.log('現在のユーザー:', this.currentUser ? this.currentUser.email : '未ログイン');
         
         // クラウド同期を試行
         this.syncWithCloud();
@@ -20,8 +25,85 @@ class SimpleAuth {
         // シンプル認証を有効化
         this.enableSimpleAuth();
         
+        // 認証状態リスナーを設定
+        this.setupAuthStateListener();
+        
         this.isInitialized = true;
-        console.log('SimpleAuth initialized with cloud sync');
+        console.log('SimpleAuth初期化完了');
+        
+        // 既にログイン済みの場合は認証状態を通知
+        if (this.currentUser) {
+            console.log('既存のログイン状態を復元:', this.currentUser.email);
+            this.notifyAuthStateChange(this.currentUser);
+        }
+    }
+
+    // 認証状態リスナーを設定
+    setupAuthStateListener() {
+        // ページ読み込み時に認証状態をチェック
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.checkAuthState();
+            });
+        } else {
+            this.checkAuthState();
+        }
+        
+        // ストレージ変更を監視（他のタブでのログイン/ログアウト）
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'simpleAuthCurrentUser') {
+                console.log('ストレージ変更を検出:', e.key);
+                this.currentUser = e.newValue ? JSON.parse(e.newValue) : null;
+                this.notifyAuthStateChange(this.currentUser);
+            }
+        });
+    }
+
+    // 認証状態をチェック
+    checkAuthState() {
+        const savedUser = localStorage.getItem('simpleAuthCurrentUser');
+        if (savedUser) {
+            try {
+                const user = JSON.parse(savedUser);
+                if (user && user.email) {
+                    console.log('保存された認証状態を復元:', user.email);
+                    this.currentUser = user;
+                    this.notifyAuthStateChange(user);
+                }
+            } catch (error) {
+                console.error('保存された認証状態の復元エラー:', error);
+                localStorage.removeItem('simpleAuthCurrentUser');
+            }
+        }
+    }
+
+    // 認証状態変更を通知
+    notifyAuthStateChange(user) {
+        console.log('認証状態変更を通知:', user ? user.email : 'ログアウト');
+        this.authStateCallbacks.forEach(callback => {
+            try {
+                callback(user);
+            } catch (error) {
+                console.error('認証状態変更コールバックエラー:', error);
+            }
+        });
+    }
+
+    // 認証状態リスナーを追加
+    onAuthStateChanged(callback) {
+        this.authStateCallbacks.push(callback);
+        
+        // 即座に現在の状態を通知
+        if (this.currentUser) {
+            setTimeout(() => callback(this.currentUser), 0);
+        }
+        
+        return () => {
+            const index = this.authStateCallbacks.indexOf(callback);
+            if (index > -1) {
+                this.authStateCallbacks.splice(index, 1);
+            }
+        };
     }
 
     // クラウド同期
@@ -90,8 +172,26 @@ class SimpleAuth {
     enableSimpleAuth() {
         // 認証状態を監視
         this.onAuthStateChanged = (callback) => {
-            callback(this.currentUser);
+            this.authStateCallbacks.push(callback);
+            
+            // 即座に現在の状態を通知
+            if (this.currentUser) {
+                setTimeout(() => callback(this.currentUser), 0);
+            }
+            
+            return () => {
+                const index = this.authStateCallbacks.indexOf(callback);
+                if (index > -1) {
+                    this.authStateCallbacks.splice(index, 1);
+                }
+            };
         };
+        
+        // 既存の認証状態をチェック
+        if (this.currentUser) {
+            console.log('既存の認証状態を復元:', this.currentUser.email);
+            this.notifyAuthStateChange(this.currentUser);
+        }
     }
 
     // サインアップ
@@ -135,6 +235,9 @@ class SimpleAuth {
             // 現在のユーザーを設定
             this.currentUser = user;
             localStorage.setItem('simpleAuthCurrentUser', JSON.stringify(user));
+            
+            // 認証状態変更を通知
+            this.notifyAuthStateChange(user);
 
             console.log('シンプル認証: サインアップ成功', user);
             return { user: user };
@@ -179,6 +282,9 @@ class SimpleAuth {
             this.currentUser = user;
             localStorage.setItem('simpleAuthCurrentUser', JSON.stringify(user));
             
+            // 認証状態変更を通知
+            this.notifyAuthStateChange(user);
+            
             console.log('シンプル認証: サインイン成功', user);
 
             return { user: user };
@@ -190,8 +296,15 @@ class SimpleAuth {
 
     // サインアウト
     async signOut() {
+        console.log('シンプル認証: サインアウト開始');
+        
         this.currentUser = null;
         localStorage.removeItem('simpleAuthCurrentUser');
+        
+        // 認証状態変更を通知
+        this.notifyAuthStateChange(null);
+        
+        console.log('シンプル認証: サインアウト完了');
         return Promise.resolve();
     }
 
