@@ -17,38 +17,37 @@ window.isGoogleLoginInProgress = false;
 
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== ページ読み込み完了 ===');
-    console.log('script-new.js が正常に読み込まれました');
+    console.log('ページ読み込み完了');
     
-    // データ初期化
-    initializeData();
-    
-    // Lucideアイコン初期化
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-        console.log('Lucideアイコン初期化完了');
+    try {
+        // データの初期化
+        initializeData();
+        
+        // イベントリスナーの設定
+        setupEventListeners();
+        
+        // 認証状態の確認
+        const isAuthenticated = checkAuthState();
+        
+        if (!isAuthenticated) {
+            console.log('未認証 - 認証画面を表示');
+            showAuthScreen();
+        } else {
+            console.log('認証済み - メインアプリを表示');
+            // 認証状態変更ハンドラーで処理される
+        }
+        
+        // Lucideアイコンの初期化
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+        
+        console.log('初期化完了');
+        
+    } catch (error) {
+        console.error('初期化エラー:', error);
+        showNotification('アプリの初期化中にエラーが発生しました', 'error');
     }
-    
-    // 認証状態チェック
-    const isLoggedIn = checkAuthState();
-    
-    if (!isLoggedIn) {
-        // ログインしていない場合は認証画面を表示
-        console.log('未ログイン - 認証画面を表示');
-        showAuthScreen();
-    } else {
-        // ログイン済みの場合はメインアプリを表示
-        console.log('ログイン済み - メインアプリを表示');
-        showMainApp();
-    }
-    
-    // イベントリスナー設定
-    setupEventListeners();
-    
-    // アプリ初期化
-    initializeApp();
-    
-    console.log('=== 初期化完了 ===');
 });
 
 // データの初期化
@@ -121,17 +120,131 @@ function setupEventListeners() {
         routineForm.addEventListener('submit', handleRoutineFormSubmit);
     }
     
-    // 頻度ボタン
-    const frequencyButtons = document.querySelectorAll('.frequency-btn');
-    frequencyButtons.forEach(button => {
-        button.addEventListener('click', handleFrequencyButtonClick);
+    // 頻度ボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('frequency-btn')) {
+            handleFrequencyButtonClick(event);
+        }
     });
     
-    // タブボタン
-    const tabButtons = document.querySelectorAll('.tab-button');
-    tabButtons.forEach(button => {
-        button.addEventListener('click', handleTabButtonClick);
+    // タブボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('tab-button')) {
+            handleTabButtonClick(event);
+        }
     });
+    
+    // ルーティン完了ボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.completion-btn')) {
+            const routineId = event.target.closest('.routine-item').dataset.routineId;
+            toggleRoutineCompletion(routineId);
+        }
+    });
+    
+    // ルーティン編集ボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.edit-btn')) {
+            const routineId = event.target.closest('.routine-item').dataset.routineId;
+            editRoutine(routineId);
+        }
+    });
+    
+    // ルーティン削除ボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.delete-btn')) {
+            const routineId = event.target.closest('.routine-item').dataset.routineId;
+            deleteRoutine(routineId);
+        }
+    });
+    
+    // 同期ボタン
+    const syncBtn = document.getElementById('syncBtn');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', manualSync);
+    }
+    
+    // 通知ボタン
+    const notificationBtn = document.getElementById('notificationBtn');
+    if (notificationBtn) {
+        notificationBtn.addEventListener('click', requestNotificationPermission);
+    }
+    
+    // 設定ボタン
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', showStorageModal);
+    }
+    
+    // 管理者ボタン
+    const adminBtn = document.getElementById('adminBtn');
+    if (adminBtn) {
+        adminBtn.addEventListener('click', showAdminDashboard);
+    }
+    
+    // ログアウトボタン
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+    
+    // ルーティン追加ボタン
+    const addRoutineBtn = document.getElementById('addRoutineBtn');
+    if (addRoutineBtn) {
+        addRoutineBtn.addEventListener('click', showAddRoutineScreen);
+    }
+    
+    // 戻るボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.back-btn')) {
+            showMainScreen();
+        }
+    });
+    
+    // キャンセルボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.cancel-button')) {
+            showMainScreen();
+        }
+    });
+    
+    // ストレージ選択（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.storage-option')) {
+            const storageType = event.target.closest('.storage-option').dataset.storageType;
+            if (storageType) {
+                selectStorage(storageType);
+            }
+        }
+    });
+    
+    // ストレージ確認ボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.modal-btn.primary')) {
+            confirmStorageSelection();
+        }
+    });
+    
+    // モーダル閉じるボタン（イベント委譲）
+    document.addEventListener('click', function(event) {
+        if (event.target.closest('.modal-close') || event.target.closest('.close')) {
+            hideStorageModal();
+        }
+    });
+    
+    // ヘルプボタン
+    const firebaseDebugBtn = document.getElementById('firebaseDebugBtn');
+    if (firebaseDebugBtn) {
+        firebaseDebugBtn.addEventListener('click', checkFirebaseStatus);
+    }
+    
+    const fixFirebaseConfigBtn = document.getElementById('fixFirebaseConfigBtn');
+    if (fixFirebaseConfigBtn) {
+        fixFirebaseConfigBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            fixFirebaseConfig();
+        });
+    }
     
     console.log('イベントリスナー設定完了');
 }
@@ -1860,5 +1973,75 @@ function requestNotificationPermission() {
         });
     } else {
         showNotification('このブラウザは通知をサポートしていません', 'warning');
+    }
+}
+
+// Firebase設定確認
+function checkFirebaseStatus() {
+    console.log('Firebase設定確認開始');
+    
+    let status = 'Firebase設定確認:\n\n';
+    
+    // Firebase SDKの確認
+    if (typeof firebase === 'undefined') {
+        status += '❌ Firebase SDKが読み込まれていません\n';
+    } else {
+        status += '✅ Firebase SDKが読み込まれています\n';
+        
+        // 認証の確認
+        if (firebase.auth) {
+            status += '✅ Firebase Authが利用可能です\n';
+        } else {
+            status += '❌ Firebase Authが利用できません\n';
+        }
+        
+        // Firestoreの確認
+        if (firebase.firestore) {
+            status += '✅ Firestoreが利用可能です\n';
+        } else {
+            status += '❌ Firestoreが利用できません\n';
+        }
+    }
+    
+    // 設定の確認
+    const config = window.firebaseConfig;
+    if (config) {
+        status += '\n設定情報:\n';
+        status += `API Key: ${config.apiKey ? '✅ 設定済み' : '❌ 未設定'}\n`;
+        status += `Auth Domain: ${config.authDomain ? '✅ 設定済み' : '❌ 未設定'}\n`;
+        status += `Project ID: ${config.projectId ? '✅ 設定済み' : '❌ 未設定'}\n`;
+    } else {
+        status += '\n❌ Firebase設定が見つかりません\n';
+    }
+    
+    alert(status);
+}
+
+// Firebase設定修正
+function fixFirebaseConfig() {
+    console.log('Firebase設定修正開始');
+    
+    // 設定修正モーダルを表示
+    const modal = document.getElementById('firebaseConfigModal');
+    if (modal) {
+        modal.style.display = 'block';
+        
+        // 現在の設定を表示
+        const currentConfig = document.getElementById('currentConfig');
+        if (currentConfig) {
+            const config = window.firebaseConfig;
+            if (config) {
+                currentConfig.innerHTML = `
+                    <p><strong>API Key:</strong> ${config.apiKey || '未設定'}</p>
+                    <p><strong>Auth Domain:</strong> ${config.authDomain || '未設定'}</p>
+                    <p><strong>Project ID:</strong> ${config.projectId || '未設定'}</p>
+                    <p><strong>Storage Bucket:</strong> ${config.storageBucket || '未設定'}</p>
+                    <p><strong>Messaging Sender ID:</strong> ${config.messagingSenderId || '未設定'}</p>
+                    <p><strong>App ID:</strong> ${config.appId || '未設定'}</p>
+                `;
+            } else {
+                currentConfig.innerHTML = '<p>設定が見つかりません</p>';
+            }
+        }
     }
 } 

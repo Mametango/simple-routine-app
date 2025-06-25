@@ -140,13 +140,13 @@
                         </summary>
                         <div class="help-content">
                             <div class="help-item">
-                                <button type="button" id="firebaseDebugBtn" class="help-btn" onclick="checkFirebaseStatus()">
+                                <button type="button" id="firebaseDebugBtn" class="help-btn">
                                     <i data-lucide="settings"></i>
                                     Firebase設定確認
                                 </button>
                             </div>
                             <div class="help-item">
-                                <a href="#" onclick="fixFirebaseConfig()" class="help-btn">
+                                <a href="#" class="help-btn" id="fixFirebaseConfigBtn">
                                     <i data-lucide="wrench"></i>
                                     Firebase設定修正
                                 </a>
@@ -178,17 +178,17 @@
                     <span id="syncStatus" class="sync-status">🟡 同期中...</span>
                 </div>
                 <div class="header-buttons">
-                    <button id="syncBtn" class="sync-btn" onclick="manualSync()" title="手動同期">
+                    <button id="syncBtn" class="sync-btn" title="手動同期">
                         <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
                     </button>
-                    <button id="notificationBtn" class="notification-btn" onclick="requestNotificationPermission()">🔔</button>
-                    <button id="settingsBtn" class="settings-btn" onclick="showStorageModal()">⚙️</button>
+                    <button id="notificationBtn" class="notification-btn">🔔</button>
+                    <button id="settingsBtn" class="settings-btn">⚙️</button>
                     <!-- 管理者ボタン（管理者のみ表示） -->
-                    <button id="adminBtn" class="admin-btn" onclick="showAdminDashboard()" style="display: none;" title="管理者ダッシュボード">
+                    <button id="adminBtn" class="admin-btn" style="display: none;" title="管理者ダッシュボード">
                         <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
                     </button>
                     <!-- ログアウトボタン -->
-                    <button id="logoutBtn" class="logout-btn" onclick="logout()" title="ログアウト">
+                    <button id="logoutBtn" class="logout-btn" title="ログアウト">
                         <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
                     </button>
                 </div>
@@ -202,7 +202,7 @@
                     <i data-lucide="calendar" class="section-icon"></i>
                     今日のルーティン
                 </h2>
-                <button id="addRoutineBtn" class="add-routine-btn" onclick="showAddRoutineScreen()">
+                <button id="addRoutineBtn" class="add-routine-btn">
                     <i data-lucide="plus" class="button-icon"></i>
                     追加
                 </button>
@@ -253,7 +253,7 @@
         <!-- ルーティン追加画面 -->
         <div id="addRoutineScreen" class="add-routine-screen" style="display: none;">
             <div class="screen-header">
-                <button class="back-btn" onclick="showMainScreen()">
+                <button class="back-btn">
                     <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
                     戻る
                 </button>
@@ -284,7 +284,7 @@
                     </div>
                     <div class="form-buttons">
                         <button type="submit" class="save-button">保存</button>
-                        <button type="button" class="cancel-button" onclick="showMainScreen()">キャンセル</button>
+                        <button type="button" class="cancel-button">キャンセル</button>
                     </div>
                 </form>
             </div>
@@ -355,12 +355,12 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h3>ストレージを選択</h3>
-                    <button class="modal-close" onclick="hideStorageModal()">
+                    <button class="modal-close">
                         <i data-lucide="x"></i>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="storage-option" onclick="selectStorage('local')">
+                    <div class="storage-option" data-storage-type="local">
                         <i data-lucide="hard-drive" class="storage-icon"></i>
                         <div class="storage-info">
                             <h4>ローカルストレージ</h4>
@@ -368,7 +368,7 @@
                         </div>
                         <i data-lucide="check" class="storage-check"></i>
                     </div>
-                    <div class="storage-option" onclick="selectStorage('firebase')">
+                    <div class="storage-option" data-storage-type="firebase">
                         <i data-lucide="cloud" class="storage-icon"></i>
                         <div class="storage-info">
                             <h4>Firebase</h4>
@@ -376,7 +376,7 @@
                         </div>
                         <i data-lucide="check" class="storage-check"></i>
                     </div>
-                    <div class="storage-option" onclick="selectStorage('google-drive')">
+                    <div class="storage-option" data-storage-type="google-drive">
                         <i data-lucide="folder" class="storage-icon"></i>
                         <div class="storage-info">
                             <h4>Google Drive</h4>
@@ -386,8 +386,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="modal-btn secondary" onclick="hideStorageModal()">キャンセル</button>
-                    <button class="modal-btn primary" onclick="confirmStorageSelection()">選択</button>
+                    <button class="modal-btn secondary">キャンセル</button>
+                    <button class="modal-btn primary">選択</button>
                 </div>
             </div>
         </div>
