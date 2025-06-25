@@ -2039,22 +2039,28 @@ function showFrequencyOptions(formType, selectedFrequency) {
 
 // 頻度の選択
 function selectFrequency(formType, frequency) {
-    const frequencyInput = document.getElementById(`${formType}RoutineFrequency`);
-    const optionsContainer = document.getElementById(`${formType}FrequencyOptions`);
+    console.log('頻度選択:', formType, frequency);
     
+    // 隠しフィールドに頻度を設定
+    const frequencyInput = document.getElementById(`${formType}RoutineFrequency`);
     if (frequencyInput) {
         frequencyInput.value = frequency;
+        console.log('頻度を設定:', frequency);
+    } else {
+        console.warn('頻度入力フィールドが見つかりません:', `${formType}RoutineFrequency`);
     }
     
+    // 頻度オプションを非表示
+    const optionsContainer = document.getElementById(`${formType}FrequencyOptions`);
     if (optionsContainer) {
         optionsContainer.style.display = 'none';
     }
     
     // 選択状態を更新
-    const buttons = optionsContainer?.querySelectorAll('.frequency-btn');
+    const buttons = document.querySelectorAll('.frequency-btn');
     buttons?.forEach(btn => {
         btn.classList.remove('selected');
-        if (btn.textContent.trim() === getFrequencyText(frequency)) {
+        if (btn.dataset.frequency === frequency) {
             btn.classList.add('selected');
         }
     });
@@ -2063,12 +2069,14 @@ function selectFrequency(formType, frequency) {
 // ルーティンフォームの送信処理
 function handleRoutineFormSubmit(event) {
     event.preventDefault();
+    console.log('ルーティンフォーム送信');
     
-    const formType = event.target.id === 'addRoutineForm' ? 'add' : 'edit';
-    const title = document.getElementById(`${formType}RoutineTitle`).value.trim();
-    const description = document.getElementById(`${formType}RoutineDescription`).value.trim();
-    const time = document.getElementById(`${formType}RoutineTime`).value;
-    const frequency = document.getElementById(`${formType}RoutineFrequency`).value;
+    const formType = event.target.id === 'routineForm' ? 'add' : 'edit';
+    const title = document.getElementById('routineName').value.trim();
+    const description = document.getElementById('routineDescription').value.trim();
+    const frequency = document.getElementById('addRoutineFrequency').value;
+    
+    console.log('フォームデータ:', { title, description, frequency });
     
     if (!title) {
         showNotification('タイトルを入力してください', 'error');
@@ -2086,17 +2094,23 @@ function handleRoutineFormSubmit(event) {
             id: Date.now().toString(),
             title,
             description,
-            time,
             frequency,
             createdAt: new Date().toISOString(),
             userId: currentUserInfo?.id || 'unknown'
         };
+        
+        console.log('新しいルーティン:', newRoutine);
         
         routines.push(newRoutine);
         saveData();
         
         // フォームをリセット
         event.target.reset();
+        document.getElementById('addRoutineFrequency').value = '';
+        
+        // 頻度ボタンの選択状態をリセット
+        const frequencyButtons = document.querySelectorAll('.frequency-btn');
+        frequencyButtons.forEach(btn => btn.classList.remove('active'));
         
         // メイン画面に戻る
         showMainScreen();
@@ -2111,10 +2125,32 @@ function handleRoutineFormSubmit(event) {
 
 // 頻度ボタンのクリック処理
 function handleFrequencyButtonClick(event) {
-    const formType = event.target.closest('form').id === 'addRoutineForm' ? 'add' : 'edit';
-    const currentFrequency = document.getElementById(`${formType}RoutineFrequency`).value;
+    console.log('頻度ボタンクリック:', event.target);
     
-    showFrequencyOptions(formType, currentFrequency);
+    // クリックされたボタンの頻度を取得
+    const frequency = event.target.dataset.frequency;
+    if (!frequency) {
+        console.error('頻度が設定されていません');
+        return;
+    }
+    
+    console.log('選択された頻度:', frequency);
+    
+    // フォームタイプを判定
+    const form = event.target.closest('form');
+    const formType = form ? (form.id === 'routineForm' ? 'add' : 'edit') : 'add';
+    
+    // 頻度を設定
+    selectFrequency(formType, frequency);
+    
+    // 選択状態を更新
+    const frequencyButtons = form.querySelectorAll('.frequency-btn');
+    frequencyButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.frequency === frequency) {
+            btn.classList.add('active');
+        }
+    });
 }
 
 // タブボタンのクリック処理
