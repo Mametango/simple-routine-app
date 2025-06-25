@@ -1261,4 +1261,132 @@ body {
 
 .routine-item {
     animation: fadeIn 0.3s ease;
+}
+
+/* ポップアップブロックダイアログ */
+.popup-blocked-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.popup-blocked-dialog .dialog-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.popup-blocked-dialog h3 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 18px;
+}
+
+.popup-blocked-dialog p {
+    margin: 0 0 20px 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+.popup-blocked-dialog .dialog-options {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.popup-blocked-dialog .btn-primary,
+.popup-blocked-dialog .btn-secondary,
+.popup-blocked-dialog .btn-cancel {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 80px;
+}
+
+.popup-blocked-dialog .btn-primary {
+    background: #4285f4;
+    color: white;
+}
+
+.popup-blocked-dialog .btn-primary:hover {
+    background: #3367d6;
+}
+
+.popup-blocked-dialog .btn-secondary {
+    background: #f8f9fa;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.popup-blocked-dialog .btn-secondary:hover {
+    background: #e8eaed;
+}
+
+.popup-blocked-dialog .btn-cancel {
+    background: #f1f3f4;
+    color: #666;
+}
+
+.popup-blocked-dialog .btn-cancel:hover {
+    background: #e8eaed;
+}
+
+.popup-blocked-dialog .popup-instructions {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+    border-left: 4px solid #4285f4;
+}
+
+.popup-blocked-dialog .popup-instructions h4 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 14px;
+}
+
+.popup-blocked-dialog .popup-instructions ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.popup-blocked-dialog .popup-instructions li {
+    margin-bottom: 6px;
+}
+
+/* モバイル対応 */
+@media (max-width: 480px) {
+    .popup-blocked-dialog .dialog-content {
+        margin: 20px;
+        padding: 20px;
+    }
+    
+    .popup-blocked-dialog .dialog-options {
+        flex-direction: column;
+    }
+    
+    .popup-blocked-dialog .btn-primary,
+    .popup-blocked-dialog .btn-secondary,
+    .popup-blocked-dialog .btn-cancel {
+        flex: none;
+        width: 100%;
+    }
 } 

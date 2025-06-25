@@ -559,7 +559,8 @@ async function handleGoogleLogin() {
         // ポップアップブロックチェック
         const popupBlocked = await checkPopupBlocked();
         if (popupBlocked) {
-            showNotification('ポップアップがブロックされています。ブラウザの設定でポップアップを許可してください。', 'error');
+            // ポップアップがブロックされている場合の代替手段を提案
+            showPopupBlockedDialog();
             return;
         }
         
@@ -623,6 +624,7 @@ async function handleGoogleLogin() {
         switch (error.code) {
             case 'auth/popup-blocked':
                 errorMessage = 'ポップアップがブロックされています。ブラウザの設定でポップアップを許可してください。';
+                showPopupBlockedDialog();
                 break;
             case 'auth/popup-closed-by-user':
                 errorMessage = 'ログインがキャンセルされました';
@@ -1700,8 +1702,24 @@ async function handleRegularLogin(email, password) {
             return;
         }
         
+        // パスワードチェック
         if (user.password !== password) {
-            throw new Error('パスワードが正しくありません');
+            // 管理者アカウントの特別処理
+            if (email === 'yasnaries@gmail.com') {
+                // 管理者アカウントの場合は、パスワードが空または未設定の場合に自動設定
+                if (!user.password || user.password === '') {
+                    user.password = password;
+                    const updatedUsers = users.map(u => 
+                        u.email === email ? user : u
+                    );
+                    localStorage.setItem('users', JSON.stringify(updatedUsers));
+                    console.log('管理者アカウントのパスワードを設定しました');
+                } else {
+                    throw new Error('管理者パスワードが正しくありません。正しいパスワードを入力してください。');
+                }
+            } else {
+                throw new Error('パスワードが正しくありません');
+            }
         }
         
         // ユーザー情報を設定
@@ -1749,7 +1767,8 @@ async function handleRegularLogin(email, password) {
         
         // 成功通知
         const storageText = currentStorage === 'firebase' ? 'サーバー同期' : 'ローカル保存';
-        showNotification(`ログインに成功しました！（${storageText}モード）`, 'success');
+        const userTypeText = email === 'yasnaries@gmail.com' ? '（管理者）' : '';
+        showNotification(`ログインに成功しました！${userTypeText}（${storageText}モード）`, 'success');
         
     } catch (error) {
         console.error('通常ログインエラー:', error);
@@ -1844,4 +1863,70 @@ function handleAuthSubmit(event) {
     
     // 通常ログイン処理を実行
     handleRegularLogin(email, password);
+}
+
+// ポップアップブロック時のダイアログ表示
+function showPopupBlockedDialog() {
+    const dialogHTML = `
+        <div class="popup-blocked-dialog" id="popupBlockedDialog">
+            <div class="dialog-content">
+                <h3>ポップアップがブロックされています</h3>
+                <p>Googleログインにはポップアップの許可が必要です。</p>
+                <div class="dialog-options">
+                    <button onclick="tryGoogleLoginAgain()" class="btn-primary">再試行</button>
+                    <button onclick="useRegularLogin()" class="btn-secondary">通常ログインを使用</button>
+                    <button onclick="closePopupBlockedDialog()" class="btn-cancel">キャンセル</button>
+                </div>
+                <div class="popup-instructions">
+                    <h4>ポップアップを許可する方法：</h4>
+                    <ul>
+                        <li>ブラウザのアドレスバー横のアイコンをクリック</li>
+                        <li>「ポップアップを許可」を選択</li>
+                        <li>ページを再読み込みしてから再試行</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 既存のダイアログを削除
+    const existingDialog = document.getElementById('popupBlockedDialog');
+    if (existingDialog) {
+        existingDialog.remove();
+    }
+    
+    // 新しいダイアログを追加
+    document.body.insertAdjacentHTML('beforeend', dialogHTML);
+    
+    // フラグをリセット
+    isGoogleLoginInProgress = false;
+    window.isGoogleLoginInProgress = false;
+}
+
+// ポップアップブロックダイアログを閉じる
+function closePopupBlockedDialog() {
+    const dialog = document.getElementById('popupBlockedDialog');
+    if (dialog) {
+        dialog.remove();
+    }
+}
+
+// Googleログインを再試行
+function tryGoogleLoginAgain() {
+    closePopupBlockedDialog();
+    setTimeout(() => {
+        handleGoogleLogin();
+    }, 500);
+}
+
+// 通常ログインに切り替え
+function useRegularLogin() {
+    closePopupBlockedDialog();
+    showNotification('通常ログインフォームに切り替えました', 'info');
+    
+    // ログインフォームにフォーカス
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+        emailInput.focus();
+    }
 } 
