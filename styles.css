@@ -196,7 +196,16 @@ body {
 .app {
     display: none;
     min-height: 100vh;
-    background: #f8fafc;
+    background: #f8fafc !important;
+    color: #333;
+    position: relative;
+    z-index: 1;
+}
+
+/* メインアプリが表示されている時のスタイル */
+.app[style*="display: block"] {
+    display: block !important;
+    background: #f8fafc !important;
 }
 
 .header {
