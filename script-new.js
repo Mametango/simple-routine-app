@@ -1,5 +1,10 @@
 // 洗練されたログイン画面用のJavaScript
 
+// デバッグ情報
+console.log('=== script-new.js 読み込み開始 ===');
+console.log('バージョン: 1.0.3');
+console.log('読み込み時刻:', new Date().toISOString());
+
 // グローバル変数の定義
 let currentUserInfo = null;
 let currentStorage = 'local';
@@ -8,7 +13,8 @@ let completions = [];
 
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('ページ読み込み完了');
+    console.log('=== ページ読み込み完了 ===');
+    console.log('script-new.js が正常に読み込まれました');
     
     // データの初期化
     initializeData();
@@ -16,6 +22,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Lucideアイコンの初期化
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
+        console.log('Lucideアイコン初期化完了');
+    } else {
+        console.warn('Lucideライブラリが見つかりません');
     }
     
     // 認証状態の確認
@@ -29,6 +38,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // モバイルデバイス検出
     detectMobileDevice();
+    
+    console.log('=== 初期化完了 ===');
 });
 
 // データの初期化
