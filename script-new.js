@@ -2170,6 +2170,32 @@ function selectFrequency(formType, frequency) {
             btn.classList.add('selected');
         }
     });
+    
+    // 頻度に応じて追加フィールドを表示/非表示
+    if (formType === 'add') {
+        // 毎週の曜日選択
+        const weeklyDaysRow = document.getElementById('addWeeklyDaysRow');
+        if (weeklyDaysRow) {
+            weeklyDaysRow.style.display = frequency === 'weekly' ? 'block' : 'none';
+        }
+        
+        // 毎月の日付選択
+        const monthlyDateRow = document.getElementById('addMonthlyDateRow');
+        if (monthlyDateRow) {
+            monthlyDateRow.style.display = frequency === 'monthly' ? 'block' : 'none';
+        }
+    } else if (formType === 'edit') {
+        // 編集フォームの場合
+        const editWeeklyDaysRow = document.getElementById('editWeeklyDaysRow');
+        if (editWeeklyDaysRow) {
+            editWeeklyDaysRow.style.display = frequency === 'weekly' ? 'block' : 'none';
+        }
+        
+        const editMonthlyDateRow = document.getElementById('editMonthlyDateRow');
+        if (editMonthlyDateRow) {
+            editMonthlyDateRow.style.display = frequency === 'monthly' ? 'block' : 'none';
+        }
+    }
 }
 
 // ルーティンフォームの送信処理
@@ -2194,6 +2220,28 @@ function handleRoutineFormSubmit(event) {
         return;
     }
     
+    // 頻度に応じた追加データを取得
+    let additionalData = {};
+    
+    if (frequency === 'weekly') {
+        const selectedWeekdays = Array.from(document.querySelectorAll('.add-weekday-input:checked'))
+            .map(checkbox => parseInt(checkbox.value));
+        if (selectedWeekdays.length === 0) {
+            showNotification('曜日を選択してください', 'error');
+            return;
+        }
+        additionalData.weeklyDays = selectedWeekdays;
+    }
+    
+    if (frequency === 'monthly') {
+        const monthlyDate = document.getElementById('addMonthlyDateInput').value;
+        if (!monthlyDate || monthlyDate < 1 || monthlyDate > 31) {
+            showNotification('1から31の間の日付を入力してください', 'error');
+            return;
+        }
+        additionalData.monthlyDate = parseInt(monthlyDate);
+    }
+    
     if (formType === 'add') {
         // 新しいルーティンを追加
         const newRoutine = {
@@ -2201,6 +2249,7 @@ function handleRoutineFormSubmit(event) {
             title,
             description,
             frequency,
+            ...additionalData,
             createdAt: new Date().toISOString(),
             userId: currentUserInfo?.id || 'unknown'
         };
@@ -2217,6 +2266,12 @@ function handleRoutineFormSubmit(event) {
         // 頻度ボタンの選択状態をリセット
         const frequencyButtons = document.querySelectorAll('.frequency-btn');
         frequencyButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // 追加フィールドを非表示
+        const weeklyDaysRow = document.getElementById('addWeeklyDaysRow');
+        const monthlyDateRow = document.getElementById('addMonthlyDateRow');
+        if (weeklyDaysRow) weeklyDaysRow.style.display = 'none';
+        if (monthlyDateRow) monthlyDateRow.style.display = 'none';
         
         // メイン画面に戻る
         showMainScreen();
@@ -2252,9 +2307,9 @@ function handleFrequencyButtonClick(event) {
     // 選択状態を更新
     const frequencyButtons = form.querySelectorAll('.frequency-btn');
     frequencyButtons.forEach(btn => {
-        btn.classList.remove('active');
+        btn.classList.remove('active', 'selected');
         if (btn.dataset.frequency === frequency) {
-            btn.classList.add('active');
+            btn.classList.add('active', 'selected');
         }
     });
 }

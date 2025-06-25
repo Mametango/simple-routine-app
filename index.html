@@ -283,6 +283,40 @@
                     <div id="frequencyOptions" class="frequency-options" style="display: none;">
                         <!-- 頻度オプションが動的に追加されます -->
                     </div>
+                    <div class="form-row" id="addWeeklyDaysRow" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">曜日</label>
+                            <div class="weekday-checkboxes">
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="1" class="add-weekday-input"> 月
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="2" class="add-weekday-input"> 火
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="3" class="add-weekday-input"> 水
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="4" class="add-weekday-input"> 木
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="5" class="add-weekday-input"> 金
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="6" class="add-weekday-input"> 土
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" value="0" class="add-weekday-input"> 日
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row" id="addMonthlyDateRow" style="display: none;">
+                        <div class="form-group">
+                            <label for="addMonthlyDateInput" class="form-label">毎月の日付</label>
+                            <input type="number" id="addMonthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
+                        </div>
+                    </div>
                     <div class="form-buttons">
                         <button type="submit" class="save-button">保存</button>
                         <button type="button" class="cancel-button">キャンセル</button>

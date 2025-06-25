@@ -1020,6 +1020,62 @@ body {
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
+/* 毎週の曜日チェックボックス */
+.weekday-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.weekday-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.weekday-checkbox:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+
+.weekday-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+}
+
+.weekday-checkbox input[type="checkbox"]:checked + span {
+    font-weight: 600;
+}
+
+/* 毎月の日付入力 */
+#addMonthlyDateInput,
+#editMonthlyDateInput {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+#addMonthlyDateInput:focus,
+#editMonthlyDateInput:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 /* 同期状態表示 */
 .sync-status-container {
     margin: 0 15px;
