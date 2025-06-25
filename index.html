@@ -132,6 +132,10 @@
                     </button>
                     <button id="notificationBtn" class="notification-btn" onclick="requestNotificationPermission()">🔔</button>
                     <button id="settingsBtn" class="settings-btn" onclick="showStorageModal()">⚙️</button>
+                    <!-- 管理者ボタン（管理者のみ表示） -->
+                    <button id="adminBtn" class="admin-btn" onclick="showAdminDashboard()" style="display: none;" title="管理者ダッシュボード">
+                        <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
+                    </button>
                 </div>
             </div>
         </header>
