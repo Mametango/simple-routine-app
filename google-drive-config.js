@@ -8,9 +8,11 @@
 
 const GOOGLE_DRIVE_CONFIG = {
     // Google Cloud Consoleで取得したクライアントID
+    // 例: '123456789-abcdefghijklmnop.apps.googleusercontent.com'
     clientId: 'YOUR_GOOGLE_CLIENT_ID',
     
     // Google Cloud Consoleで取得したAPIキー
+    // 例: 'AIzaSyB1234567890abcdefghijklmnopqrstuvwxyz'
     apiKey: 'YOUR_GOOGLE_API_KEY',
     
     // 必要なスコープ
@@ -38,4 +40,10 @@ Google Drive API設定について：
 7. 取得したクライアントIDとAPIキーを上記の設定に記入
 
 注意: 本番環境では、APIキーとクライアントIDを適切に管理してください。
+
+現在の設定状態:
+- クライアントID: ${GOOGLE_DRIVE_CONFIG.clientId === 'YOUR_GOOGLE_CLIENT_ID' ? '未設定' : '設定済み'}
+- APIキー: ${GOOGLE_DRIVE_CONFIG.apiKey === 'YOUR_GOOGLE_API_KEY' ? '未設定' : '設定済み'}
+
+設定が未設定の場合、Google Drive同期は動作しません。
 `); 
