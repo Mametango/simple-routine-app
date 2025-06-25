@@ -701,6 +701,9 @@ function showMainScreen() {
     
     if (mainScreen) mainScreen.style.display = 'block';
     if (addRoutineScreen) addRoutineScreen.style.display = 'none';
+    
+    // ルーティンの表示を更新
+    loadRoutines();
 }
 
 // 同期状態を更新
@@ -2177,12 +2180,16 @@ function selectFrequency(formType, frequency) {
         const weeklyDaysRow = document.getElementById('addWeeklyDaysRow');
         if (weeklyDaysRow) {
             weeklyDaysRow.style.display = frequency === 'weekly' ? 'block' : 'none';
+            console.log('毎週の曜日選択フィールド:', frequency === 'weekly' ? '表示' : '非表示');
         }
         
         // 毎月の日付選択
         const monthlyDateRow = document.getElementById('addMonthlyDateRow');
         if (monthlyDateRow) {
             monthlyDateRow.style.display = frequency === 'monthly' ? 'block' : 'none';
+            console.log('毎月の日付選択フィールド:', frequency === 'monthly' ? '表示' : '非表示');
+        } else {
+            console.error('addMonthlyDateRow要素が見つかりません');
         }
     } else if (formType === 'edit') {
         // 編集フォームの場合
@@ -2235,11 +2242,13 @@ function handleRoutineFormSubmit(event) {
     
     if (frequency === 'monthly') {
         const monthlyDate = document.getElementById('addMonthlyDateInput').value;
+        console.log('毎月の日付入力値:', monthlyDate);
         if (!monthlyDate || monthlyDate < 1 || monthlyDate > 31) {
             showNotification('1から31の間の日付を入力してください', 'error');
             return;
         }
         additionalData.monthlyDate = parseInt(monthlyDate);
+        console.log('毎月の日付データ設定:', additionalData.monthlyDate);
     }
     
     if (formType === 'add') {
@@ -2276,6 +2285,10 @@ function handleRoutineFormSubmit(event) {
         // メイン画面に戻る
         showMainScreen();
         
+        // ルーティンの表示を更新
+        displayTodayRoutines();
+        displayAllRoutines();
+        
         showNotification('ルーティンを追加しました', 'success');
     } else {
         // 既存のルーティンを更新
@@ -2287,6 +2300,7 @@ function handleRoutineFormSubmit(event) {
 // 頻度ボタンのクリック処理
 function handleFrequencyButtonClick(event) {
     console.log('頻度ボタンクリック:', event.target);
+    console.log('頻度ボタンのdata-frequency:', event.target.dataset.frequency);
     
     // クリックされたボタンの頻度を取得
     const frequency = event.target.dataset.frequency;
@@ -2300,6 +2314,7 @@ function handleFrequencyButtonClick(event) {
     // フォームタイプを判定
     const form = event.target.closest('form');
     const formType = form ? (form.id === 'routineForm' ? 'add' : 'edit') : 'add';
+    console.log('フォームタイプ:', formType);
     
     // 頻度を設定
     selectFrequency(formType, frequency);
