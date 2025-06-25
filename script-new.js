@@ -614,7 +614,18 @@ async function handleGoogleLogin() {
         // メインアプリを表示
         showMainApp();
         
-        showNotification('Googleログインに成功しました！（サーバー同期モード）', 'success');
+        // 成功通知（詳細版）
+        const userTypeText = user.email === 'yasnaries@gmail.com' ? '（管理者）' : '';
+        const storageText = 'サーバー同期';
+        showNotification(`Googleログインに成功しました！${userTypeText}（${storageText}モード）`, 'success');
+        
+        console.log('Googleログイン完了:', {
+            email: user.email,
+            displayName: user.displayName,
+            userType: user.email === 'yasnaries@gmail.com' ? 'admin' : 'user',
+            storage: 'firebase',
+            isGoogleUser: true
+        });
         
     } catch (error) {
         console.error('Googleログインエラー:', error);
@@ -657,6 +668,89 @@ async function handleGoogleLogin() {
             isGoogleLoginInProgress = false;
             window.isGoogleLoginInProgress = false;
         }
+    }
+}
+
+// 認証フォーム送信処理
+function handleAuthSubmit(event) {
+    event.preventDefault();
+    console.log('認証フォーム送信');
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    if (!email || !password) {
+        showNotification('メールアドレスとパスワードを入力してください', 'error');
+        return;
+    }
+    
+    // 通常ログイン処理を実行
+    handleRegularLogin(email, password);
+}
+
+// ポップアップブロック時のダイアログ表示
+function showPopupBlockedDialog() {
+    const dialogHTML = `
+        <div class="popup-blocked-dialog" id="popupBlockedDialog">
+            <div class="dialog-content">
+                <h3>ポップアップがブロックされています</h3>
+                <p>Googleログインにはポップアップの許可が必要です。</p>
+                <div class="dialog-options">
+                    <button onclick="tryGoogleLoginAgain()" class="btn-primary">再試行</button>
+                    <button onclick="useRegularLogin()" class="btn-secondary">通常ログインを使用</button>
+                    <button onclick="closePopupBlockedDialog()" class="btn-cancel">キャンセル</button>
+                </div>
+                <div class="popup-instructions">
+                    <h4>ポップアップを許可する方法：</h4>
+                    <ul>
+                        <li>ブラウザのアドレスバー横のアイコンをクリック</li>
+                        <li>「ポップアップを許可」を選択</li>
+                        <li>ページを再読み込みしてから再試行</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 既存のダイアログを削除
+    const existingDialog = document.getElementById('popupBlockedDialog');
+    if (existingDialog) {
+        existingDialog.remove();
+    }
+    
+    // 新しいダイアログを追加
+    document.body.insertAdjacentHTML('beforeend', dialogHTML);
+    
+    // フラグをリセット
+    isGoogleLoginInProgress = false;
+    window.isGoogleLoginInProgress = false;
+}
+
+// ポップアップブロックダイアログを閉じる
+function closePopupBlockedDialog() {
+    const dialog = document.getElementById('popupBlockedDialog');
+    if (dialog) {
+        dialog.remove();
+    }
+}
+
+// Googleログインを再試行
+function tryGoogleLoginAgain() {
+    closePopupBlockedDialog();
+    setTimeout(() => {
+        handleGoogleLogin();
+    }, 500);
+}
+
+// 通常ログインに切り替え
+function useRegularLogin() {
+    closePopupBlockedDialog();
+    showNotification('通常ログインフォームに切り替えました', 'info');
+    
+    // ログインフォームにフォーカス
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+        emailInput.focus();
     }
 }
 
@@ -761,896 +855,19 @@ function togglePasswordVisibility() {
     }
 }
 
-// ログイン状態保持の処理
+// ログイン永続化の変更
 function handlePersistenceChange(event) {
-    const rememberMe = event.target.checked;
-    console.log('ログイン状態保持変更:', rememberMe);
-    
-    if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-    } else {
-        localStorage.removeItem('rememberMe');
-        sessionStorage.removeItem('rememberMe');
-    }
+    const isChecked = event.target.checked;
+    localStorage.setItem('rememberMe', isChecked);
+    console.log('ログイン永続化設定:', isChecked);
 }
 
-// ログイン状態保持の復元
+// 永続化状態の復元
 function restorePersistenceState() {
-    const rememberMe = document.getElementById('rememberMe');
-    if (rememberMe) {
-        const isRemembered = localStorage.getItem('rememberMe') || sessionStorage.getItem('rememberMe');
-        rememberMe.checked = !!isRemembered;
-    }
-}
-
-// デモユーザーの作成
-function createDemoUser() {
-    console.log('デモユーザー作成');
-    
-    try {
-        const demoUser = {
-            id: 'demo-' + Date.now(),
-            email: 'demo@example.com',
-            password: 'demo123',
-            displayName: 'デモユーザー',
-            createdAt: new Date().toISOString()
-        };
-        
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        users.push(demoUser);
-        localStorage.setItem('users', JSON.stringify(users));
-        
-        console.log('デモユーザー作成完了');
-        showNotification('デモユーザーが作成されました', 'success');
-        
-        // 自動ログイン
-        handleLocalAuth(demoUser.email, demoUser.password, 'LOCAL');
-        
-    } catch (error) {
-        console.error('デモユーザー作成エラー:', error);
-        showNotification('デモユーザーの作成に失敗しました', 'error');
-    }
-}
-
-// 通知表示
-function showNotification(message, type = 'info') {
-    console.log('通知表示:', message, type);
-    
-    // 既存の通知を削除
-    const existingNotifications = document.querySelectorAll('.ai-notification');
-    existingNotifications.forEach(notification => notification.remove());
-    
-    // 新しい通知を作成
-    const notification = document.createElement('div');
-    notification.className = `ai-notification ai-notification-${type}`;
-    notification.innerHTML = `
-        <div class="ai-notification-content">
-            <div class="ai-notification-message">${message}</div>
-            <button class="ai-notification-close" onclick="this.parentElement.parentElement.remove()">
-                <i data-lucide="x"></i>
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Lucideアイコンを初期化
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-    
-    // 5秒後に自動削除
-    setTimeout(() => {
-        if (notification.parentElement) {
-            notification.remove();
-        }
-    }, 5000);
-}
-
-// ストレージタイプの設定
-function setStorageType(type) {
-    console.log('ストレージタイプ設定:', type);
-    localStorage.setItem('storageType', type);
-}
-
-// ユーザータイプ関連の関数
-function getUserType() {
-    if (!currentUserInfo) {
-        return 'general';
-    }
-    
-    // 管理者チェック
-    if (currentUserInfo.email === 'yasnaries@gmail.com') {
-        return 'admin';
-    }
-    
-    // ローカルストレージからユーザータイプを取得
-    const userType = localStorage.getItem(`userType_${currentUserInfo.id}`);
-    if (userType) {
-        return userType;
-    }
-    
-    // デフォルトは一般ユーザー
-    return 'general';
-}
-
-function setUserType(user) {
-    console.log('ユーザータイプ設定:', user.email);
-    
-    let userType = 'general';
-    
-    // 管理者チェック
-    if (user.email === 'yasnaries@gmail.com') {
-        userType = 'admin';
-    } else {
-        // ローカルストレージからユーザータイプを取得
-        const savedUserType = localStorage.getItem(`userType_${user.id || user.uid}`);
-        if (savedUserType) {
-            userType = savedUserType;
-        }
-    }
-    
-    // ユーザータイプを保存
-    if (user.id || user.uid) {
-        localStorage.setItem(`userType_${user.id || user.uid}`, userType);
-    }
-    
-    // 表示を更新
-    updateUserTypeDisplay(userType);
-    
-    console.log('ユーザータイプ設定完了:', userType);
-}
-
-function updateUserTypeDisplay(userType) {
-    const userTypeDisplay = document.getElementById('userTypeDisplay');
-    if (userTypeDisplay) {
-        userTypeDisplay.textContent = userType;
-        userTypeDisplay.className = `user-type-display user-type-${userType}`;
-    }
-}
-
-function isAdmin() {
-    return getUserType() === 'admin';
-}
-
-// 管理者ダッシュボード関連の関数
-function showAdminDashboard() {
-    console.log('管理者ダッシュボード表示');
-    
-    // 管理者ダッシュボードのHTMLを作成
-    const dashboardHTML = `
-        <div class="admin-dashboard" id="adminDashboard">
-            <div class="dashboard-header">
-                <h2>管理者ダッシュボード</h2>
-                <button class="close-btn" onclick="hideAdminDashboard()">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-            <div class="dashboard-content">
-                <div class="dashboard-tabs">
-                    <button class="tab-btn active" onclick="showAdminTab('users')">ユーザー管理</button>
-                    <button class="tab-btn" onclick="showAdminTab('friends')">友達管理</button>
-                    <button class="tab-btn" onclick="showAdminTab('stats')">統計</button>
-                </div>
-                <div class="tab-content" id="adminTabContent">
-                    <!-- タブコンテンツがここに表示されます -->
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // ダッシュボードを表示
-    const app = document.getElementById('app');
-    if (app) {
-        app.insertAdjacentHTML('beforeend', dashboardHTML);
-        
-        // 最初のタブを表示
-        showAdminTab('users');
-        
-        // Lucideアイコンを初期化
-        if (window.lucide) {
-            lucide.createIcons();
-        }
-    }
-}
-
-function hideAdminDashboard() {
-    const dashboard = document.getElementById('adminDashboard');
-    if (dashboard) {
-        dashboard.remove();
-    }
-}
-
-function showAdminTab(tabName) {
-    console.log('管理者タブ表示:', tabName);
-    
-    // タブボタンのアクティブ状態を更新
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    tabButtons.forEach(btn => btn.classList.remove('active'));
-    
-    const activeTabBtn = document.querySelector(`[onclick="showAdminTab('${tabName}')"]`);
-    if (activeTabBtn) {
-        activeTabBtn.classList.add('active');
-    }
-    
-    // タブコンテンツを更新
-    const tabContent = document.getElementById('adminTabContent');
-    if (!tabContent) return;
-    
-    switch (tabName) {
-        case 'users':
-            tabContent.innerHTML = `
-                <div class="admin-section">
-                    <h3>ユーザー管理</h3>
-                    <p>ユーザー管理機能は開発中です。</p>
-                </div>
-            `;
-            break;
-        case 'friends':
-            tabContent.innerHTML = `
-                <div class="admin-section">
-                    <h3>友達管理</h3>
-                    <p>友達管理機能は開発中です。</p>
-                </div>
-            `;
-            break;
-        case 'stats':
-            tabContent.innerHTML = `
-                <div class="admin-section">
-                    <h3>統計</h3>
-                    <p>統計機能は開発中です。</p>
-                </div>
-            `;
-            break;
-    }
-}
-
-// 手動同期機能
-function manualSync() {
-    console.log('手動同期開始');
-    
-    const syncBtn = document.getElementById('syncBtn');
-    if (syncBtn) {
-        syncBtn.classList.add('syncing');
-    }
-    
-    // 同期処理をシミュレート
-    setTimeout(() => {
-        console.log('手動同期完了');
-        
-        if (syncBtn) {
-            syncBtn.classList.remove('syncing');
-        }
-        
-        showNotification('同期が完了しました', 'success');
-        updateSyncStatus();
-    }, 2000);
-}
-
-// 通知許可要求
-function requestNotificationPermission() {
-    console.log('通知許可要求');
-    
-    if ('Notification' in window) {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                showNotification('通知が有効になりました', 'success');
-            } else {
-                showNotification('通知が拒否されました', 'info');
-            }
-        });
-    } else {
-        showNotification('このブラウザは通知をサポートしていません', 'warning');
-    }
-}
-
-// ストレージモーダル関連
-function showStorageModal() {
-    const storageModal = document.getElementById('storageModal');
-    if (storageModal) {
-        storageModal.style.display = 'block';
-    }
-}
-
-function hideStorageModal() {
-    const storageModal = document.getElementById('storageModal');
-    if (storageModal) {
-        storageModal.style.display = 'none';
-    }
-}
-
-function selectStorage(storageType) {
-    console.log('ストレージ選択:', storageType);
-    
-    // 選択状態を更新
-    const storageOptions = document.querySelectorAll('.storage-option');
-    storageOptions.forEach(option => {
-        option.classList.remove('selected');
-    });
-    
-    const selectedOption = document.querySelector(`[onclick="selectStorage('${storageType}')"]`);
-    if (selectedOption) {
-        selectedOption.classList.add('selected');
-    }
-    
-    // 選択されたストレージタイプを保存
-    localStorage.setItem('selectedStorage', storageType);
-}
-
-function confirmStorageSelection() {
-    const selectedStorage = localStorage.getItem('selectedStorage') || 'local';
-    console.log('ストレージ選択確認:', selectedStorage);
-    
-    currentStorage = selectedStorage;
-    localStorage.setItem('storageType', selectedStorage);
-    
-    hideStorageModal();
-    updateSyncStatus();
-    
-    showNotification(`${getStorageDisplayName(selectedStorage)}が選択されました`, 'success');
-}
-
-function getStorageDisplayName(storageType) {
-    switch (storageType) {
-        case 'local': return 'ローカルストレージ';
-        case 'firebase': return 'Firebase';
-        case 'google-drive': return 'Google Drive';
-        default: return 'ローカルストレージ';
-    }
-}
-
-// アプリの初期化
-function initializeApp() {
-    console.log('アプリ初期化開始');
-    
-    try {
-        // ストレージの初期化
-        initializeStorage();
-        
-        // ルーティンの読み込み
-        loadRoutines();
-        
-        // 今日のルーティンの表示
-        displayTodayRoutines();
-        
-        // 同期状態の更新
-        updateSyncStatus();
-        
-        console.log('アプリ初期化完了');
-    } catch (error) {
-        console.error('アプリ初期化エラー:', error);
-    }
-}
-
-// ストレージの初期化
-function initializeStorage() {
-    console.log('ストレージ初期化');
-    
-    const storageType = localStorage.getItem('storageType') || 'local';
-    
-    if (storageType === 'firebase' && typeof firebase !== 'undefined') {
-        console.log('Firebaseストレージ初期化');
-        // Firebase初期化処理
-    } else {
-        console.log('ローカルストレージ初期化');
-        // ローカルストレージ初期化処理
-    }
-}
-
-// モバイルデバイス検出
-function detectMobileDevice() {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-        document.body.classList.add('mobile-device');
-        console.log('モバイルデバイス検出');
-    }
-}
-
-// Firebase設定確認
-function checkFirebaseStatus() {
-    console.log('Firebase設定確認');
-    
-    if (typeof firebase !== 'undefined') {
-        showNotification('Firebaseは正常に初期化されています', 'success');
-    } else {
-        showNotification('Firebaseが初期化されていません', 'error');
-    }
-}
-
-// Firebase設定修正
-function fixFirebaseConfig() {
-    console.log('Firebase設定修正');
-    showNotification('Firebase設定の修正を開始します', 'info');
-    
-    // 設定修正のロジックを実装
-    setTimeout(() => {
-        showNotification('Firebase設定の修正が完了しました', 'success');
-    }, 2000);
-}
-
-// ログアウト処理
-async function logout() {
-    console.log('ログアウト開始');
-    
-    try {
-        // Firebase認証からログアウト
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            await firebase.auth().signOut();
-            console.log('Firebase認証からログアウト完了');
-        }
-        
-        // ローカルログイン状態をクリア
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('userInfo');
-        localStorage.removeItem('storageType');
-        
-        // ユーザー情報をリセット
-        currentUserInfo = null;
-        currentStorage = 'local';
-        
-        // メインアプリを非表示
-        const app = document.getElementById('app');
-        if (app) {
-            app.style.display = 'none';
-            app.classList.remove('app-active');
-        }
-        
-        // ログイン画面を表示
-        const loginContainer = document.getElementById('loginContainer');
-        if (loginContainer) {
-            loginContainer.style.display = 'flex';
-        }
-        
-        // フォームをリセット
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.reset();
-        }
-        
-        console.log('ログアウト完了');
-        showNotification('ログアウトしました。', 'info');
-        
-    } catch (error) {
-        console.error('ログアウトエラー:', error);
-        showNotification('ログアウト中にエラーが発生しました。', 'error');
-    }
-}
-
-// ログインフォーム送信処理
-document.addEventListener('DOMContentLoaded', function() {
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const rememberMe = document.getElementById('rememberMe');
-            
-            if (!email || !password) {
-                showNotification('メールアドレスとパスワードを入力してください。', 'error');
-                return;
-            }
-            
-            // ログインボタンを無効化
-            const authButton = document.getElementById('authButton');
-            if (authButton) {
-                authButton.disabled = true;
-                authButton.innerHTML = '<i data-lucide="loader-2" class="button-icon spinning"></i>ログイン中...';
-            }
-            
-            try {
-                // 通常ログインを実行
-                await handleRegularLogin(email, password);
-                
-            } catch (error) {
-                console.error('ログインエラー:', error);
-                showNotification('ログインに失敗しました: ' + error.message, 'error');
-            } finally {
-                // ログインボタンを復元
-                if (authButton) {
-                    authButton.disabled = false;
-                    authButton.innerHTML = '<i data-lucide="log-in" class="button-icon"></i>ログイン';
-                }
-            }
-        });
-    }
-    
-    // Googleログインボタンのイベントリスナー
-    const googleLoginBtn = document.getElementById('googleLoginBtn');
-    if (googleLoginBtn) {
-        googleLoginBtn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            
-            // ボタンを無効化
-            googleLoginBtn.disabled = true;
-            googleLoginBtn.innerHTML = '<i data-lucide="loader-2" class="button-icon spinning"></i>ログイン中...';
-            
-            try {
-                await handleGoogleLogin();
-            } catch (error) {
-                console.error('Googleログインエラー:', error);
-                showNotification('Googleログインに失敗しました。', 'error');
-            } finally {
-                // ボタンを復元
-                googleLoginBtn.disabled = false;
-                googleLoginBtn.innerHTML = '<i data-lucide="chrome" class="button-icon"></i>Googleでログイン';
-            }
-        });
-    }
-});
-
-// データを保存する関数
-function saveData() {
-    console.log('データ保存開始');
-    
-    try {
-        // ルーティンデータを保存
-        localStorage.setItem('routines', JSON.stringify(routines));
-        
-        // 完了データを保存
-        localStorage.setItem('completions', JSON.stringify(completions));
-        
-        // ストレージタイプを保存
-        localStorage.setItem('storageType', currentStorage);
-        
-        console.log('データ保存完了');
-        
-        // 同期状態を更新
-        updateSyncStatus();
-        
-    } catch (error) {
-        console.error('データ保存エラー:', error);
-        showNotification('データの保存に失敗しました', 'error');
-    }
-}
-
-// ルーティンを追加する関数
-function addRoutine(routineData) {
-    console.log('ルーティン追加:', routineData.title);
-    
-    const newRoutine = {
-        id: Date.now().toString(),
-        title: routineData.title,
-        description: routineData.description || '',
-        frequency: routineData.frequency,
-        time: routineData.time || null,
-        weeklyDays: routineData.weeklyDays || [],
-        monthlyDate: routineData.monthlyDate || null,
-        createdAt: new Date().toISOString(),
-        userId: currentUserInfo ? currentUserInfo.id : 'unknown'
-    };
-    
-    routines.push(newRoutine);
-    saveData();
-    
-    // 表示を更新
-    displayTodayRoutines();
-    displayAllRoutines();
-    
-    showNotification('ルーティンが追加されました', 'success');
-    
-    return newRoutine;
-}
-
-// ルーティンを編集する関数
-function editRoutine(routineId) {
-    console.log('ルーティン編集:', routineId);
-    
-    const routine = routines.find(r => r.id === routineId);
-    if (!routine) {
-        showNotification('ルーティンが見つかりません', 'error');
-        return;
-    }
-    
-    // 編集フォームを表示
-    showEditForm(routine);
-}
-
-// ルーティンを削除する関数
-function deleteRoutine(routineId) {
-    console.log('ルーティン削除:', routineId);
-    
-    if (confirm('このルーティンを削除しますか？')) {
-        routines = routines.filter(r => r.id !== routineId);
-        
-        // 関連する完了データも削除
-        completions = completions.filter(c => c.routineId !== routineId);
-        
-        saveData();
-        
-        // 表示を更新
-        displayTodayRoutines();
-        displayAllRoutines();
-        
-        showNotification('ルーティンが削除されました', 'success');
-    }
-}
-
-// 編集フォームを表示する関数
-function showEditForm(routine) {
-    const editFormContainer = document.getElementById('editFormContainer');
-    if (!editFormContainer) {
-        console.error('編集フォームコンテナが見つかりません');
-        return;
-    }
-    
-    // フォームに値を設定
-    const titleInput = document.getElementById('editTitleInput');
-    const descriptionInput = document.getElementById('editDescriptionInput');
-    const frequencyInput = document.getElementById('editFrequencyInput');
-    const timeInput = document.getElementById('editTimeInput');
-    
-    if (titleInput) titleInput.value = routine.title;
-    if (descriptionInput) descriptionInput.value = routine.description || '';
-    if (frequencyInput) frequencyInput.value = routine.frequency;
-    if (timeInput) timeInput.value = routine.time || '';
-    
-    // 頻度に応じたオプションを表示
-    showFrequencyOptions('edit', routine.frequency);
-    
-    // フォームを表示
-    editFormContainer.style.display = 'block';
-    
-    // 保存ボタンのイベントリスナーを設定
-    const saveButton = document.getElementById('editSaveButton');
-    if (saveButton) {
-        saveButton.onclick = () => saveEditedRoutine(routine.id);
-    }
-    
-    // キャンセルボタンのイベントリスナーを設定
-    const cancelButton = document.getElementById('editCancelButton');
-    if (cancelButton) {
-        cancelButton.onclick = hideEditForm;
-    }
-}
-
-// 編集されたルーティンを保存する関数
-function saveEditedRoutine(routineId) {
-    const titleInput = document.getElementById('editTitleInput');
-    const descriptionInput = document.getElementById('editDescriptionInput');
-    const frequencyInput = document.getElementById('editFrequencyInput');
-    const timeInput = document.getElementById('editTimeInput');
-    
-    const routine = routines.find(r => r.id === routineId);
-    if (!routine) {
-        showNotification('ルーティンが見つかりません', 'error');
-        return;
-    }
-    
-    // 値を更新
-    routine.title = titleInput.value;
-    routine.description = descriptionInput.value;
-    routine.frequency = frequencyInput.value;
-    routine.time = timeInput.value;
-    
-    // 頻度に応じたデータを更新
-    if (routine.frequency === 'weekly') {
-        const weekdayInputs = document.querySelectorAll('.edit-weekday-input:checked');
-        routine.weeklyDays = Array.from(weekdayInputs).map(input => parseInt(input.value));
-    } else if (routine.frequency === 'monthly') {
-        const monthlyDateInput = document.getElementById('editMonthlyDateInput');
-        routine.monthlyDate = parseInt(monthlyDateInput.value);
-    }
-    
-    saveData();
-    
-    // 表示を更新
-    displayTodayRoutines();
-    displayAllRoutines();
-    
-    // 編集フォームを非表示
-    hideEditForm();
-    
-    showNotification('ルーティンが更新されました', 'success');
-}
-
-// 編集フォームを非表示にする関数
-function hideEditForm() {
-    const editFormContainer = document.getElementById('editFormContainer');
-    if (editFormContainer) {
-        editFormContainer.style.display = 'none';
-    }
-}
-
-// 頻度オプションを表示する関数
-function showFrequencyOptions(formType, selectedFrequency) {
-    const weeklyDaysRow = document.getElementById(formType + 'WeeklyDaysRow');
-    const monthlyDateRow = document.getElementById(formType + 'MonthlyDateRow');
-    
-    if (weeklyDaysRow) {
-        weeklyDaysRow.style.display = selectedFrequency === 'weekly' ? 'block' : 'none';
-    }
-    
-    if (monthlyDateRow) {
-        monthlyDateRow.style.display = selectedFrequency === 'monthly' ? 'block' : 'none';
-    }
-}
-
-// ルーティン追加フォーム送信処理
-function handleRoutineFormSubmit(event) {
-    event.preventDefault();
-    console.log('ルーティン追加フォーム送信');
-    
-    const title = document.getElementById('routineName').value;
-    const description = document.getElementById('routineDescription').value;
-    const selectedFrequency = document.querySelector('.frequency-btn.active');
-    
-    if (!title) {
-        showNotification('ルーティン名を入力してください', 'error');
-        return;
-    }
-    
-    if (!selectedFrequency) {
-        showNotification('頻度を選択してください', 'error');
-        return;
-    }
-    
-    const frequency = selectedFrequency.dataset.frequency;
-    let weeklyDays = [];
-    let monthlyDate = null;
-    
-    // 頻度に応じたデータを取得
-    if (frequency === 'weekly') {
-        const weekdayInputs = document.querySelectorAll('.weekday-input:checked');
-        weeklyDays = Array.from(weekdayInputs).map(input => parseInt(input.value));
-        
-        if (weeklyDays.length === 0) {
-            showNotification('曜日を選択してください', 'error');
-            return;
-        }
-    } else if (frequency === 'monthly') {
-        const monthlyDateInput = document.getElementById('monthlyDateInput');
-        monthlyDate = parseInt(monthlyDateInput.value);
-        
-        if (!monthlyDate || monthlyDate < 1 || monthlyDate > 31) {
-            showNotification('有効な日付を入力してください（1-31）', 'error');
-            return;
-        }
-    }
-    
-    // ルーティンを追加
-    const routineData = {
-        title: title,
-        description: description,
-        frequency: frequency,
-        weeklyDays: weeklyDays,
-        monthlyDate: monthlyDate
-    };
-    
-    addRoutine(routineData);
-    
-    // フォームをリセット
-    event.target.reset();
-    
-    // 頻度ボタンのアクティブ状態をクリア
-    document.querySelectorAll('.frequency-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // 頻度オプションを非表示
-    const frequencyOptions = document.getElementById('frequencyOptions');
-    if (frequencyOptions) {
-        frequencyOptions.style.display = 'none';
-    }
-    
-    // メイン画面に戻る
-    showMainScreen();
-}
-
-// 頻度ボタンクリック処理
-function handleFrequencyButtonClick(event) {
-    const button = event.target;
-    const frequency = button.dataset.frequency;
-    
-    // 他のボタンのアクティブ状態をクリア
-    document.querySelectorAll('.frequency-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // クリックされたボタンをアクティブにする
-    button.classList.add('active');
-    
-    // 頻度オプションを表示
-    showFrequencyOptionsForAdd(frequency);
-}
-
-// 追加フォーム用の頻度オプション表示
-function showFrequencyOptionsForAdd(frequency) {
-    const frequencyOptions = document.getElementById('frequencyOptions');
-    if (!frequencyOptions) return;
-    
-    if (frequency === 'weekly') {
-        frequencyOptions.innerHTML = `
-            <div class="form-group">
-                <label class="form-label">曜日</label>
-                <div class="weekday-checkboxes">
-                    <label class="weekday-checkbox">
-                        <input type="checkbox" value="1" class="weekday-input"> 月
-                    </label>
-                    <label class="weekday-checkbox">
-                        <input type="checkbox" value="2" class="weekday-input"> 火
-                    </label>
-                    <label class="weekday-checkbox">
-                        <input type="checkbox" value="3" class="weekday-input"> 水
-                    </label>
-                    <label class="weekday-checkbox">
-                        <input type="checkbox" value="4" class="weekday-input"> 木
-                    </label>
-                    <label class="weekday-checkbox">
-                        <input type="checkbox" value="5" class="weekday-input"> 金
-                    </label>
-                    <label class="weekday-checkbox">
-                        <input type="checkbox" value="6" class="weekday-input"> 土
-                    </label>
-                    <label class="weekday-checkbox">
-                        <input type="checkbox" value="0" class="weekday-input"> 日
-                    </label>
-                </div>
-            </div>
-        `;
-        frequencyOptions.style.display = 'block';
-    } else if (frequency === 'monthly') {
-        frequencyOptions.innerHTML = `
-            <div class="form-group">
-                <label for="monthlyDateInput" class="form-label">毎月の日付</label>
-                <input type="number" id="monthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
-            </div>
-        `;
-        frequencyOptions.style.display = 'block';
-    } else {
-        frequencyOptions.style.display = 'none';
-    }
-}
-
-// タブボタンクリック処理
-function handleTabButtonClick(event) {
-    const button = event.target;
-    const frequency = button.dataset.frequency;
-    
-    // 他のタブのアクティブ状態をクリア
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // クリックされたタブをアクティブにする
-    button.classList.add('active');
-    
-    // ルーティンをフィルタリングして表示
-    filterRoutinesByFrequency(frequency);
-}
-
-// 頻度でルーティンをフィルタリング
-function filterRoutinesByFrequency(frequency) {
-    const allRoutinesList = document.getElementById('allRoutinesList');
-    if (!allRoutinesList) return;
-    
-    let filteredRoutines = routines;
-    
-    if (frequency !== 'all') {
-        filteredRoutines = routines.filter(routine => routine.frequency === frequency);
-    }
-    
-    if (filteredRoutines.length === 0) {
-        allRoutinesList.innerHTML = `
-            <div class="empty-state">
-                <i data-lucide="list" class="empty-icon"></i>
-                <h3>${getFrequencyText(frequency)}のルーティンはありません</h3>
-                <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
-                <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
-                    <i data-lucide="plus" class="button-icon"></i>
-                    ルーティンを追加
-                </button>
-            </div>
-        `;
-    } else {
-        allRoutinesList.innerHTML = filteredRoutines.map(routine => createRoutineHTML(routine)).join('');
-    }
-    
-    // Lucideアイコンを初期化
-    if (window.lucide) {
-        lucide.createIcons();
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    const checkbox = document.getElementById('rememberMe');
+    if (checkbox) {
+        checkbox.checked = rememberMe;
     }
 }
 
@@ -1845,88 +1062,5 @@ function checkLoginStatus() {
     } catch (error) {
         console.error('ログイン状態チェックエラー:', error);
         return false;
-    }
-}
-
-// 認証フォーム送信処理
-function handleAuthSubmit(event) {
-    event.preventDefault();
-    console.log('認証フォーム送信');
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    if (!email || !password) {
-        showNotification('メールアドレスとパスワードを入力してください', 'error');
-        return;
-    }
-    
-    // 通常ログイン処理を実行
-    handleRegularLogin(email, password);
-}
-
-// ポップアップブロック時のダイアログ表示
-function showPopupBlockedDialog() {
-    const dialogHTML = `
-        <div class="popup-blocked-dialog" id="popupBlockedDialog">
-            <div class="dialog-content">
-                <h3>ポップアップがブロックされています</h3>
-                <p>Googleログインにはポップアップの許可が必要です。</p>
-                <div class="dialog-options">
-                    <button onclick="tryGoogleLoginAgain()" class="btn-primary">再試行</button>
-                    <button onclick="useRegularLogin()" class="btn-secondary">通常ログインを使用</button>
-                    <button onclick="closePopupBlockedDialog()" class="btn-cancel">キャンセル</button>
-                </div>
-                <div class="popup-instructions">
-                    <h4>ポップアップを許可する方法：</h4>
-                    <ul>
-                        <li>ブラウザのアドレスバー横のアイコンをクリック</li>
-                        <li>「ポップアップを許可」を選択</li>
-                        <li>ページを再読み込みしてから再試行</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // 既存のダイアログを削除
-    const existingDialog = document.getElementById('popupBlockedDialog');
-    if (existingDialog) {
-        existingDialog.remove();
-    }
-    
-    // 新しいダイアログを追加
-    document.body.insertAdjacentHTML('beforeend', dialogHTML);
-    
-    // フラグをリセット
-    isGoogleLoginInProgress = false;
-    window.isGoogleLoginInProgress = false;
-}
-
-// ポップアップブロックダイアログを閉じる
-function closePopupBlockedDialog() {
-    const dialog = document.getElementById('popupBlockedDialog');
-    if (dialog) {
-        dialog.remove();
-    }
-}
-
-// Googleログインを再試行
-function tryGoogleLoginAgain() {
-    closePopupBlockedDialog();
-    setTimeout(() => {
-        handleGoogleLogin();
-    }, 500);
-}
-
-// 通常ログインに切り替え
-function useRegularLogin() {
-    closePopupBlockedDialog();
-    showNotification('通常ログインフォームに切り替えました', 'info');
-    
-    // ログインフォームにフォーカス
-    const emailInput = document.getElementById('email');
-    if (emailInput) {
-        emailInput.focus();
     }
 } 
