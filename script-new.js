@@ -150,25 +150,282 @@ function clearUserInfo() {
     localStorage.removeItem('userType');
 }
 
-// メインアプリの表示
+// メインアプリを表示する関数
 function showMainApp() {
-    console.log('メインアプリ表示');
+    console.log('showMainApp called');
     
-    const authContainer = document.getElementById('authContainer');
-    const app = document.getElementById('app');
-    
-    if (authContainer) {
-        authContainer.style.display = 'none';
+    // ログイン画面を非表示
+    const loginContainer = document.getElementById('loginContainer');
+    if (loginContainer) {
+        loginContainer.style.display = 'none';
+        console.log('Login container hidden');
     }
     
+    // メインアプリを表示
+    const app = document.getElementById('app');
     if (app) {
         app.style.display = 'block';
-        app.style.background = '#f8fafc';
-        
-        // 強制的にスタイルを適用
         app.classList.add('app-active');
+        console.log('Main app displayed');
         
-        console.log('メインアプリ表示完了');
+        // 背景色を強制設定
+        document.body.style.background = '#f8fafc';
+        app.style.background = '#f8fafc';
+    } else {
+        console.error('App element not found');
+    }
+    
+    // ユーザー情報を更新
+    updateUserInfo();
+    
+    // ルーティンを読み込み
+    loadRoutines();
+    
+    // 同期状態を更新
+    updateSyncStatus();
+    
+    // 広告を表示（一般ユーザーのみ）
+    showAdsIfNeeded();
+    
+    console.log('showMainApp completed');
+}
+
+// ユーザー情報を更新
+function updateUserInfo() {
+    const currentUser = document.getElementById('currentUser');
+    const userTypeDisplay = document.getElementById('userTypeDisplay');
+    const adminBtn = document.getElementById('adminBtn');
+    
+    if (currentUser && currentUserInfo) {
+        currentUser.textContent = currentUserInfo.email || currentUserInfo.displayName || 'ユーザー';
+    }
+    
+    if (userTypeDisplay) {
+        const userType = getUserType();
+        userTypeDisplay.textContent = userType;
+        userTypeDisplay.className = `user-type-display user-type-${userType}`;
+    }
+    
+    // 管理者ボタンの表示/非表示
+    if (adminBtn) {
+        if (isAdmin()) {
+            adminBtn.style.display = 'block';
+        } else {
+            adminBtn.style.display = 'none';
+        }
+    }
+}
+
+// ルーティンを読み込み
+function loadRoutines() {
+    console.log('Loading routines...');
+    
+    // 今日のルーティンを表示
+    displayTodayRoutines();
+    
+    // 全ルーティンを表示
+    displayAllRoutines();
+}
+
+// 今日のルーティンを表示
+function displayTodayRoutines() {
+    const todayRoutinesList = document.getElementById('todayRoutinesList');
+    if (!todayRoutinesList) {
+        console.error('Today routines list element not found');
+        return;
+    }
+    
+    const today = new Date();
+    const todayRoutines = routines.filter(routine => {
+        if (routine.frequency === 'daily') return true;
+        if (routine.frequency === 'weekly') {
+            return routine.weeklyDays && routine.weeklyDays.includes(today.getDay());
+        }
+        if (routine.frequency === 'monthly') {
+            return routine.monthlyDate === today.getDate();
+        }
+        return false;
+    });
+    
+    if (todayRoutines.length === 0) {
+        todayRoutinesList.innerHTML = `
+            <div class="empty-state">
+                <i data-lucide="calendar" class="empty-icon"></i>
+                <h3>今日のルーティンはありません</h3>
+                <p>新しいルーティンを追加して、今日の習慣を始めましょう！</p>
+                <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
+                    <i data-lucide="plus" class="button-icon"></i>
+                    ルーティンを追加
+                </button>
+            </div>
+        `;
+    } else {
+        todayRoutinesList.innerHTML = todayRoutines.map(routine => createRoutineHTML(routine)).join('');
+    }
+    
+    // Lucideアイコンを初期化
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+// 全ルーティンを表示
+function displayAllRoutines() {
+    const allRoutinesList = document.getElementById('allRoutinesList');
+    if (!allRoutinesList) {
+        console.error('All routines list element not found');
+        return;
+    }
+    
+    if (routines.length === 0) {
+        allRoutinesList.innerHTML = `
+            <div class="empty-state">
+                <i data-lucide="list" class="empty-icon"></i>
+                <h3>まだルーティンがありません</h3>
+                <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
+                <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
+                    <i data-lucide="plus" class="button-icon"></i>
+                    ルーティンを追加
+                </button>
+            </div>
+        `;
+    } else {
+        allRoutinesList.innerHTML = routines.map(routine => createRoutineHTML(routine)).join('');
+    }
+    
+    // Lucideアイコンを初期化
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+// ルーティンのHTMLを生成
+function createRoutineHTML(routine) {
+    const isCompleted = isRoutineCompletedToday(routine.id);
+    const completionClass = isCompleted ? 'completed' : '';
+    
+    return `
+        <div class="routine-item ${completionClass}" data-routine-id="${routine.id}">
+            <div class="routine-content">
+                <div class="routine-header">
+                    <h3 class="routine-title">${routine.title}</h3>
+                    <div class="routine-actions">
+                        <button class="action-btn edit-btn" onclick="editRoutine('${routine.id}')" title="編集">
+                            <i data-lucide="edit" class="action-icon"></i>
+                        </button>
+                        <button class="action-btn delete-btn" onclick="deleteRoutine('${routine.id}')" title="削除">
+                            <i data-lucide="trash" class="action-icon"></i>
+                        </button>
+                    </div>
+                </div>
+                ${routine.description ? `<p class="routine-description">${routine.description}</p>` : ''}
+                <div class="routine-meta">
+                    <span class="routine-frequency">
+                        <i data-lucide="repeat" class="meta-icon"></i>
+                        ${getFrequencyText(routine.frequency)}
+                    </span>
+                    ${routine.time ? `
+                        <span class="routine-time">
+                            <i data-lucide="clock" class="meta-icon"></i>
+                            ${routine.time}
+                        </span>
+                    ` : ''}
+                </div>
+            </div>
+            <button class="completion-btn ${completionClass}" onclick="toggleRoutineCompletion('${routine.id}')">
+                <i data-lucide="${isCompleted ? 'check-circle' : 'circle'}" class="completion-icon"></i>
+                ${isCompleted ? '完了済み' : '完了にする'}
+            </button>
+        </div>
+    `;
+}
+
+// 頻度テキストを取得
+function getFrequencyText(frequency) {
+    switch (frequency) {
+        case 'daily': return '毎日';
+        case 'weekly': return '毎週';
+        case 'monthly': return '毎月';
+        default: return frequency;
+    }
+}
+
+// 今日ルーティンが完了しているかチェック
+function isRoutineCompletedToday(routineId) {
+    const today = new Date().toDateString();
+    return completions.some(completion => 
+        completion.routineId === routineId && 
+        completion.date === today
+    );
+}
+
+// ルーティン完了を切り替え
+function toggleRoutineCompletion(routineId) {
+    const today = new Date().toDateString();
+    const existingCompletion = completions.find(completion => 
+        completion.routineId === routineId && 
+        completion.date === today
+    );
+    
+    if (existingCompletion) {
+        // 完了を取り消し
+        completions = completions.filter(completion => completion !== existingCompletion);
+    } else {
+        // 完了にする
+        completions.push({
+            routineId: routineId,
+            date: today,
+            timestamp: new Date().toISOString()
+        });
+    }
+    
+    // データを保存
+    saveData();
+    
+    // 表示を更新
+    displayTodayRoutines();
+    displayAllRoutines();
+}
+
+// ルーティン追加画面を表示
+function showAddRoutineScreen() {
+    const addRoutineScreen = document.getElementById('addRoutineScreen');
+    if (addRoutineScreen) {
+        addRoutineScreen.style.display = 'flex';
+    }
+}
+
+// メイン画面に戻る
+function showMainScreen() {
+    const addRoutineScreen = document.getElementById('addRoutineScreen');
+    if (addRoutineScreen) {
+        addRoutineScreen.style.display = 'none';
+    }
+}
+
+// 同期状態を更新
+function updateSyncStatus() {
+    const syncStatus = document.getElementById('syncStatus');
+    if (syncStatus) {
+        if (currentStorage === 'firebase') {
+            syncStatus.textContent = '🟢 サーバー同期';
+            syncStatus.className = 'sync-status server-sync';
+        } else {
+            syncStatus.textContent = '🟡 ローカル保存';
+            syncStatus.className = 'sync-status local-sync';
+        }
+    }
+}
+
+// 広告を表示（一般ユーザーのみ）
+function showAdsIfNeeded() {
+    const adContainer = document.getElementById('adContainer');
+    if (adContainer) {
+        if (getUserType() === 'general') {
+            adContainer.style.display = 'block';
+        } else {
+            adContainer.style.display = 'none';
+        }
     }
 }
 
@@ -496,146 +753,6 @@ function initializeStorage() {
     } else {
         console.log('ローカルストレージ初期化');
         // ローカルストレージ初期化処理
-    }
-}
-
-// ルーティンの読み込み
-function loadRoutines() {
-    console.log('ルーティン読み込み');
-    
-    try {
-        const routines = JSON.parse(localStorage.getItem('routines') || '[]');
-        console.log('読み込まれたルーティン数:', routines.length);
-        return routines;
-    } catch (error) {
-        console.error('ルーティン読み込みエラー:', error);
-        return [];
-    }
-}
-
-// 今日のルーティンの表示
-function displayTodayRoutines() {
-    console.log('今日のルーティン表示');
-    
-    const routines = loadRoutines();
-    const today = new Date().toDateString();
-    
-    // 今日のルーティンをフィルタリング
-    const todayRoutines = routines.filter(routine => {
-        // 頻度に基づいて今日のルーティンかどうかを判定
-        return isTodayRoutine(routine, today);
-    });
-    
-    console.log('今日のルーティン数:', todayRoutines.length);
-    
-    // UIの更新
-    updateTodayRoutinesUI(todayRoutines);
-}
-
-// 今日のルーティンかどうかの判定
-function isTodayRoutine(routine, today) {
-    const dayOfWeek = new Date().getDay();
-    const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
-    const todayName = dayNames[dayOfWeek];
-    
-    switch (routine.frequency) {
-        case 'daily':
-            return true;
-        case 'weekly':
-            return routine.days && routine.days.includes(todayName);
-        case 'monthly':
-            const dayOfMonth = new Date().getDate();
-            return routine.dayOfMonth && routine.dayOfMonth === dayOfMonth;
-        default:
-            return false;
-    }
-}
-
-// 今日のルーティンUI更新
-function updateTodayRoutinesUI(routines) {
-    const container = document.querySelector('.today-routines-list');
-    if (!container) return;
-    
-    if (routines.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i data-lucide="calendar" class="empty-icon"></i>
-                <h3>今日のルーティンはありません</h3>
-                <p>新しいルーティンを追加して、毎日の習慣を管理しましょう</p>
-                <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
-                    <i data-lucide="plus"></i>
-                    最初のルーティンを追加
-                </button>
-            </div>
-        `;
-    } else {
-        container.innerHTML = routines.map(routine => `
-            <div class="routine-item" data-id="${routine.id}">
-                <div class="routine-content">
-                    <div class="routine-header">
-                        <h3 class="routine-title">${routine.title}</h3>
-                        <div class="routine-actions">
-                            <button class="action-btn edit-btn" onclick="editRoutine('${routine.id}')">
-                                <i data-lucide="edit" class="action-icon"></i>
-                            </button>
-                            <button class="action-btn delete-btn" onclick="deleteRoutine('${routine.id}')">
-                                <i data-lucide="trash-2" class="action-icon"></i>
-                            </button>
-                        </div>
-                    </div>
-                    ${routine.description ? `<p class="routine-description">${routine.description}</p>` : ''}
-                    <div class="routine-meta">
-                        <span class="routine-frequency">
-                            <i data-lucide="calendar" class="meta-icon"></i>
-                            ${getFrequencyText(routine.frequency)}
-                        </span>
-                        ${routine.time ? `
-                            <span class="routine-time">
-                                <i data-lucide="clock" class="meta-icon"></i>
-                                ${routine.time}
-                            </span>
-                        ` : ''}
-                    </div>
-                </div>
-                <button class="completion-btn" onclick="toggleRoutineCompletion('${routine.id}')">
-                    <i data-lucide="check" class="completion-icon"></i>
-                    完了
-                </button>
-            </div>
-        `).join('');
-    }
-    
-    // Lucideアイコンを初期化
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-// 頻度テキストの取得
-function getFrequencyText(frequency) {
-    switch (frequency) {
-        case 'daily': return '毎日';
-        case 'weekly': return '週次';
-        case 'monthly': return '月次';
-        default: return 'カスタム';
-    }
-}
-
-// 同期状態の更新
-function updateSyncStatus() {
-    console.log('同期状態更新');
-    
-    const storageType = localStorage.getItem('storageType') || 'local';
-    const syncStatus = document.querySelector('.sync-status');
-    
-    if (syncStatus) {
-        if (storageType === 'firebase') {
-            syncStatus.textContent = 'サーバー同期';
-            syncStatus.className = 'sync-status server-sync';
-        } else {
-            syncStatus.textContent = 'ローカル同期';
-            syncStatus.className = 'sync-status local-sync';
-        }
     }
 }
 

@@ -159,7 +159,7 @@
     </div>
 
     <!-- メインアプリ -->
-    <div class="app" id="mainApp" style="display: none;">
+    <div class="app" id="app" style="display: none;">
         <header class="header">
             <div class="header-content">
                 <h1 class="title">
@@ -187,62 +187,33 @@
                     <button id="adminBtn" class="admin-btn" onclick="showAdminDashboard()" style="display: none;" title="管理者ダッシュボード">
                         <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
                     </button>
+                    <!-- ログアウトボタン -->
+                    <button id="logoutBtn" class="logout-btn" onclick="logout()" title="ログアウト">
+                        <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+                    </button>
                 </div>
             </div>
         </header>
 
-        <!-- メインコンテンツ -->
-        <main id="mainContent" class="main-content">
-            <!-- 今日のルーティン画面 -->
-            <div id="mainScreen" class="screen active">
-                <div class="screen-header">
-                    <h1>今日のルーティン</h1>
-                    <button id="addRoutineBtn" class="add-routine-btn" onclick="showAddRoutineScreen()">
-                        <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
-                    </button>
-                </div>
-                <div id="todayRoutines" class="routines-container">
-                    <!-- ルーティンがここに表示されます -->
+        <!-- 今日のルーティンセクション -->
+        <section class="today-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i data-lucide="calendar" class="section-icon"></i>
+                    今日のルーティン
+                </h2>
+                <button id="addRoutineBtn" class="add-routine-btn" onclick="showAddRoutineScreen()">
+                    <i data-lucide="plus" class="button-icon"></i>
+                    追加
+                </button>
+            </div>
+            
+            <div class="today-routines" id="todayRoutines">
+                <div class="today-routines-list" id="todayRoutinesList">
+                    <!-- 今日のルーティンがここに表示されます -->
                 </div>
             </div>
-
-            <!-- ルーティン追加画面 -->
-            <div id="addRoutineScreen" class="screen">
-                <div class="screen-header">
-                    <button class="back-btn" onclick="showMainScreen()">
-                        <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
-                    </button>
-                    <h1>ルーティンを追加</h1>
-                </div>
-                <form id="routineForm" class="routine-form">
-                    <div class="form-group">
-                        <label for="routineName">ルーティン名</label>
-                        <input type="text" id="routineName" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="routineDescription">説明（任意）</label>
-                        <textarea id="routineDescription" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>頻度</label>
-                        <div class="frequency-buttons">
-                            <button type="button" class="frequency-btn" data-frequency="daily">毎日</button>
-                            <button type="button" class="frequency-btn" data-frequency="weekly">毎週</button>
-                            <button type="button" class="frequency-btn" data-frequency="monthly">毎月</button>
-                        </div>
-                    </div>
-                    <div id="frequencyOptions" class="frequency-options" style="display: none;">
-                        <!-- 頻度オプションが動的に追加されます -->
-                    </div>
-                    <button type="submit" class="save-btn">保存</button>
-                </form>
-            </div>
-        </main>
-
-        <!-- 広告エリア -->
-        <div id="adContainer" class="ad-container" style="display: none;">
-            <!-- 広告がここに表示されます -->
-        </div>
+        </section>
 
         <!-- 全ルーティンセクション -->
         <section class="all-routines-section">
@@ -273,15 +244,53 @@
             </div>
             
             <div class="all-routines" id="allRoutines">
-                <div class="empty-state" id="allEmptyState">
-                    <i data-lucide="list" class="empty-icon"></i>
-                    <h3>まだルーティンがありません</h3>
-                    <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
+                <div class="all-routines-list" id="allRoutinesList">
+                    <!-- すべてのルーティンがここに表示されます -->
                 </div>
-                <div class="all-routines-list" id="allRoutinesList" style="display: none;"></div>
             </div>
         </section>
 
+        <!-- ルーティン追加画面 -->
+        <div id="addRoutineScreen" class="add-routine-screen" style="display: none;">
+            <div class="screen-header">
+                <button class="back-btn" onclick="showMainScreen()">
+                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                    戻る
+                </button>
+                <h1 class="screen-title">ルーティンを追加</h1>
+                <div class="header-spacer"></div>
+            </div>
+            
+            <div class="form-container">
+                <form id="routineForm" class="form">
+                    <div class="form-group">
+                        <label for="routineName" class="form-label">ルーティン名</label>
+                        <input type="text" id="routineName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="routineDescription" class="form-label">説明（任意）</label>
+                        <textarea id="routineDescription" class="form-textarea" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">頻度</label>
+                        <div class="frequency-buttons">
+                            <button type="button" class="frequency-btn" data-frequency="daily">毎日</button>
+                            <button type="button" class="frequency-btn" data-frequency="weekly">毎週</button>
+                            <button type="button" class="frequency-btn" data-frequency="monthly">毎月</button>
+                        </div>
+                    </div>
+                    <div id="frequencyOptions" class="frequency-options" style="display: none;">
+                        <!-- 頻度オプションが動的に追加されます -->
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="save-button">保存</button>
+                        <button type="button" class="cancel-button" onclick="showMainScreen()">キャンセル</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 編集フォーム -->
         <div class="form-container" id="editFormContainer" style="display: none;">
             <div class="form">
                 <input type="text" placeholder="ルーティンのタイトル" id="editTitleInput" class="form-input" autocomplete="off" inputmode="text">
@@ -341,62 +350,55 @@
             </div>
         </div>
 
-        <div class="modal-overlay" id="modalOverlay" style="display: none;">
-            <div class="modal">
-                <h3>ルーティンを編集</h3>
-                <input type="text" placeholder="ルーティンのタイトル" id="editTitleInput" class="form-input" autocomplete="off" inputmode="text">
-                <textarea placeholder="説明（オプション）" id="editDescriptionInput" class="form-textarea" autocomplete="off"></textarea>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="editFrequencyInput" class="form-label">頻度</label>
-                        <select id="editFrequencyInput" class="form-select">
-                            <option value="daily">毎日</option>
-                            <option value="weekly">毎週</option>
-                            <option value="monthly">毎月</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="editTimeInput" class="form-label">時間</label>
-                        <input type="time" id="editTimeInput" class="form-input">
-                    </div>
+        <!-- ストレージ選択モーダル -->
+        <div id="storageModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>ストレージを選択</h3>
+                    <button class="modal-close" onclick="hideStorageModal()">
+                        <i data-lucide="x"></i>
+                    </button>
                 </div>
-                <div class="form-row" id="editWeeklyDaysRow" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">曜日</label>
-                        <div class="weekday-checkboxes">
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="1" class="weekday-input"> 月
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="2" class="weekday-input"> 火
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="3" class="weekday-input"> 水
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="4" class="weekday-input"> 木
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="5" class="weekday-input"> 金
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="6" class="weekday-input"> 土
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="0" class="weekday-input"> 日
-                            </label>
+                <div class="modal-body">
+                    <div class="storage-option" onclick="selectStorage('local')">
+                        <i data-lucide="hard-drive" class="storage-icon"></i>
+                        <div class="storage-info">
+                            <h4>ローカルストレージ</h4>
+                            <p>データはこのデバイスに保存されます</p>
                         </div>
+                        <i data-lucide="check" class="storage-check"></i>
+                    </div>
+                    <div class="storage-option" onclick="selectStorage('firebase')">
+                        <i data-lucide="cloud" class="storage-icon"></i>
+                        <div class="storage-info">
+                            <h4>Firebase</h4>
+                            <p>データはクラウドに同期されます</p>
+                        </div>
+                        <i data-lucide="check" class="storage-check"></i>
+                    </div>
+                    <div class="storage-option" onclick="selectStorage('google-drive')">
+                        <i data-lucide="folder" class="storage-icon"></i>
+                        <div class="storage-info">
+                            <h4>Google Drive</h4>
+                            <p>データはGoogle Driveに保存されます</p>
+                        </div>
+                        <i data-lucide="check" class="storage-check"></i>
                     </div>
                 </div>
-                <div class="form-row" id="editMonthlyDateRow" style="display: none;">
-                    <div class="form-group">
-                        <label for="editMonthlyDateInput" class="form-label">毎月の日付</label>
-                        <input type="number" id="editMonthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
-                    </div>
+                <div class="modal-footer">
+                    <button class="modal-btn secondary" onclick="hideStorageModal()">キャンセル</button>
+                    <button class="modal-btn primary" onclick="confirmStorageSelection()">選択</button>
                 </div>
-                <div class="modal-buttons">
-                    <button class="save-button" id="editSaveButton">保存</button>
-                    <button class="cancel-button" id="editCancelButton">キャンセル</button>
+            </div>
+        </div>
+
+        <!-- 広告エリア -->
+        <div id="adContainer" class="ad-container" style="display: none;">
+            <div class="ad-placeholder">
+                <div class="ad-content">
+                    <h3>広告エリア</h3>
+                    <p>ここに広告が表示されます</p>
+                    <small>一般ユーザーのみ表示</small>
                 </div>
             </div>
         </div>
@@ -583,45 +585,5 @@
 
     <!-- ファイルインポート用の隠しinput -->
     <input type="file" id="importFile" accept=".json" style="display: none;">
-
-    <!-- ストレージ選択モーダル -->
-    <div id="storageModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>データ保存方法を選択</h3>
-                <button class="modal-close" onclick="closeStorageModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="storage-option" onclick="selectStorage('firebase')">
-                    <div class="storage-icon">🔥</div>
-                    <div class="storage-info">
-                        <h4>Firebase（推奨）</h4>
-                        <p>リアルタイム同期、複数デバイス対応</p>
-                    </div>
-                    <div class="storage-check">✓</div>
-                </div>
-                <div class="storage-option" onclick="selectStorage('google-drive')">
-                    <div class="storage-icon">☁️</div>
-                    <div class="storage-info">
-                        <h4>Google Drive</h4>
-                        <p>Googleアカウントで同期、プライバシー重視</p>
-                    </div>
-                    <div class="storage-check">✓</div>
-                </div>
-                <div class="storage-option" onclick="selectStorage('local')">
-                    <div class="storage-icon">💾</div>
-                    <div class="storage-info">
-                        <h4>ローカル保存</h4>
-                        <p>このデバイスのみ、オフライン対応</p>
-                    </div>
-                    <div class="storage-check">✓</div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn secondary" onclick="closeStorageModal()">キャンセル</button>
-                <button class="modal-btn primary" onclick="confirmStorageSelection()">選択</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
