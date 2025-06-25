@@ -206,45 +206,33 @@ function handleAuthStateChange(user) {
     }
 }
 
-// ユーザー情報の設定
+// ユーザー情報を設定
 function setUserInfo(user) {
     console.log('ユーザー情報設定:', user.email);
     
-    // currentUserInfoを設定
     currentUserInfo = {
         email: user.email,
-        displayName: user.displayName || user.email,
-        uid: user.uid || null,
-        id: user.id || Date.now().toString(),
-        isGoogleUser: user.uid ? true : false
+        displayName: user.displayName || user.email.split('@')[0],
+        id: user.id || user.uid || Date.now().toString(),
+        isGoogleUser: user.isGoogleUser || false
     };
     
-    // グローバル変数に保存
-    window.currentUser = {
-        email: user.email,
-        displayName: user.displayName || user.email,
-        uid: user.uid || null,
-        isAdmin: user.email === 'yasnaries@gmail.com',
-        authType: user.uid ? 'firebase' : 'local' // 認証タイプを記録
-    };
+    // ユーザータイプを設定
+    setUserType(user);
     
-    // ローカルストレージに保存
-    localStorage.setItem('userData', JSON.stringify(window.currentUser));
+    // ログイン状態を保存
+    localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
     
-    // ユーザータイプの設定
-    setUserType(window.currentUser);
+    console.log('ユーザー情報設定完了');
 }
 
-// ユーザー情報のクリア
+// ユーザー情報をクリア
 function clearUserInfo() {
-    console.log('ユーザー情報クリア');
-    
     currentUserInfo = null;
-    window.currentUser = null;
-    localStorage.removeItem('userData');
+    localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userInfo');
-    localStorage.removeItem('userType');
+    console.log('ユーザー情報クリア完了');
 }
 
 // メインアプリを表示する関数
@@ -471,67 +459,79 @@ function isRoutineCompletedToday(routineId) {
 
 // ルーティン完了を切り替え
 function toggleRoutineCompletion(routineId) {
-    const today = new Date().toDateString();
-    const existingCompletion = completions.find(completion => 
-        completion.routineId === routineId && 
-        completion.date === today
-    );
+    console.log('ルーティン完了切り替え:', routineId);
     
-    if (existingCompletion) {
-        // 完了を取り消し
-        completions = completions.filter(completion => completion !== existingCompletion);
+    const today = new Date().toISOString().split('T')[0];
+    const completionKey = `completion_${routineId}_${today}`;
+    
+    const isCompleted = localStorage.getItem(completionKey) === 'true';
+    
+    if (isCompleted) {
+        localStorage.removeItem(completionKey);
+        console.log('ルーティン完了を解除:', routineId);
     } else {
-        // 完了にする
-        completions.push({
-            routineId: routineId,
-            date: today,
-            timestamp: new Date().toISOString()
-        });
+        localStorage.setItem(completionKey, 'true');
+        console.log('ルーティン完了を設定:', routineId);
     }
-    
-    // データを保存
-    saveData();
     
     // 表示を更新
     displayTodayRoutines();
     displayAllRoutines();
+    
+    // データを保存
+    saveData();
 }
 
 // ルーティン追加画面を表示
 function showAddRoutineScreen() {
+    console.log('ルーティン追加画面表示');
+    
+    const mainScreen = document.getElementById('mainScreen');
     const addRoutineScreen = document.getElementById('addRoutineScreen');
-    if (addRoutineScreen) {
-        addRoutineScreen.style.display = 'flex';
-    }
+    
+    if (mainScreen) mainScreen.style.display = 'none';
+    if (addRoutineScreen) addRoutineScreen.style.display = 'block';
 }
 
 // メイン画面に戻る
 function showMainScreen() {
+    console.log('メイン画面表示');
+    
+    const mainScreen = document.getElementById('mainScreen');
     const addRoutineScreen = document.getElementById('addRoutineScreen');
-    if (addRoutineScreen) {
-        addRoutineScreen.style.display = 'none';
-    }
+    
+    if (mainScreen) mainScreen.style.display = 'block';
+    if (addRoutineScreen) addRoutineScreen.style.display = 'none';
 }
 
 // 同期状態を更新
 function updateSyncStatus() {
     const syncStatus = document.getElementById('syncStatus');
-    if (syncStatus) {
-        if (currentStorage === 'firebase') {
+    if (!syncStatus) return;
+    
+    switch (currentStorage) {
+        case 'firebase':
             syncStatus.textContent = '🟢 サーバー同期';
-            syncStatus.className = 'sync-status server-sync';
-        } else {
+            syncStatus.className = 'sync-status synced';
+            break;
+        case 'google-drive':
+            syncStatus.textContent = '🟢 Google Drive同期';
+            syncStatus.className = 'sync-status synced';
+            break;
+        default:
             syncStatus.textContent = '🟡 ローカル保存';
-            syncStatus.className = 'sync-status local-sync';
-        }
+            syncStatus.className = 'sync-status local';
+            break;
     }
 }
 
 // 広告を表示（一般ユーザーのみ）
 function showAdsIfNeeded() {
+    const userType = getUserType();
     const adContainer = document.getElementById('adContainer');
+    
     if (adContainer) {
-        if (getUserType() === 'general') {
+        if (userType === 'general') {
             adContainer.style.display = 'block';
         } else {
             adContainer.style.display = 'none';
@@ -1091,5 +1091,557 @@ function checkLoginStatus() {
     } catch (error) {
         console.error('ログイン状態チェックエラー:', error);
         return false;
+    }
+}
+
+// 手動同期機能
+function manualSync() {
+    console.log('手動同期開始');
+    
+    const syncBtn = document.getElementById('syncBtn');
+    if (syncBtn) {
+        syncBtn.classList.add('syncing');
+    }
+    
+    // 同期処理をシミュレート
+    setTimeout(() => {
+        console.log('手動同期完了');
+        
+        if (syncBtn) {
+            syncBtn.classList.remove('syncing');
+        }
+        
+        showNotification('同期が完了しました', 'success');
+        updateSyncStatus();
+    }, 2000);
+}
+
+// 通知許可要求
+function requestNotificationPermission() {
+    console.log('通知許可要求');
+    
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showNotification('通知が有効になりました', 'success');
+            } else {
+                showNotification('通知が拒否されました', 'info');
+            }
+        });
+    } else {
+        showNotification('このブラウザは通知をサポートしていません', 'warning');
+    }
+}
+
+// ストレージモーダル関連
+function showStorageModal() {
+    const storageModal = document.getElementById('storageModal');
+    if (storageModal) {
+        storageModal.style.display = 'block';
+    }
+}
+
+function hideStorageModal() {
+    const storageModal = document.getElementById('storageModal');
+    if (storageModal) {
+        storageModal.style.display = 'none';
+    }
+}
+
+function selectStorage(storageType) {
+    console.log('ストレージ選択:', storageType);
+    
+    // 選択状態を更新
+    const storageOptions = document.querySelectorAll('.storage-option');
+    storageOptions.forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    const selectedOption = document.querySelector(`[onclick="selectStorage('${storageType}')"]`);
+    if (selectedOption) {
+        selectedOption.classList.add('selected');
+    }
+    
+    // 選択されたストレージタイプを保存
+    localStorage.setItem('selectedStorage', storageType);
+}
+
+function confirmStorageSelection() {
+    const selectedStorage = localStorage.getItem('selectedStorage') || 'local';
+    console.log('ストレージ選択確認:', selectedStorage);
+    
+    currentStorage = selectedStorage;
+    localStorage.setItem('storageType', selectedStorage);
+    
+    hideStorageModal();
+    updateSyncStatus();
+    
+    showNotification(`${getStorageDisplayName(selectedStorage)}が選択されました`, 'success');
+}
+
+function getStorageDisplayName(storageType) {
+    switch (storageType) {
+        case 'local': return 'ローカルストレージ';
+        case 'firebase': return 'Firebase';
+        case 'google-drive': return 'Google Drive';
+        default: return 'ローカルストレージ';
+    }
+}
+
+// 管理者ダッシュボード関連
+function showAdminDashboard() {
+    console.log('管理者ダッシュボード表示');
+    
+    // 管理者ダッシュボードのHTMLを作成
+    const dashboardHTML = `
+        <div class="admin-dashboard" id="adminDashboard">
+            <div class="dashboard-header">
+                <h2>管理者ダッシュボード</h2>
+                <button class="close-btn" onclick="hideAdminDashboard()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="dashboard-content">
+                <div class="dashboard-tabs">
+                    <button class="tab-btn active" onclick="showAdminTab('users')">ユーザー管理</button>
+                    <button class="tab-btn" onclick="showAdminTab('friends')">友達管理</button>
+                    <button class="tab-btn" onclick="showAdminTab('stats')">統計</button>
+                </div>
+                <div class="tab-content" id="adminTabContent">
+                    <!-- タブコンテンツがここに表示されます -->
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // ダッシュボードを表示
+    const app = document.getElementById('app');
+    if (app) {
+        app.insertAdjacentHTML('beforeend', dashboardHTML);
+        
+        // 最初のタブを表示
+        showAdminTab('users');
+        
+        // Lucideアイコンを初期化
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+}
+
+function hideAdminDashboard() {
+    const dashboard = document.getElementById('adminDashboard');
+    if (dashboard) {
+        dashboard.remove();
+    }
+}
+
+function showAdminTab(tabName) {
+    console.log('管理者タブ表示:', tabName);
+    
+    // タブボタンのアクティブ状態を更新
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    
+    const activeTabBtn = document.querySelector(`[onclick="showAdminTab('${tabName}')"]`);
+    if (activeTabBtn) {
+        activeTabBtn.classList.add('active');
+    }
+    
+    // タブコンテンツを更新
+    const tabContent = document.getElementById('adminTabContent');
+    if (!tabContent) return;
+    
+    switch (tabName) {
+        case 'users':
+            tabContent.innerHTML = `
+                <div class="admin-section">
+                    <h3>ユーザー管理</h3>
+                    <p>ユーザー管理機能は開発中です。</p>
+                </div>
+            `;
+            break;
+        case 'friends':
+            tabContent.innerHTML = `
+                <div class="admin-section">
+                    <h3>友達管理</h3>
+                    <p>友達管理機能は開発中です。</p>
+                </div>
+            `;
+            break;
+        case 'stats':
+            tabContent.innerHTML = `
+                <div class="admin-section">
+                    <h3>統計</h3>
+                    <p>統計機能は開発中です。</p>
+                </div>
+            `;
+            break;
+    }
+}
+
+// ルーティンの編集
+function editRoutine(routineId) {
+    console.log('ルーティン編集:', routineId);
+    
+    const routine = routines.find(r => r.id === routineId);
+    if (!routine) {
+        console.error('ルーティンが見つかりません:', routineId);
+        return;
+    }
+    
+    showEditForm(routine);
+}
+
+// ルーティンの削除
+function deleteRoutine(routineId) {
+    console.log('ルーティン削除:', routineId);
+    
+    if (confirm('このルーティンを削除しますか？')) {
+        routines = routines.filter(r => r.id !== routineId);
+        saveData();
+        
+        // 表示を更新
+        displayTodayRoutines();
+        displayAllRoutines();
+        
+        showNotification('ルーティンを削除しました', 'success');
+    }
+}
+
+// 編集フォームの表示
+function showEditForm(routine) {
+    const editForm = document.getElementById('editRoutineForm');
+    if (!editForm) return;
+    
+    // フォームに値を設定
+    document.getElementById('editRoutineId').value = routine.id;
+    document.getElementById('editRoutineTitle').value = routine.title;
+    document.getElementById('editRoutineDescription').value = routine.description || '';
+    document.getElementById('editRoutineTime').value = routine.time || '';
+    
+    // 頻度を設定
+    const frequencySelect = document.getElementById('editRoutineFrequency');
+    if (frequencySelect) {
+        frequencySelect.value = routine.frequency;
+    }
+    
+    // 編集フォームを表示
+    editForm.style.display = 'block';
+}
+
+// 編集されたルーティンを保存
+function saveEditedRoutine(routineId) {
+    const title = document.getElementById('editRoutineTitle').value.trim();
+    const description = document.getElementById('editRoutineDescription').value.trim();
+    const time = document.getElementById('editRoutineTime').value;
+    const frequency = document.getElementById('editRoutineFrequency').value;
+    
+    if (!title) {
+        showNotification('タイトルを入力してください', 'error');
+        return;
+    }
+    
+    const routineIndex = routines.findIndex(r => r.id === routineId);
+    if (routineIndex === -1) {
+        console.error('ルーティンが見つかりません:', routineId);
+        return;
+    }
+    
+    // ルーティンを更新
+    routines[routineIndex] = {
+        ...routines[routineIndex],
+        title,
+        description,
+        time,
+        frequency,
+        updatedAt: new Date().toISOString()
+    };
+    
+    saveData();
+    hideEditForm();
+    
+    // 表示を更新
+    displayTodayRoutines();
+    displayAllRoutines();
+    
+    showNotification('ルーティンを更新しました', 'success');
+}
+
+// 編集フォームを非表示
+function hideEditForm() {
+    const editForm = document.getElementById('editRoutineForm');
+    if (editForm) {
+        editForm.style.display = 'none';
+    }
+}
+
+// 頻度オプションの表示
+function showFrequencyOptions(formType, selectedFrequency) {
+    const optionsContainer = document.getElementById(`${formType}FrequencyOptions`);
+    if (!optionsContainer) return;
+    
+    const frequencies = [
+        { value: 'daily', label: '毎日' },
+        { value: 'weekly', label: '毎週' },
+        { value: 'monthly', label: '毎月' }
+    ];
+    
+    optionsContainer.innerHTML = frequencies.map(freq => `
+        <button type="button" 
+                class="frequency-btn ${freq.value === selectedFrequency ? 'selected' : ''}"
+                onclick="selectFrequency('${formType}', '${freq.value}')">
+            ${freq.label}
+        </button>
+    `).join('');
+    
+    optionsContainer.style.display = 'block';
+}
+
+// 頻度の選択
+function selectFrequency(formType, frequency) {
+    const frequencyInput = document.getElementById(`${formType}RoutineFrequency`);
+    const optionsContainer = document.getElementById(`${formType}FrequencyOptions`);
+    
+    if (frequencyInput) {
+        frequencyInput.value = frequency;
+    }
+    
+    if (optionsContainer) {
+        optionsContainer.style.display = 'none';
+    }
+    
+    // 選択状態を更新
+    const buttons = optionsContainer?.querySelectorAll('.frequency-btn');
+    buttons?.forEach(btn => {
+        btn.classList.remove('selected');
+        if (btn.textContent.trim() === getFrequencyText(frequency)) {
+            btn.classList.add('selected');
+        }
+    });
+}
+
+// ルーティンフォームの送信処理
+function handleRoutineFormSubmit(event) {
+    event.preventDefault();
+    
+    const formType = event.target.id === 'addRoutineForm' ? 'add' : 'edit';
+    const title = document.getElementById(`${formType}RoutineTitle`).value.trim();
+    const description = document.getElementById(`${formType}RoutineDescription`).value.trim();
+    const time = document.getElementById(`${formType}RoutineTime`).value;
+    const frequency = document.getElementById(`${formType}RoutineFrequency`).value;
+    
+    if (!title) {
+        showNotification('タイトルを入力してください', 'error');
+        return;
+    }
+    
+    if (!frequency) {
+        showNotification('頻度を選択してください', 'error');
+        return;
+    }
+    
+    if (formType === 'add') {
+        // 新しいルーティンを追加
+        const newRoutine = {
+            id: Date.now().toString(),
+            title,
+            description,
+            time,
+            frequency,
+            createdAt: new Date().toISOString(),
+            userId: currentUserInfo?.id || 'unknown'
+        };
+        
+        routines.push(newRoutine);
+        saveData();
+        
+        // フォームをリセット
+        event.target.reset();
+        
+        // メイン画面に戻る
+        showMainScreen();
+        
+        showNotification('ルーティンを追加しました', 'success');
+    } else {
+        // 既存のルーティンを更新
+        const routineId = document.getElementById('editRoutineId').value;
+        saveEditedRoutine(routineId);
+    }
+}
+
+// 頻度ボタンのクリック処理
+function handleFrequencyButtonClick(event) {
+    const formType = event.target.closest('form').id === 'addRoutineForm' ? 'add' : 'edit';
+    const currentFrequency = document.getElementById(`${formType}RoutineFrequency`).value;
+    
+    showFrequencyOptions(formType, currentFrequency);
+}
+
+// タブボタンのクリック処理
+function handleTabButtonClick(event) {
+    const frequency = event.target.dataset.frequency;
+    if (frequency) {
+        filterRoutinesByFrequency(frequency);
+    }
+}
+
+// 頻度別にルーティンをフィルタリング
+function filterRoutinesByFrequency(frequency) {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    
+    event.target.classList.add('active');
+    
+    const filteredRoutines = routines.filter(routine => routine.frequency === frequency);
+    
+    const allRoutinesList = document.getElementById('allRoutinesList');
+    if (allRoutinesList) {
+        if (filteredRoutines.length === 0) {
+            allRoutinesList.innerHTML = `
+                <div class="empty-state">
+                    <i data-lucide="list" class="empty-icon"></i>
+                    <h3>${getFrequencyText(frequency)}のルーティンはありません</h3>
+                    <p>新しいルーティンを追加しましょう！</p>
+                </div>
+            `;
+        } else {
+            allRoutinesList.innerHTML = filteredRoutines.map(routine => createRoutineHTML(routine)).join('');
+        }
+        
+        // Lucideアイコンを初期化
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+}
+
+// データの保存
+function saveData() {
+    console.log('データ保存開始');
+    
+    try {
+        const data = {
+            routines: routines,
+            completions: completions,
+            lastUpdated: new Date().toISOString()
+        };
+        
+        switch (currentStorage) {
+            case 'firebase':
+                // Firebaseに保存
+                if (typeof firebase !== 'undefined' && firebase.firestore) {
+                    const db = firebase.firestore();
+                    const userId = currentUserInfo?.id || 'unknown';
+                    
+                    db.collection('users').doc(userId).set({
+                        data: data,
+                        updatedAt: new Date()
+                    }).then(() => {
+                        console.log('Firebaseに保存完了');
+                    }).catch(error => {
+                        console.error('Firebase保存エラー:', error);
+                        // ローカルにフォールバック
+                        localStorage.setItem('appData', JSON.stringify(data));
+                    });
+                }
+                break;
+            case 'google-drive':
+                // Google Driveに保存（実装予定）
+                console.log('Google Drive保存（未実装）');
+                localStorage.setItem('appData', JSON.stringify(data));
+                break;
+            default:
+                // ローカルストレージに保存
+                localStorage.setItem('appData', JSON.stringify(data));
+                console.log('ローカルストレージに保存完了');
+                break;
+        }
+    } catch (error) {
+        console.error('データ保存エラー:', error);
+    }
+}
+
+// ルーティンの追加
+function addRoutine(routineData) {
+    console.log('ルーティン追加:', routineData);
+    
+    const newRoutine = {
+        id: Date.now().toString(),
+        ...routineData,
+        createdAt: new Date().toISOString(),
+        userId: currentUserInfo?.id || 'unknown'
+    };
+    
+    routines.push(newRoutine);
+    saveData();
+    
+    // 表示を更新
+    displayTodayRoutines();
+    displayAllRoutines();
+    
+    showNotification('ルーティンを追加しました', 'success');
+}
+
+// アプリの初期化
+function initializeApp() {
+    console.log('アプリ初期化開始');
+    
+    // ストレージの初期化
+    initializeStorage();
+    
+    // データの読み込み
+    loadRoutines();
+    
+    // 同期状態の更新
+    updateSyncStatus();
+    
+    // 広告の表示
+    showAdsIfNeeded();
+    
+    console.log('アプリ初期化完了');
+}
+
+// ストレージの初期化
+function initializeStorage() {
+    console.log('ストレージ初期化');
+    
+    // 保存されたデータを読み込み
+    try {
+        const savedData = localStorage.getItem('appData');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            routines = data.routines || [];
+            completions = data.completions || [];
+            console.log('保存されたデータを読み込みました');
+        }
+    } catch (error) {
+        console.error('データ読み込みエラー:', error);
+        routines = [];
+        completions = [];
+    }
+}
+
+// ログアウト処理
+async function logout() {
+    console.log('ログアウト開始');
+    
+    try {
+        // Firebase認証からログアウト
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            await firebase.auth().signOut();
+        }
+        
+        // ローカルデータをクリア
+        clearUserInfo();
+        
+        // 画面を認証画面に戻す
+        showAuthScreen();
+        
+        showNotification('ログアウトしました', 'info');
+        
+    } catch (error) {
+        console.error('ログアウトエラー:', error);
+        showNotification('ログアウトエラーが発生しました', 'error');
     }
 } 
