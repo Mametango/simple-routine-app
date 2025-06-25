@@ -54,22 +54,30 @@ function setupEventListeners() {
 
 // 認証状態の確認
 function checkAuthState() {
-    console.log('認証状態確認開始');
-    
     try {
+        // まずローカル認証を確認
+        const localUser = checkLocalAuth();
+        if (localUser) {
+            handleAuthStateChange(localUser);
+            return;
+        }
+        
         // Firebase認証状態の確認
         if (typeof firebase !== 'undefined' && firebase.auth) {
             firebase.auth().onAuthStateChanged(function(user) {
                 console.log('Firebase認証状態変更:', user ? 'ログイン済み' : '未ログイン');
-                handleAuthStateChange(user);
+                if (user) {
+                    handleAuthStateChange(user);
+                } else {
+                    showAuthScreen();
+                }
             });
         } else {
-            console.log('Firebase未初期化、ローカル認証を確認');
-            checkLocalAuth();
+            showAuthScreen();
         }
     } catch (error) {
         console.error('認証状態確認エラー:', error);
-        checkLocalAuth();
+        showAuthScreen();
     }
 }
 
@@ -82,15 +90,12 @@ function checkLocalAuth() {
         if (userData) {
             const user = JSON.parse(userData);
             console.log('ローカルユーザー発見:', user.email);
-            handleAuthStateChange(user);
-        } else {
-            console.log('ローカルユーザーなし');
-            showAuthScreen();
+            return user;
         }
     } catch (error) {
         console.error('ローカル認証確認エラー:', error);
-        showAuthScreen();
     }
+    return null;
 }
 
 // 認証状態変更の処理
@@ -125,7 +130,8 @@ function setUserInfo(user) {
         email: user.email,
         displayName: user.displayName || user.email,
         uid: user.uid || null,
-        isAdmin: user.email === 'yasnaries@gmail.com'
+        isAdmin: user.email === 'yasnaries@gmail.com',
+        authType: user.uid ? 'firebase' : 'local' // 認証タイプを記録
     };
     
     // ローカルストレージに保存
@@ -238,8 +244,14 @@ function handleAuthSubmit(event) {
     }
     
     try {
+        // まずローカル認証を試行
+        const localAuthResult = handleLocalAuth(email, password, persistence);
+        if (localAuthResult) {
+            return; // ローカル認証が成功した場合
+        }
+        
+        // ローカル認証が失敗した場合、Firebase認証を試行
         if (typeof firebase !== 'undefined' && firebase.auth) {
-            // Firebase認証
             firebase.auth().setPersistence(persistence === 'LOCAL' ? 
                 firebase.auth.Auth.Persistence.LOCAL : 
                 firebase.auth.Auth.Persistence.SESSION
@@ -248,18 +260,16 @@ function handleAuthSubmit(event) {
             }).then((result) => {
                 console.log('Firebaseログイン成功:', result.user.email);
                 
-                // ストレージを自動的にローカルに設定
-                setStorageType('local');
-                showNotification('メールログインでローカルストレージが自動選択されました', 'info');
+                // ストレージを自動的にFirebaseに設定
+                setStorageType('firebase');
+                showNotification('FirebaseログインでFirebaseストレージが自動選択されました', 'info');
                 
             }).catch((error) => {
                 console.error('Firebaseログインエラー:', error);
                 showNotification('ログインに失敗しました: ' + error.message, 'error');
             });
         } else {
-            console.log('Firebase未利用、ローカル認証を使用');
-            // ローカル認証
-            handleLocalAuth(email, password, persistence);
+            showNotification('メールアドレスまたはパスワードが正しくありません', 'error');
         }
     } catch (error) {
         console.error('認証処理エラー:', error);
@@ -290,7 +300,8 @@ function handleLocalAuth(email, password, persistence) {
                 email: user.email,
                 displayName: user.displayName || user.email,
                 uid: user.id,
-                isAdmin: user.email === 'yasnaries@gmail.com'
+                isAdmin: user.email === 'yasnaries@gmail.com',
+                authType: 'local'
             };
             
             handleAuthStateChange(userData);
@@ -299,13 +310,14 @@ function handleLocalAuth(email, password, persistence) {
             setStorageType('local');
             showNotification('ローカルストレージが自動選択されました', 'info');
             
+            return true; // 認証成功
         } else {
             console.log('ローカル認証失敗: ユーザーが見つかりません');
-            showNotification('メールアドレスまたはパスワードが正しくありません', 'error');
+            return false; // 認証失敗
         }
     } catch (error) {
         console.error('ローカル認証エラー:', error);
-        showNotification('認証に失敗しました', 'error');
+        return false; // 認証失敗
     }
 }
 
@@ -657,4 +669,47 @@ function fixFirebaseConfig() {
     setTimeout(() => {
         showNotification('Firebase設定の修正が完了しました', 'success');
     }, 2000);
+}
+
+// ログアウト機能
+function logout() {
+    console.log('ログアウト開始');
+    
+    try {
+        // 現在のユーザー情報を取得
+        const currentUser = window.currentUser;
+        
+        if (currentUser && currentUser.authType === 'firebase') {
+            // Firebaseログアウト
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().signOut().then(() => {
+                    console.log('Firebaseログアウト成功');
+                    clearUserInfo();
+                    showAuthScreen();
+                    showNotification('ログアウトしました', 'info');
+                }).catch((error) => {
+                    console.error('Firebaseログアウトエラー:', error);
+                    // エラーが発生してもローカル情報をクリア
+                    clearUserInfo();
+                    showAuthScreen();
+                    showNotification('ログアウトしました', 'info');
+                });
+            } else {
+                clearUserInfo();
+                showAuthScreen();
+                showNotification('ログアウトしました', 'info');
+            }
+        } else {
+            // ローカルログアウト
+            clearUserInfo();
+            showAuthScreen();
+            showNotification('ログアウトしました', 'info');
+        }
+    } catch (error) {
+        console.error('ログアウトエラー:', error);
+        // エラーが発生してもローカル情報をクリア
+        clearUserInfo();
+        showAuthScreen();
+        showNotification('ログアウトしました', 'info');
+    }
 } 
