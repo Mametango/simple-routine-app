@@ -10,6 +10,10 @@ let currentUserInfo = null;
 let currentStorage = 'local';
 let routines = [];
 let completions = [];
+let isGoogleLoginInProgress = false; // ログイン処理中のフラグ
+
+// グローバルフラグを設定（Firebase設定からアクセス可能にする）
+window.isGoogleLoginInProgress = false;
 
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
@@ -536,10 +540,20 @@ function showAuthScreen() {
 async function handleGoogleLogin() {
     console.log('Googleログイン開始');
     
+    // 既にログイン処理中の場合は何もしない
+    if (isGoogleLoginInProgress) {
+        console.log('Googleログイン処理中です。しばらく待ってから再試行してください。');
+        showNotification('ログイン処理中です。しばらく待ってから再試行してください。', 'info');
+        return;
+    }
+    
     if (typeof firebase === 'undefined') {
         showNotification('Firebaseが読み込まれていません', 'error');
         return;
     }
+    
+    isGoogleLoginInProgress = true;
+    window.isGoogleLoginInProgress = true; // グローバルフラグも更新
     
     try {
         // ポップアップブロックチェック
@@ -550,6 +564,10 @@ async function handleGoogleLogin() {
         }
         
         const auth = firebase.auth();
+        
+        // 既存のポップアップをクリーンアップ
+        await cleanupExistingPopups();
+        
         const googleProvider = new firebase.auth.GoogleAuthProvider();
         
         // スコープを設定
@@ -563,8 +581,13 @@ async function handleGoogleLogin() {
         
         console.log('Google認証プロバイダー設定完了');
         
-        // ポップアップ認証を試行
-        const result = await auth.signInWithPopup(googleProvider);
+        // ポップアップ認証を試行（タイムアウト付き）
+        const result = await Promise.race([
+            auth.signInWithPopup(googleProvider),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('認証タイムアウト')), 30000)
+            )
+        ]);
         
         console.log('Googleログイン成功:', result.user.email);
         
@@ -611,23 +634,70 @@ async function handleGoogleLogin() {
                 errorMessage = 'このドメインは認証が許可されていません。管理者に連絡してください。';
                 break;
             default:
-                errorMessage = `ログインエラー: ${error.message}`;
+                if (error.message.includes('タイムアウト')) {
+                    errorMessage = '認証がタイムアウトしました。再試行してください。';
+                } else {
+                    errorMessage = `ログインエラー: ${error.message}`;
+                }
         }
         
         showNotification(errorMessage, 'error');
+        
+        // エラー後に少し待ってからフラグをリセット
+        setTimeout(() => {
+            isGoogleLoginInProgress = false;
+            window.isGoogleLoginInProgress = false;
+        }, 2000);
+        
+    } finally {
+        // 成功時は即座にフラグをリセット
+        if (!isGoogleLoginInProgress) {
+            isGoogleLoginInProgress = false;
+            window.isGoogleLoginInProgress = false;
+        }
     }
 }
 
-// ポップアップブロックチェック
+// 既存のポップアップをクリーンアップ
+async function cleanupExistingPopups() {
+    try {
+        // 既存のFirebase認証ポップアップをキャンセル
+        const auth = firebase.auth();
+        if (auth.currentUser) {
+            // 現在のユーザーがいる場合は一旦サインアウト
+            await auth.signOut();
+        }
+        
+        // 少し待機してから次の処理へ
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+    } catch (error) {
+        console.log('ポップアップクリーンアップエラー（無視）:', error);
+    }
+}
+
+// ポップアップブロックチェック（改善版）
 function checkPopupBlocked() {
     return new Promise((resolve) => {
-        const popup = window.open('', '_blank', 'width=1,height=1');
-        
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-            resolve(true); // ポップアップがブロックされている
-        } else {
-            popup.close();
-            resolve(false); // ポップアップが許可されている
+        try {
+            const popup = window.open('', '_blank', 'width=1,height=1,scrollbars=no,resizable=no');
+            
+            if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                resolve(true); // ポップアップがブロックされている
+            } else {
+                // ポップアップが開いた場合、少し待ってから閉じる
+                setTimeout(() => {
+                    try {
+                        popup.close();
+                    } catch (e) {
+                        console.log('ポップアップクローズエラー（無視）:', e);
+                    }
+                }, 100);
+                resolve(false); // ポップアップが許可されている
+            }
+        } catch (error) {
+            console.log('ポップアップチェックエラー:', error);
+            resolve(true); // エラーの場合はブロックされているとみなす
         }
     });
 }

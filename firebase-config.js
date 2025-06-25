@@ -68,9 +68,16 @@ if (typeof firebase !== 'undefined') {
     console.error('firebase-config.jsがfirebase SDKの読み込み後に実行されていることを確認してください');
 }
 
-// Firebase認証状態の監視
+// Firebase認証状態の監視（改善版）
+let authStateListener = null;
+
 if (typeof firebase !== 'undefined' && firebase.auth) {
-    firebase.auth().onAuthStateChanged((user) => {
+    // 既存のリスナーをクリーンアップ
+    if (authStateListener) {
+        firebase.auth().removeAuthStateListener(authStateListener);
+    }
+    
+    authStateListener = (user) => {
         if (user) {
             console.log('Firebase認証状態変更 - ログイン:', user.email);
             // Googleログインの場合のみ処理
@@ -80,12 +87,20 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
         } else {
             console.log('Firebase認証状態変更 - ログアウト');
         }
-    });
+    };
+    
+    firebase.auth().onAuthStateChanged(authStateListener);
 }
 
-// Firebase認証状態変更時の処理
+// Firebase認証状態変更時の処理（改善版）
 function handleFirebaseAuthStateChange(user) {
     console.log('Firebase認証状態変更処理開始:', user.email);
+    
+    // 処理中のフラグをチェック
+    if (window.isGoogleLoginInProgress) {
+        console.log('Googleログイン処理中のため、認証状態変更をスキップ');
+        return;
+    }
     
     // ローカルアカウントをチェック
     const users = JSON.parse(localStorage.getItem('users') || '[]');
@@ -118,11 +133,15 @@ function handleFirebaseAuthStateChange(user) {
         localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
         
         // メインアプリを表示
-        showMainApp();
+        if (typeof showMainApp === 'function') {
+            showMainApp();
+        }
         
         console.log('Googleアカウントとローカルアカウントをリンク完了');
     } else {
         // 新しいGoogleユーザーの場合
-        createLocalAccountForGoogleUser(user);
+        if (typeof createLocalAccountForGoogleUser === 'function') {
+            createLocalAccountForGoogleUser(user);
+        }
     }
 } 
