@@ -592,21 +592,22 @@ async function handleRegularLogin(email, password) {
             isGoogleUser: user.isGoogleLinked || false
         };
         
-        // Googleアカウントとリンクされている場合はFirebase認証も試行
+        // Googleアカウントとリンクされている場合の処理
         if (user.isGoogleLinked && user.googleUid) {
             try {
-                // Firebase認証状態をチェック
+                // Firebase認証状態をチェック（Googleログインのみ）
                 const firebaseUser = firebase.auth().currentUser;
                 if (firebaseUser && firebaseUser.uid === user.googleUid) {
-                    // 既にFirebaseでログイン済み
+                    // 既にGoogleでログイン済み
                     currentStorage = 'firebase';
                     localStorage.setItem('storageType', 'firebase');
-                    console.log('Firebase認証済み - サーバー同期モード');
+                    console.log('Google認証済み - サーバー同期モード');
                 } else {
-                    // Firebase認証が必要
-                    console.log('Googleアカウントとの再認証が必要です');
-                    showNotification('Googleアカウントとの再認証が必要です。Googleログインを使用してください。', 'warning');
-                    return;
+                    // Google認証が必要だが、通常ログインではFirebase認証を試行しない
+                    console.log('Googleアカウントとの再認証が必要です - ローカルモードで続行');
+                    currentStorage = 'local';
+                    localStorage.setItem('storageType', 'local');
+                    showNotification('Googleアカウントとの再認証が必要です。Googleログインを使用するとサーバー同期が可能です。', 'info');
                 }
             } catch (firebaseError) {
                 console.log('Firebase認証エラー - ローカルモードで続行:', firebaseError);
