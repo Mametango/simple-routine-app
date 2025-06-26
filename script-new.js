@@ -812,45 +812,75 @@ function getFrequencyText(frequency) {
 function isRoutineCompletedToday(routineId) {
     const today = new Date().toISOString().split('T')[0];
     
+    // completions配列が初期化されているかチェック
+    if (!Array.isArray(completions)) {
+        console.warn('completions配列が初期化されていません。初期化します。');
+        completions = [];
+        return false;
+    }
+    
     // completions配列から完了データを検索
     const completion = completions.find(c => 
         c.routineId === routineId && c.date === today
     );
     
-    return completion !== undefined;
+    const isCompleted = completion !== undefined;
+    console.log(`完了チェック [${routineId}]: ${isCompleted ? '完了済み' : '未完了'} (日付: ${today}, completions配列長: ${completions.length})`);
+    
+    return isCompleted;
 }
 
 // ルーティン完了を切り替え
 async function toggleRoutineCompletion(routineId) {
-    console.log('ルーティン完了切り替え:', routineId);
+    console.log('ルーティン完了切り替え開始:', routineId);
+    
+    // completions配列が初期化されているかチェック
+    if (!Array.isArray(completions)) {
+        console.warn('completions配列が初期化されていません。初期化します。');
+        completions = [];
+    }
     
     const today = new Date().toISOString().split('T')[0];
+    console.log('今日の日付:', today);
+    console.log('現在のcompletions配列:', completions);
     
     // completions配列から完了データを検索
     const completionIndex = completions.findIndex(c => 
         c.routineId === routineId && c.date === today
     );
     
+    console.log('完了データ検索結果:', {
+        routineId: routineId,
+        today: today,
+        completionIndex: completionIndex,
+        foundCompletion: completionIndex !== -1 ? completions[completionIndex] : null
+    });
+    
     if (completionIndex !== -1) {
         // 完了データを削除
-        completions.splice(completionIndex, 1);
-        console.log('ルーティン完了を解除:', routineId);
+        const removedCompletion = completions.splice(completionIndex, 1)[0];
+        console.log('ルーティン完了を解除:', routineId, '削除されたデータ:', removedCompletion);
     } else {
         // 完了データを追加
-        completions.push({
+        const newCompletion = {
             routineId: routineId,
             date: today,
             completedAt: new Date().toISOString()
-        });
-        console.log('ルーティン完了を設定:', routineId);
+        };
+        completions.push(newCompletion);
+        console.log('ルーティン完了を設定:', routineId, '追加されたデータ:', newCompletion);
     }
+    
+    console.log('更新後のcompletions配列:', completions);
     
     // 表示を更新
     displayTodayRoutines();
     displayAllRoutines();
     
     // データを保存（完了を待つ）
+    console.log('データ保存開始');
     await saveData();
+    console.log('データ保存完了');
     
     // Firebaseストレージが選択されている場合は、Firebaseに同期
     if (currentStorage === 'firebase' && currentUserInfo && currentUserInfo.id) {
@@ -863,6 +893,8 @@ async function toggleRoutineCompletion(routineId) {
             showNotification('Firebase同期に失敗しました', 'error');
         }
     }
+    
+    console.log('ルーティン完了切り替え完了:', routineId);
 }
 
 // ルーティン追加画面を表示
@@ -1999,6 +2031,9 @@ function showAdminTab(tabName) {
 function loadAdminData() {
     console.log('管理者データ読み込み開始');
     
+    // デバッグ情報を表示
+    showDataDebugInfo();
+    
     // ユーザーリストを読み込み
     loadUsersList();
     
@@ -2014,10 +2049,14 @@ function loadUsersList() {
     console.log('ユーザーリスト読み込み');
     
     const usersList = document.getElementById('usersList');
-    if (!usersList) return;
+    if (!usersList) {
+        console.error('usersList要素が見つかりません');
+        return;
+    }
     
     // ローカルストレージからユーザーデータを取得
     const users = getAllUsers();
+    console.log('取得したユーザー:', users);
     
     if (users.length === 0) {
         usersList.innerHTML = `
@@ -2025,6 +2064,10 @@ function loadUsersList() {
                 <i data-lucide="users" class="empty-icon"></i>
                 <h3>ユーザーが見つかりません</h3>
                 <p>まだユーザーが登録されていません</p>
+                <button class="debug-btn" onclick="showDataDebugInfo()">
+                    <i data-lucide="bug"></i>
+                    デバッグ情報を表示
+                </button>
             </div>
         `;
     } else {
@@ -2280,11 +2323,26 @@ function loadAdminStats() {
     const adminUsers = users.filter(u => u.userType === 'admin').length;
     const friendUsers = users.filter(u => u.userType === 'friend').length;
     const generalUsers = users.filter(u => u.userType === 'general').length;
+    const googleUsers = users.filter(u => u.isGoogleLinked).length;
+    
+    // 詳細統計を表示
+    const adminUsersCount = document.getElementById('adminUsersCount');
+    if (adminUsersCount) adminUsersCount.textContent = adminUsers;
+    
+    const generalUsersCount = document.getElementById('generalUsersCount');
+    if (generalUsersCount) generalUsersCount.textContent = generalUsers;
+    
+    const friendUsersCount = document.getElementById('friendUsersCount');
+    if (friendUsersCount) friendUsersCount.textContent = friendUsers;
+    
+    const googleUsersCount = document.getElementById('googleUsersCount');
+    if (googleUsersCount) googleUsersCount.textContent = googleUsers;
     
     console.log('ユーザータイプ別統計:', {
         admin: adminUsers,
         friend: friendUsers,
         general: generalUsers,
+        google: googleUsers,
         total: users.length
     });
     
@@ -2323,6 +2381,7 @@ function loadAdminStats() {
         adminUsers: adminUsers,
         friendUsers: friendUsers,
         generalUsers: generalUsers,
+        googleUsers: googleUsers,
         friendsList: friendsList.length,
         totalRoutines: routines.length,
         currentUser: currentUserInfo?.email,
@@ -2724,19 +2783,25 @@ function handleFrequencyButtonClick(event) {
 function handleTabButtonClick(event) {
     const frequency = event.target.dataset.frequency;
     if (frequency) {
-        filterRoutinesByFrequency(frequency);
+        filterRoutinesByFrequency(frequency, event.target);
     }
 }
 
 // 頻度別にルーティンをフィルタリング
-function filterRoutinesByFrequency(frequency) {
+function filterRoutinesByFrequency(frequency, clickedButton) {
     const tabButtons = document.querySelectorAll('.tab-btn');
     tabButtons.forEach(btn => btn.classList.remove('active'));
-    
-    event.target.classList.add('active');
-    
-    const filteredRoutines = routines.filter(routine => routine.frequency === frequency);
-    
+    if (clickedButton) {
+        clickedButton.classList.add('active');
+    }
+
+    let filteredRoutines;
+    if (frequency === 'all') {
+        filteredRoutines = routines;
+    } else {
+        filteredRoutines = routines.filter(routine => routine.frequency === frequency);
+    }
+
     const allRoutinesList = document.getElementById('allRoutinesList');
     if (allRoutinesList) {
         if (filteredRoutines.length === 0) {
@@ -2750,7 +2815,6 @@ function filterRoutinesByFrequency(frequency) {
         } else {
             allRoutinesList.innerHTML = filteredRoutines.map(routine => createRoutineHTML(routine)).join('');
         }
-        
         // Lucideアイコンを初期化
         if (window.lucide) {
             lucide.createIcons();
@@ -3219,6 +3283,10 @@ function manualSync() {
 
 // デバッグ用のデータ状態表示関数
 function showDataDebugInfo() {
+    // ローカルストレージからユーザーデータを取得
+    const registeredUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+    
     const debugInfo = {
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
@@ -3227,12 +3295,26 @@ function showDataDebugInfo() {
         storageType: currentStorage,
         routinesCount: routines.length,
         completionsCount: completions.length,
+        usersData: {
+            registeredUsersCount: registeredUsers.length,
+            registeredUsers: registeredUsers.map(u => ({
+                email: u.email,
+                displayName: u.displayName,
+                id: u.id,
+                isGoogleLinked: u.isGoogleLinked,
+                createdAt: u.createdAt
+            })),
+            friendsListCount: friendsList.length,
+            friendsList: friendsList
+        },
         localStorage: {
             appData: localStorage.getItem('appData') ? '存在' : 'なし',
             lastUpdated: localStorage.getItem('lastUpdated'),
             storageType: localStorage.getItem('storageType'),
             isLoggedIn: localStorage.getItem('isLoggedIn'),
-            userInfo: localStorage.getItem('userInfo') ? '存在' : 'なし'
+            userInfo: localStorage.getItem('userInfo') ? '存在' : 'なし',
+            users: localStorage.getItem('users') ? '存在' : 'なし',
+            friendsList: localStorage.getItem('friendsList') ? '存在' : 'なし'
         },
         today: {
             date: new Date().toISOString().split('T')[0],
@@ -3253,6 +3335,8 @@ function showDataDebugInfo() {
           `ストレージ: ${debugInfo.storageType}\n` +
           `ルーティン数: ${debugInfo.routinesCount}\n` +
           `完了数: ${debugInfo.completionsCount}\n` +
+          `登録ユーザー数: ${debugInfo.usersData.registeredUsersCount}\n` +
+          `友達リスト数: ${debugInfo.usersData.friendsListCount}\n` +
           `今日: ${debugInfo.today.date} (曜日: ${debugInfo.today.day}, 日: ${debugInfo.today.dateNum})`);
 }
 

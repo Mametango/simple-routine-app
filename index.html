@@ -483,6 +483,20 @@
                             <div class="users-list" id="usersList">
                                 <!-- ユーザーリストがここに表示されます -->
                             </div>
+                            
+                            <!-- デバッグ情報セクション -->
+                            <div class="admin-section">
+                                <h3>デバッグ情報</h3>
+                                <div class="debug-info">
+                                    <button onclick="showDataDebugInfo()" class="debug-btn">
+                                        <i data-lucide="bug"></i>
+                                        詳細デバッグ情報を表示
+                                    </button>
+                                    <div class="debug-details" id="debugDetails" style="display: none;">
+                                        <pre id="debugOutput"></pre>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
