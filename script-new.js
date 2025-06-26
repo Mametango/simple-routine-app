@@ -1241,10 +1241,12 @@ async function linkWithLocalAccount(googleUser) {
     console.log('ローカルアカウントとのリンク開始:', googleUser.email);
     
     const users = JSON.parse(localStorage.getItem('users') || '[]');
+    console.log('現在のusers配列:', users);
     const existingUser = users.find(u => u.email === googleUser.email);
     
     if (existingUser) {
         // 既存のローカルアカウントとリンク
+        console.log('既存ユーザーとリンク:', existingUser);
         existingUser.isGoogleLinked = true;
         existingUser.googleUid = googleUser.uid;
         existingUser.displayName = googleUser.displayName || existingUser.displayName;
@@ -1253,10 +1255,13 @@ async function linkWithLocalAccount(googleUser) {
             u.email === googleUser.email ? existingUser : u
         );
         localStorage.setItem('users', JSON.stringify(updatedUsers));
+        console.log('既存ユーザーを更新:', existingUser);
+        console.log('更新後のusers配列:', JSON.parse(localStorage.getItem('users') || '[]'));
         
         console.log('既存アカウントとリンク完了');
     } else {
         // 新しいGoogleユーザー用のローカルアカウントを作成
+        console.log('新規Googleユーザーアカウント作成:', googleUser.email);
         const newUser = {
             id: googleUser.uid,
             email: googleUser.email,
@@ -1269,6 +1274,8 @@ async function linkWithLocalAccount(googleUser) {
         
         users.push(newUser);
         localStorage.setItem('users', JSON.stringify(users));
+        console.log('新規Googleユーザーをusers配列に追加:', newUser);
+        console.log('更新後のusers配列:', JSON.parse(localStorage.getItem('users') || '[]'));
         
         console.log('新規Googleユーザーアカウント作成完了');
     }
@@ -1316,6 +1323,7 @@ async function handleRegularLogin(email, password) {
     try {
         // ローカルユーザーをチェック
         const users = JSON.parse(localStorage.getItem('users') || '[]');
+        console.log('現在のusers配列:', users);
         const user = users.find(u => u.email === email);
         
         if (!user) {
@@ -1333,6 +1341,8 @@ async function handleRegularLogin(email, password) {
             
             users.push(newUser);
             localStorage.setItem('users', JSON.stringify(users));
+            console.log('新規ユーザーをusers配列に追加:', newUser);
+            console.log('更新後のusers配列:', JSON.parse(localStorage.getItem('users') || '[]'));
             
             // ユーザー情報を設定
             currentUserInfo = {
@@ -1356,6 +1366,8 @@ async function handleRegularLogin(email, password) {
             showNotification('新規ユーザーとして登録されました', 'success');
             return;
         }
+        
+        console.log('既存ユーザーを発見:', user);
         
         // パスワードチェック
         if (user.password !== password) {
