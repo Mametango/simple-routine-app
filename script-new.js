@@ -132,6 +132,11 @@ async function loadDataFromFirebase() {
         const userId = currentUserInfo.id;
         
         console.log('Firebaseからデータ読み込み - ユーザーID:', userId);
+        console.log('Firebaseからデータ読み込み - 現在のローカルデータ:', {
+            routinesCount: routines.length,
+            completionsCount: completions.length,
+            lastUpdated: localStorage.getItem('lastUpdated')
+        });
         
         const docRef = db.collection('users').doc(userId);
         const doc = await docRef.get();
@@ -141,8 +146,40 @@ async function loadDataFromFirebase() {
             console.log('Firebaseから読み込み:', firebaseData);
             
             if (firebaseData.data) {
-                routines = firebaseData.data.routines || [];
-                completions = firebaseData.data.completions || [];
+                const firebaseRoutines = firebaseData.data.routines || [];
+                const firebaseCompletions = firebaseData.data.completions || [];
+                
+                console.log('Firebaseデータ詳細:', {
+                    routinesCount: firebaseRoutines.length,
+                    completionsCount: firebaseCompletions.length,
+                    lastUpdated: firebaseData.data.lastUpdated
+                });
+                
+                // ローカルデータと比較
+                const localLastUpdated = localStorage.getItem('lastUpdated');
+                if (localLastUpdated && firebaseData.data.lastUpdated) {
+                    const firebaseLastUpdated = new Date(firebaseData.data.lastUpdated);
+                    const localLastUpdatedDate = new Date(localLastUpdated);
+                    
+                    console.log('データ比較:', {
+                        firebase: firebaseLastUpdated.toISOString(),
+                        local: localLastUpdatedDate.toISOString(),
+                        firebaseIsNewer: firebaseLastUpdated > localLastUpdatedDate
+                    });
+                    
+                    if (firebaseLastUpdated > localLastUpdatedDate) {
+                        console.log('Firebaseのデータが新しいため、ローカルデータを更新');
+                        routines = firebaseRoutines;
+                        completions = firebaseCompletions;
+                    } else {
+                        console.log('ローカルデータが新しいか同じため、Firebaseデータを使用しない');
+                        // ローカルデータを維持
+                    }
+                } else {
+                    console.log('日付情報がないため、Firebaseデータを使用');
+                    routines = firebaseRoutines;
+                    completions = firebaseCompletions;
+                }
                 
                 // ローカルストレージにも保存（バックアップ）
                 localStorage.setItem('appData', JSON.stringify({
@@ -1463,6 +1500,13 @@ function checkLoginStatus() {
 // 手動同期機能
 function manualSync() {
     console.log('手動同期開始');
+    console.log('手動同期 - 現在のストレージタイプ:', currentStorage);
+    console.log('手動同期 - 現在のユーザー情報:', currentUserInfo);
+    console.log('手動同期 - 現在のローカルデータ:', {
+        routinesCount: routines.length,
+        completionsCount: completions.length,
+        lastUpdated: localStorage.getItem('lastUpdated')
+    });
     
     const syncBtn = document.getElementById('syncBtn');
     if (syncBtn) {
@@ -1476,6 +1520,11 @@ function manualSync() {
     
     syncPromise.then(() => {
         console.log('手動同期完了');
+        console.log('手動同期完了後のローカルデータ:', {
+            routinesCount: routines.length,
+            completionsCount: completions.length,
+            lastUpdated: localStorage.getItem('lastUpdated')
+        });
         
         if (syncBtn) {
             syncBtn.classList.remove('syncing');
@@ -1502,16 +1551,21 @@ function manualSync() {
 // 実際の同期処理
 async function performActualSync() {
     console.log('実際の同期処理開始');
+    console.log('performActualSync - 現在のストレージタイプ:', currentStorage);
+    console.log('performActualSync - 現在のユーザー情報:', currentUserInfo);
     
     try {
         switch (currentStorage) {
             case 'firebase':
+                console.log('Firebase同期を実行');
                 await syncWithFirebase();
                 break;
             case 'google-drive':
+                console.log('Google Drive同期を実行');
                 await syncWithGoogleDrive();
                 break;
             default:
+                console.log('ローカルストレージ同期を実行');
                 await syncWithLocalStorage();
                 break;
         }
@@ -1540,6 +1594,11 @@ async function syncWithFirebase() {
     const userId = currentUserInfo.id;
     
     console.log('Firebase同期 - ユーザーID:', userId);
+    console.log('Firebase同期 - 現在のローカルデータ:', {
+        routinesCount: routines.length,
+        completionsCount: completions.length,
+        lastUpdated: localStorage.getItem('lastUpdated')
+    });
     
     try {
         // 同期状態を「同期中」に更新
@@ -1550,66 +1609,96 @@ async function syncWithFirebase() {
             syncStatus.title = 'Firebaseサーバーと同期中...';
         }
         
-        // まずFirebaseからデータを読み込み
+        // Firebaseからデータを読み込み
         const docRef = db.collection('users').doc(userId);
         const doc = await docRef.get();
         
+        let firebaseData = null;
+        let shouldUpdateLocal = false;
+        let shouldUpdateFirebase = true;
+        
         if (doc.exists) {
-            const firebaseData = doc.data();
+            firebaseData = doc.data();
             console.log('Firebaseから読み込み:', firebaseData);
             
-            // Firebaseのデータが新しい場合は、ローカルデータを更新
             if (firebaseData.data && firebaseData.data.lastUpdated) {
                 const firebaseLastUpdated = new Date(firebaseData.data.lastUpdated);
                 const localLastUpdated = localStorage.getItem('lastUpdated') ? 
                     new Date(localStorage.getItem('lastUpdated')) : new Date(0);
                 
+                console.log('日付比較:', {
+                    firebase: firebaseLastUpdated.toISOString(),
+                    local: localLastUpdated.toISOString(),
+                    firebaseIsNewer: firebaseLastUpdated > localLastUpdated
+                });
+                
                 if (firebaseLastUpdated > localLastUpdated) {
                     console.log('Firebaseのデータが新しいため、ローカルデータを更新');
-                    routines = firebaseData.data.routines || [];
-                    completions = firebaseData.data.completions || [];
-                    localStorage.setItem('appData', JSON.stringify({
-                        routines: routines,
-                        completions: completions,
-                        lastUpdated: firebaseData.data.lastUpdated
-                    }));
-                    localStorage.setItem('lastUpdated', firebaseData.data.lastUpdated);
-                    
-                    // UIを更新
-                    displayTodayRoutines();
-                    displayAllRoutines();
-                    showNotification('Firebaseから最新データを取得しました', 'success');
+                    shouldUpdateLocal = true;
+                    shouldUpdateFirebase = false; // 既に最新なので更新不要
+                } else if (firebaseLastUpdated.getTime() === localLastUpdated.getTime()) {
+                    console.log('データが同じ日時なので、Firebase更新をスキップ');
+                    shouldUpdateFirebase = false;
                 }
             }
+        } else {
+            console.log('Firebaseにドキュメントが存在しないため、新規作成');
         }
         
-        // 現在のデータをFirebaseに保存
-        const data = {
-            routines: routines || [],
-            completions: completions || [],
-            lastUpdated: new Date().toISOString(),
-            userInfo: {
-                email: currentUserInfo.email,
-                displayName: currentUserInfo.displayName,
-                isGoogleUser: currentUserInfo.isGoogleUser || false
-            }
-        };
+        // ローカルデータを更新（必要な場合）
+        if (shouldUpdateLocal && firebaseData && firebaseData.data) {
+            routines = firebaseData.data.routines || [];
+            completions = firebaseData.data.completions || [];
+            localStorage.setItem('appData', JSON.stringify({
+                routines: routines,
+                completions: completions,
+                lastUpdated: firebaseData.data.lastUpdated
+            }));
+            localStorage.setItem('lastUpdated', firebaseData.data.lastUpdated);
+            
+            console.log('ローカルデータ更新完了:', {
+                routinesCount: routines.length,
+                completionsCount: completions.length
+            });
+            
+            // UIを更新
+            displayTodayRoutines();
+            displayAllRoutines();
+            showNotification('Firebaseから最新データを取得しました', 'success');
+        }
         
-        console.log('Firebase同期 - 保存データ:', data);
-        
-        await docRef.set({
-            data: data,
-            updatedAt: new Date(),
-            userEmail: currentUserInfo.email
-        });
-        
-        console.log('Firebase同期完了');
+        // Firebaseにデータを保存（必要な場合）
+        if (shouldUpdateFirebase) {
+            const data = {
+                routines: routines || [],
+                completions: completions || [],
+                lastUpdated: new Date().toISOString(),
+                userInfo: {
+                    email: currentUserInfo.email,
+                    displayName: currentUserInfo.displayName,
+                    isGoogleUser: currentUserInfo.isGoogleUser || false
+                }
+            };
+            
+            console.log('Firebase同期 - 保存データ:', data);
+            
+            await docRef.set({
+                data: data,
+                updatedAt: new Date(),
+                userEmail: currentUserInfo.email
+            });
+            
+            // ローカルストレージのlastUpdatedも更新
+            localStorage.setItem('lastUpdated', data.lastUpdated);
+            
+            console.log('Firebase保存完了');
+            showNotification('Firebase同期が完了しました', 'success');
+        } else {
+            console.log('Firebase更新をスキップ');
+        }
         
         // 同期状態を「オンライン同期」に更新
         updateSyncStatus();
-        
-        // 成功通知
-        showNotification('Firebase同期が完了しました', 'success');
         
     } catch (error) {
         console.error('Firebase同期エラー:', error);
@@ -2439,13 +2528,27 @@ async function handleRoutineFormSubmit(event) {
         };
         
         console.log('新しいルーティン:', newRoutine);
+        console.log('ルーティン追加前のデータ:', {
+            routinesCount: routines.length,
+            completionsCount: completions.length,
+            lastUpdated: localStorage.getItem('lastUpdated'),
+            currentStorage: currentStorage,
+            currentUserInfo: currentUserInfo
+        });
         
         routines.push(newRoutine);
         console.log('routines配列に追加後の長さ:', routines.length);
         console.log('routines配列の内容:', routines);
         
         // データを保存（完了を待つ）
+        console.log('データ保存開始');
         await saveData();
+        console.log('データ保存完了');
+        console.log('ルーティン追加後のデータ:', {
+            routinesCount: routines.length,
+            completionsCount: completions.length,
+            lastUpdated: localStorage.getItem('lastUpdated')
+        });
         
         // フォームをリセット
         event.target.reset();
