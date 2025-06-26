@@ -759,5 +759,42 @@
 
     <!-- ファイルインポート用の隠しinput -->
     <input type="file" id="importFile" accept=".json" style="display: none;">
+
+    <!-- ページ読み込み時の初期化 -->
+    <script>
+        // ページ読み込み完了後に初期化を実行
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM読み込み完了 - 初期化開始');
+            
+            // イベントリスナーを設定
+            if (typeof setupEventListeners === 'function') {
+                setupEventListeners();
+                console.log('イベントリスナー設定完了');
+            } else {
+                console.error('setupEventListeners関数が見つかりません');
+            }
+            
+            // アプリを初期化
+            if (typeof initializeApp === 'function') {
+                initializeApp();
+                console.log('アプリ初期化完了');
+            } else {
+                console.error('initializeApp関数が見つかりません');
+            }
+            
+            // 認証状態をチェック
+            if (typeof checkAuthState === 'function') {
+                checkAuthState();
+                console.log('認証状態チェック完了');
+            } else {
+                console.error('checkAuthState関数が見つかりません');
+            }
+        });
+        
+        // ページ読み込みエラー時の処理
+        window.addEventListener('error', function(e) {
+            console.error('ページ読み込みエラー:', e.error);
+        });
+    </script>
 </body>
 </html>
