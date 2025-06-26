@@ -87,27 +87,91 @@ function initializeData() {
 function loadDataFromLocalStorage() {
     console.log('ローカルストレージからデータ読み込み開始');
     
-    // appDataからルーティンデータを読み込み
-    const savedAppData = localStorage.getItem('appData');
-    if (savedAppData) {
-        const appData = JSON.parse(savedAppData);
-        routines = appData.routines || [];
-        completions = appData.completions || [];
-        console.log('appDataからルーティンデータ読み込み完了:', routines.length);
-        console.log('appDataから完了データ読み込み完了:', completions.length);
-    } else {
-        // 旧形式のデータも確認
-        const savedRoutines = localStorage.getItem('routines');
-        if (savedRoutines) {
-            routines = JSON.parse(savedRoutines);
-            console.log('旧形式からルーティンデータ読み込み完了:', routines.length);
-        }
+    try {
+        const appData = localStorage.getItem('appData');
+        const lastUpdated = localStorage.getItem('lastUpdated');
         
-        const savedCompletions = localStorage.getItem('completions');
-        if (savedCompletions) {
-            completions = JSON.parse(savedCompletions);
-            console.log('旧形式から完了データ読み込み完了:', completions.length);
+        console.log('ローカルストレージ読み込み - 現在のユーザー:', currentUserInfo?.email);
+        console.log('ローカルストレージ読み込み - appData存在:', !!appData);
+        console.log('ローカルストレージ読み込み - lastUpdated:', lastUpdated);
+        
+        if (appData) {
+            const data = JSON.parse(appData);
+            console.log('ローカルストレージから読み込み:', data);
+            
+            // データの整合性チェック
+            if (data.routines && Array.isArray(data.routines)) {
+                routines = data.routines;
+                console.log('ローカルストレージからルーティン読み込み:', routines.length);
+            } else {
+                routines = [];
+                console.log('ローカルストレージのルーティンデータが不正、初期化');
+            }
+            
+            if (data.completions && Array.isArray(data.completions)) {
+                completions = data.completions;
+                console.log('ローカルストレージから完了データ読み込み:', completions.length);
+            } else {
+                completions = [];
+                console.log('ローカルストレージの完了データが不正、初期化');
+            }
+            
+            // データの所有者チェック（Firebaseストレージの場合）
+            if (currentStorage === 'firebase' && currentUserInfo) {
+                console.log('Firebaseストレージモード - データ所有者チェック');
+                
+                // ルーティンの所有者をチェック
+                const validRoutines = routines.filter(routine => {
+                    if (!routine.userId) {
+                        console.log('ルーティンにuserIdがありません:', routine);
+                        return false;
+                    }
+                    if (routine.userId !== currentUserInfo.id) {
+                        console.log('他のユーザーのルーティンを除外:', routine);
+                        return false;
+                    }
+                    return true;
+                });
+                
+                if (validRoutines.length !== routines.length) {
+                    console.log('他のユーザーのルーティンを除外:', routines.length - validRoutines.length);
+                    routines = validRoutines;
+                }
+                
+                // 完了データの所有者をチェック
+                const validCompletions = completions.filter(completion => {
+                    if (!completion.userId) {
+                        console.log('完了データにuserIdがありません:', completion);
+                        return false;
+                    }
+                    if (completion.userId !== currentUserInfo.id) {
+                        console.log('他のユーザーの完了データを除外:', completion);
+                        return false;
+                    }
+                    return true;
+                });
+                
+                if (validCompletions.length !== completions.length) {
+                    console.log('他のユーザーの完了データを除外:', completions.length - validCompletions.length);
+                    completions = validCompletions;
+                }
+            }
+            
+            // UIを更新
+            displayTodayRoutines();
+            displayAllRoutines();
+            
+            console.log('ローカルストレージからデータ読み込み完了');
+        } else {
+            console.log('ローカルストレージにデータがありません');
+            routines = [];
+            completions = [];
         }
+    } catch (error) {
+        console.error('ローカルストレージからデータ読み込みエラー:', error);
+        routines = [];
+        completions = [];
+        showNotification('ローカルデータの読み込みに失敗しました', 'error');
     }
 }
 
@@ -841,60 +905,41 @@ async function toggleRoutineCompletion(routineId) {
     }
     
     const today = new Date().toISOString().split('T')[0];
-    console.log('今日の日付:', today);
-    console.log('現在のcompletions配列:', completions);
-    
-    // completions配列から完了データを検索
-    const completionIndex = completions.findIndex(c => 
+    const existingCompletionIndex = completions.findIndex(c => 
         c.routineId === routineId && c.date === today
     );
     
-    console.log('完了データ検索結果:', {
-        routineId: routineId,
-        today: today,
-        completionIndex: completionIndex,
-        foundCompletion: completionIndex !== -1 ? completions[completionIndex] : null
-    });
-    
-    if (completionIndex !== -1) {
-        // 完了データを削除
-        const removedCompletion = completions.splice(completionIndex, 1)[0];
-        console.log('ルーティン完了を解除:', routineId, '削除されたデータ:', removedCompletion);
+    if (existingCompletionIndex !== -1) {
+        // 完了を削除
+        completions.splice(existingCompletionIndex, 1);
+        console.log('完了を削除:', routineId, today);
     } else {
-        // 完了データを追加
+        // 完了を追加
         const newCompletion = {
             routineId: routineId,
             date: today,
-            completedAt: new Date().toISOString()
+            completedAt: new Date().toISOString(),
+            userId: currentUserInfo?.id || 'unknown'
         };
         completions.push(newCompletion);
-        console.log('ルーティン完了を設定:', routineId, '追加されたデータ:', newCompletion);
+        console.log('完了を追加:', newCompletion);
     }
     
-    console.log('更新後のcompletions配列:', completions);
+    // データを保存
+    await saveData();
     
     // 表示を更新
     displayTodayRoutines();
     displayAllRoutines();
     
-    // データを保存（完了を待つ）
-    console.log('データ保存開始');
-    await saveData();
-    console.log('データ保存完了');
+    // 通知
+    const routine = routines.find(r => r.id === routineId);
+    const routineTitle = routine ? routine.title : 'ルーティン';
+    const message = existingCompletionIndex !== -1 ? 
+        `${routineTitle}の完了を解除しました` : 
+        `${routineTitle}を完了しました`;
     
-    // Firebaseストレージが選択されている場合は、Firebaseに同期
-    if (currentStorage === 'firebase' && currentUserInfo && currentUserInfo.id) {
-        console.log('Firebaseストレージが選択されているため、Firebaseに同期します');
-        try {
-            await performActualSync();
-            console.log('Firebase同期完了');
-        } catch (error) {
-            console.error('Firebase同期エラー:', error);
-            showNotification('Firebase同期に失敗しました', 'error');
-        }
-    }
-    
-    console.log('ルーティン完了切り替え完了:', routineId);
+    showNotification(message, 'success');
 }
 
 // ルーティン追加画面を表示
