@@ -118,10 +118,21 @@ function loadDataFromLocalStorage() {
             
             // データの所有者チェック（Firebaseストレージの場合）
             if (currentStorage === 'firebase' && currentUserInfo) {
-                console.log('Firebaseストレージモード - データ所有者チェック');
+                console.log('Firebaseストレージモード - データ所有者チェック開始');
+                console.log('現在のユーザーID:', currentUserInfo.id);
+                console.log('チェック前のルーティン数:', routines.length);
+                console.log('チェック前の完了データ数:', completions.length);
                 
                 // ルーティンの所有者をチェック
                 const validRoutines = routines.filter(routine => {
+                    console.log('ルーティンチェック:', {
+                        id: routine.id,
+                        title: routine.title,
+                        userId: routine.userId,
+                        currentUserId: currentUserInfo.id,
+                        isValid: routine.userId === currentUserInfo.id
+                    });
+                    
                     if (!routine.userId) {
                         console.log('ルーティンにuserIdがありません:', routine);
                         return false;
@@ -140,6 +151,14 @@ function loadDataFromLocalStorage() {
                 
                 // 完了データの所有者をチェック
                 const validCompletions = completions.filter(completion => {
+                    console.log('完了データチェック:', {
+                        routineId: completion.routineId,
+                        date: completion.date,
+                        userId: completion.userId,
+                        currentUserId: currentUserInfo.id,
+                        isValid: completion.userId === currentUserInfo.id
+                    });
+                    
                     if (!completion.userId) {
                         console.log('完了データにuserIdがありません:', completion);
                         return false;
@@ -155,6 +174,9 @@ function loadDataFromLocalStorage() {
                     console.log('他のユーザーの完了データを除外:', completions.length - validCompletions.length);
                     completions = validCompletions;
                 }
+                
+                console.log('チェック後のルーティン数:', routines.length);
+                console.log('チェック後の完了データ数:', completions.length);
             }
             
             // UIを更新
