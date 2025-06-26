@@ -546,6 +546,43 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- 詳細統計セクション -->
+                        <div class="admin-section">
+                            <h3>ユーザー詳細統計</h3>
+                            <div class="detailed-stats">
+                                <div class="stat-row">
+                                    <div class="stat-label">管理者ユーザー:</div>
+                                    <div class="stat-value" id="adminUsersCount">0</div>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label">一般ユーザー:</div>
+                                    <div class="stat-value" id="generalUsersCount">0</div>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label">友達ユーザー:</div>
+                                    <div class="stat-value" id="friendUsersCount">0</div>
+                                </div>
+                                <div class="stat-row">
+                                    <div class="stat-label">Google連携ユーザー:</div>
+                                    <div class="stat-value" id="googleUsersCount">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- デバッグ情報セクション -->
+                        <div class="admin-section">
+                            <h3>デバッグ情報</h3>
+                            <div class="debug-info">
+                                <button onclick="showDataDebugInfo()" class="debug-btn">
+                                    <i data-lucide="bug"></i>
+                                    詳細デバッグ情報を表示
+                                </button>
+                                <div class="debug-details" id="debugDetails" style="display: none;">
+                                    <pre id="debugOutput"></pre>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

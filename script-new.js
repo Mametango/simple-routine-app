@@ -2039,31 +2039,61 @@ function loadUsersList() {
 
 // すべてのユーザーを取得
 function getAllUsers() {
+    console.log('getAllUsers開始');
+    
     const users = [];
     
-    // ローカルストレージからユーザー情報を取得
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null');
-    if (userInfo) {
-        users.push({
-            email: userInfo.email,
-            displayName: userInfo.displayName,
-            userType: getUserType(),
-            isCurrentUser: true
-        });
-    }
+    // ローカルストレージから登録済みユーザーを取得
+    const registeredUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    console.log('登録済みユーザー:', registeredUsers.length, '人');
     
-    // 友達リストを取得
+    // 登録済みユーザーを追加
+    registeredUsers.forEach(user => {
+        users.push({
+            email: user.email,
+            displayName: user.displayName || user.email.split('@')[0],
+            userType: user.email === 'yasnaries@gmail.com' ? 'admin' : 'general',
+            isCurrentUser: currentUserInfo && currentUserInfo.email === user.email,
+            createdAt: user.createdAt,
+            isGoogleLinked: user.isGoogleLinked || false
+        });
+    });
+    
+    // 友達リストを取得（重複を避けて追加）
     const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+    console.log('友達リスト:', friendsList.length, '人');
+    
     friendsList.forEach(email => {
         if (!users.find(u => u.email === email)) {
             users.push({
                 email: email,
                 displayName: email.split('@')[0],
                 userType: 'friend',
-                isCurrentUser: false
+                isCurrentUser: currentUserInfo && currentUserInfo.email === email,
+                createdAt: null,
+                isGoogleLinked: false
             });
         }
     });
+    
+    // 現在のユーザーが登録済みユーザーに含まれていない場合は追加
+    if (currentUserInfo && !users.find(u => u.email === currentUserInfo.email)) {
+        users.push({
+            email: currentUserInfo.email,
+            displayName: currentUserInfo.displayName || currentUserInfo.email.split('@')[0],
+            userType: currentUserInfo.email === 'yasnaries@gmail.com' ? 'admin' : 'general',
+            isCurrentUser: true,
+            createdAt: new Date().toISOString(),
+            isGoogleLinked: currentUserInfo.isGoogleUser || false
+        });
+    }
+    
+    console.log('総ユーザー数:', users.length, '人');
+    console.log('ユーザー詳細:', users.map(u => ({
+        email: u.email,
+        userType: u.userType,
+        isCurrentUser: u.isCurrentUser
+    })));
     
     return users;
 }
@@ -2236,26 +2266,41 @@ function createFriendItemHTML(email) {
 
 // 管理者統計の読み込み
 function loadAdminStats() {
-    console.log('管理者統計読み込み');
+    console.log('管理者統計読み込み開始');
     
     // ユーザー数
     const users = getAllUsers();
     const totalUsersCount = document.getElementById('totalUsersCount');
     if (totalUsersCount) {
         totalUsersCount.textContent = users.length;
+        console.log('総ユーザー数表示:', users.length);
     }
+    
+    // ユーザータイプ別の統計
+    const adminUsers = users.filter(u => u.userType === 'admin').length;
+    const friendUsers = users.filter(u => u.userType === 'friend').length;
+    const generalUsers = users.filter(u => u.userType === 'general').length;
+    
+    console.log('ユーザータイプ別統計:', {
+        admin: adminUsers,
+        friend: friendUsers,
+        general: generalUsers,
+        total: users.length
+    });
     
     // 友達数
     const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
     const friendsCount = document.getElementById('friendsCount');
     if (friendsCount) {
         friendsCount.textContent = friendsList.length;
+        console.log('友達数表示:', friendsList.length);
     }
     
     // ルーティン数
     const totalRoutinesCount = document.getElementById('totalRoutinesCount');
     if (totalRoutinesCount) {
         totalRoutinesCount.textContent = routines.length;
+        console.log('総ルーティン数表示:', routines.length);
     }
     
     // 完了率
@@ -2269,7 +2314,22 @@ function loadAdminStats() {
         
         const rate = routines.length > 0 ? Math.round((completedToday / routines.length) * 100) : 0;
         completionRate.textContent = `${rate}%`;
+        console.log('完了率表示:', rate + '%', `(${completedToday}/${routines.length})`);
     }
+    
+    // 追加の統計情報をコンソールに出力
+    console.log('管理者統計詳細:', {
+        totalUsers: users.length,
+        adminUsers: adminUsers,
+        friendUsers: friendUsers,
+        generalUsers: generalUsers,
+        friendsList: friendsList.length,
+        totalRoutines: routines.length,
+        currentUser: currentUserInfo?.email,
+        storageType: currentStorage
+    });
+    
+    console.log('管理者統計読み込み完了');
 }
 
 // 友達追加モーダル表示
