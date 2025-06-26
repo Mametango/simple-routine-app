@@ -532,13 +532,21 @@ function handleAuthStateChange(user) {
 // ユーザー情報を設定
 function setUserInfo(user) {
     console.log('ユーザー情報設定:', user.email);
+    console.log('setUserInfo - user object:', user);
+    
+    // Googleユーザーの場合はuidを使用、そうでなければidまたはuidを使用
+    const isGoogleUser = user.isGoogleUser || user.uid || (user.providerData && user.providerData.length > 0 && user.providerData[0].providerId === 'google.com');
+    const userId = isGoogleUser ? user.uid : (user.id || user.uid || Date.now().toString());
     
     currentUserInfo = {
         email: user.email,
         displayName: user.displayName || user.email.split('@')[0],
-        id: user.id || user.uid || Date.now().toString(),
-        isGoogleUser: user.isGoogleUser || false
+        id: userId,
+        uid: user.uid,
+        isGoogleUser: isGoogleUser
     };
+    
+    console.log('setUserInfo - 設定されたユーザー情報:', currentUserInfo);
     
     // ユーザータイプを設定
     setUserType(user);
@@ -1013,48 +1021,14 @@ async function handleGoogleLogin() {
         
         console.log('Googleログイン成功:', result.user.email);
         
-        // ユーザー情報を設定
-        const user = result.user;
-        currentUserInfo = {
-            email: user.email,
-            displayName: user.displayName || user.email.split('@')[0],
-            uid: user.uid,
-            id: user.uid, // Google UIDをIDとして使用
-            isGoogleUser: true
-        };
-        
-        // ローカルアカウントとリンク
-        await linkWithLocalAccount(user);
-        
-        // Firebaseストレージを強制設定
-        console.log('handleGoogleLogin - Firebaseストレージを設定前のcurrentStorage:', currentStorage);
-        currentStorage = 'firebase';
-        localStorage.setItem('storageType', 'firebase');
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
-        console.log('handleGoogleLogin - Firebaseストレージ設定後のcurrentStorage:', currentStorage);
-        
-        // 同期状態を即座に更新
-        updateSyncStatus();
-        
-        // メインアプリを表示
-        showMainApp();
-        
-        // Firebase同期を実行
-        setTimeout(() => {
-            console.log('Googleログイン後のFirebase同期を開始');
-            performActualSync();
-        }, 1000);
-        
-        // 成功通知（詳細版）
-        const userTypeText = user.email === 'yasnaries@gmail.com' ? '（管理者）' : '';
-        const storageText = 'サーバー同期';
-        showNotification(`Googleログインに成功しました！${userTypeText}（${storageText}モード）`, 'success');
+        // 認証状態変更ハンドラーを呼び出してユーザー情報を設定
+        console.log('handleGoogleLogin - handleAuthStateChangeを呼び出し');
+        handleAuthStateChange(result.user);
         
         console.log('Googleログイン完了:', {
-            email: user.email,
-            displayName: user.displayName,
-            userType: user.email === 'yasnaries@gmail.com' ? 'admin' : 'user',
+            email: result.user.email,
+            displayName: result.user.displayName,
+            userType: result.user.email === 'yasnaries@gmail.com' ? 'admin' : 'user',
             storage: 'firebase',
             isGoogleUser: true
         });
@@ -1502,6 +1476,13 @@ function manualSync() {
     console.log('手動同期開始');
     console.log('手動同期 - 現在のストレージタイプ:', currentStorage);
     console.log('手動同期 - 現在のユーザー情報:', currentUserInfo);
+    console.log('手動同期 - ユーザーID詳細:', {
+        email: currentUserInfo?.email,
+        displayName: currentUserInfo?.displayName,
+        id: currentUserInfo?.id,
+        uid: currentUserInfo?.uid,
+        isGoogleUser: currentUserInfo?.isGoogleUser
+    });
     console.log('手動同期 - 現在のローカルデータ:', {
         routinesCount: routines.length,
         completionsCount: completions.length,
@@ -1593,6 +1574,13 @@ async function syncWithFirebase() {
     const db = firebase.firestore();
     const userId = currentUserInfo.id;
     
+    console.log('Firebase同期 - ユーザー情報詳細:', {
+        email: currentUserInfo.email,
+        displayName: currentUserInfo.displayName,
+        id: currentUserInfo.id,
+        uid: currentUserInfo.uid,
+        isGoogleUser: currentUserInfo.isGoogleUser
+    });
     console.log('Firebase同期 - ユーザーID:', userId);
     console.log('Firebase同期 - 現在のローカルデータ:', {
         routinesCount: routines.length,
@@ -1611,6 +1599,8 @@ async function syncWithFirebase() {
         
         // Firebaseからデータを読み込み
         const docRef = db.collection('users').doc(userId);
+        console.log('Firebase同期 - ドキュメント参照:', docRef.path);
+        
         const doc = await docRef.get();
         
         let firebaseData = null;
