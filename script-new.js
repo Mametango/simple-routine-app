@@ -2,8 +2,31 @@
 
 // デバッグ情報
 console.log('=== script-new.js 読み込み開始 ===');
-console.log('バージョン: 1.0.4');
+console.log('バージョン: 1.0.7');
 console.log('読み込み時刻:', new Date().toISOString());
+
+// 関数の存在チェックとグローバル公開を即座に実行
+(function() {
+    console.log('=== 関数存在チェック開始 ===');
+    
+    // グローバル変数の定義
+    let currentUserInfo = null;
+    let currentStorage = 'local';
+    let routines = [];
+    let completions = [];
+    let isGoogleLoginInProgress = false; // ログイン処理中のフラグ
+
+    // グローバルフラグを設定（Firebase設定からアクセス可能にする）
+    window.isGoogleLoginInProgress = false;
+    
+    // グローバル変数をwindowに公開
+    window.currentUserInfo = currentUserInfo;
+    window.currentStorage = currentStorage;
+    window.routines = routines;
+    window.completions = completions;
+    
+    console.log('=== 関数存在チェック完了 ===');
+})();
 
 // グローバル変数の定義
 let currentUserInfo = null;
@@ -264,9 +287,21 @@ function setupEventListeners() {
     
     try {
         // ログインフォーム
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.addEventListener('submit', handleLogin);
+        const authForm = document.getElementById('authForm');
+        if (authForm) {
+            authForm.addEventListener('submit', handleLogin);
+            console.log('authFormイベントリスナー設定完了');
+        } else {
+            console.warn('authForm要素が見つかりません');
+        }
+        
+        // Googleログインボタン
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
+        if (googleLoginBtn) {
+            googleLoginBtn.addEventListener('click', handleGoogleLogin);
+            console.log('Googleログインボタンイベントリスナー設定完了');
+        } else {
+            console.warn('googleLoginBtn要素が見つかりません');
         }
         
         // 登録フォーム
@@ -375,11 +410,11 @@ function checkAuthState() {
 function showAuthScreen() {
     console.log('認証画面表示');
     
-    const authScreen = document.getElementById('authScreen');
-    const mainApp = document.getElementById('mainApp');
+    const authContainer = document.getElementById('authContainer');
+    const app = document.getElementById('app');
     
-    if (authScreen) authScreen.style.display = 'block';
-    if (mainApp) mainApp.style.display = 'none';
+    if (authContainer) authContainer.style.display = 'block';
+    if (app) app.style.display = 'none';
 }
 
 // ルーティンを読み込み
@@ -872,11 +907,12 @@ function initializeApp() {
     // データの読み込み
     loadRoutines();
     
-    // 同期状態の更新
-    updateSyncStatus();
-    
-    // 広告の表示
-    showAdsIfNeeded();
+    // 同期状態の更新（安全な呼び出し）
+    if (typeof updateSyncStatus === 'function') {
+        updateSyncStatus();
+    } else {
+        console.warn('updateSyncStatus関数が見つかりません');
+    }
     
     console.log('アプリ初期化完了');
 }
@@ -1105,48 +1141,276 @@ function filterUsers(searchTerm) {
 function checkFirebaseInitialization() {
     console.log('Firebase初期化状態チェック開始');
     
+    let status = 'Firebase初期化状態:\n\n';
+    
+    // Firebase SDKの確認
+    if (typeof firebase === 'undefined') {
+        status += '❌ Firebase SDKが読み込まれていません\n';
+    } else {
+        status += '✅ Firebase SDKが読み込まれています\n';
+        
+        // 初期化状態の確認
+        try {
+            const app = firebase.app();
+            status += `✅ Firebase初期化済み (${app.name})\n`;
+            
+            // 設定の確認
+            const config = app.options;
+            status += `✅ API Key: ${config.apiKey ? '設定済み' : '未設定'}\n`;
+            status += `✅ Auth Domain: ${config.authDomain ? '設定済み' : '未設定'}\n`;
+            status += `✅ Project ID: ${config.projectId ? '設定済み' : '未設定'}\n`;
+            
+        } catch (error) {
+            status += `❌ Firebase初期化エラー: ${error.message}\n`;
+        }
+    }
+    
+    alert(status);
+}
+
+// ユーザー情報をクリア
+function clearUserInfo() {
+    console.log('ユーザー情報クリア開始');
+    
+    // ローカルストレージから削除
+    localStorage.removeItem('userInfo');
+    localStorage.removeItem('userType');
+    
+    // グローバル変数をリセット
+    currentUserInfo = null;
+    
+    console.log('ユーザー情報クリア完了');
+}
+
+// ログアウト処理
+async function logout() {
+    console.log('ログアウト開始');
+    
     try {
-        // Firebaseが利用可能かチェック
-        if (typeof firebase === 'undefined') {
-            console.error('Firebase初期化エラー: firebaseが未定義');
-            return {
-                initialized: false,
-                error: 'Firebaseが利用できません'
-            };
+        // Firebase認証からログアウト
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            await firebase.auth().signOut();
         }
         
-        // Firestoreが利用可能かチェック
-        if (!firebase.firestore) {
-            console.error('Firebase初期化エラー: firestoreが未定義');
-            return {
-                initialized: false,
-                error: 'Firestoreが利用できません'
-            };
-        }
+        // ローカルデータをクリア
+        clearUserInfo();
         
-        // Firestoreインスタンスを取得してみる
-        const db = firebase.firestore();
-        if (!db) {
-            console.error('Firebase初期化エラー: Firestoreインスタンスが取得できません');
-            return {
-                initialized: false,
-                error: 'Firestoreインスタンスが取得できません'
-            };
-        }
+        // 画面を認証画面に戻す
+        showAuthScreen();
         
-        console.log('Firebase初期化状態: 正常');
-        return {
-            initialized: true,
-            error: null
-        };
+        showNotification('ログアウトしました', 'info');
         
     } catch (error) {
-        console.error('Firebase初期化状態チェックエラー:', error);
-        return {
-            initialized: false,
-            error: error.message
-        };
+        console.error('ログアウトエラー:', error);
+        showNotification('ログアウトエラーが発生しました', 'error');
     }
+}
+
+// ユーザータイプの設定
+function setUserType(user) {
+    console.log('ユーザータイプ設定開始:', user.email);
+    
+    let userType = 'general'; // デフォルトは一般ユーザー
+    
+    // 管理者チェック
+    if (user.email === 'yasnaries@gmail.com') {
+        userType = 'admin';
+        console.log('管理者として設定:', user.email);
+    } else {
+        // 友達リストをチェック
+        const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+        if (friendsList.includes(user.email)) {
+            userType = 'friend';
+            console.log('友達として設定:', user.email);
+        }
+    }
+    
+    // ユーザータイプを保存
+    localStorage.setItem('userType', userType);
+    
+    // currentUserInfoにユーザータイプを追加
+    if (currentUserInfo) {
+        currentUserInfo.userType = userType;
+        localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
+    }
+    
+    console.log('ユーザータイプ設定完了:', userType);
+}
+
+// ユーザータイプの取得
+function getUserType() {
+    if (!currentUserInfo) {
+        console.log('ユーザー情報がありません');
+        return 'general';
+    }
+    
+    const userType = localStorage.getItem('userType') || 'general';
+    console.log('ユーザータイプ取得:', userType);
+    return userType;
+}
+
+// 管理者かどうかチェック
+function isAdmin() {
+    return getUserType() === 'admin';
+}
+
+// 友達かどうかチェック
+function isFriend() {
+    return getUserType() === 'friend';
+}
+
+// 一般ユーザーかどうかチェック
+function isGeneralUser() {
+    return getUserType() === 'general';
+}
+
+// 通知許可要求
+function requestNotificationPermission() {
+    console.log('通知許可要求');
+    
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showNotification('通知が有効になりました', 'success');
+            } else {
+                showNotification('通知が拒否されました', 'info');
+            }
+        });
+    } else {
+        showNotification('このブラウザは通知をサポートしていません', 'warning');
+    }
+}
+
+// Firebase設定確認
+function checkFirebaseStatus() {
+    console.log('Firebase設定確認開始');
+    
+    let status = 'Firebase設定確認:\n\n';
+    
+    // Firebase SDKの確認
+    if (typeof firebase === 'undefined') {
+        status += '❌ Firebase SDKが読み込まれていません\n';
+    } else {
+        status += '✅ Firebase SDKが読み込まれています\n';
+        
+        // 認証の確認
+        if (firebase.auth) {
+            status += '✅ Firebase Authが利用可能です\n';
+        } else {
+            status += '❌ Firebase Authが利用できません\n';
+        }
+        
+        // Firestoreの確認
+        if (firebase.firestore) {
+            status += '✅ Firestoreが利用可能です\n';
+        } else {
+            status += '❌ Firestoreが利用できません\n';
+        }
+    }
+    
+    // 設定の確認
+    const config = window.firebaseConfig;
+    if (config) {
+        status += '\n設定情報:\n';
+        status += `API Key: ${config.apiKey ? '✅ 設定済み' : '❌ 未設定'}\n`;
+        status += `Auth Domain: ${config.authDomain ? '✅ 設定済み' : '❌ 未設定'}\n`;
+        status += `Project ID: ${config.projectId ? '✅ 設定済み' : '❌ 未設定'}\n`;
+    } else {
+        status += '\n❌ Firebase設定が見つかりません\n';
+    }
+    
+    alert(status);
+}
+
+// Firebase設定修正
+function fixFirebaseConfig() {
+    console.log('Firebase設定修正開始');
+    
+    // 設定修正モーダルを表示
+    const modal = document.getElementById('firebaseConfigModal');
+    if (modal) {
+        modal.style.display = 'block';
+        
+        // 現在の設定を表示
+        const currentConfig = document.getElementById('currentConfig');
+        if (currentConfig) {
+            const config = window.firebaseConfig;
+            if (config) {
+                currentConfig.innerHTML = `
+                    <p><strong>API Key:</strong> ${config.apiKey || '未設定'}</p>
+                    <p><strong>Auth Domain:</strong> ${config.authDomain || '未設定'}</p>
+                    <p><strong>Project ID:</strong> ${config.projectId || '未設定'}</p>
+                    <p><strong>Storage Bucket:</strong> ${config.storageBucket || '未設定'}</p>
+                    <p><strong>Messaging Sender ID:</strong> ${config.messagingSenderId || '未設定'}</p>
+                    <p><strong>App ID:</strong> ${config.appId || '未設定'}</p>
+                `;
+            } else {
+                currentConfig.innerHTML = '<p>設定が見つかりません</p>';
+            }
+        }
+    }
+}
+
+// ユーザー検索機能
+function filterUsers(searchTerm) {
+    console.log('ユーザー検索:', searchTerm);
+    
+    const usersList = document.getElementById('usersList');
+    if (!usersList) return;
+    
+    const users = getAllUsers();
+    const filteredUsers = users.filter(user => 
+        user.email.toLowerCase().includes(searchTerm) ||
+        user.displayName.toLowerCase().includes(searchTerm)
+    );
+    
+    if (filteredUsers.length === 0) {
+        usersList.innerHTML = `
+            <div class="empty-state">
+                <i data-lucide="search" class="empty-icon"></i>
+                <h3>検索結果が見つかりません</h3>
+                <p>"${searchTerm}"に一致するユーザーはいません</p>
+            </div>
+        `;
+    } else {
+        usersList.innerHTML = filteredUsers.map(user => createUserItemHTML(user)).join('');
+    }
+    
+    // Lucideアイコンを初期化
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+// Firebaseの初期化状態をチェック
+function checkFirebaseInitialization() {
+    console.log('Firebase初期化状態チェック開始');
+    
+    let status = 'Firebase初期化状態:\n\n';
+    
+    // Firebase SDKの確認
+    if (typeof firebase === 'undefined') {
+        status += '❌ Firebase SDKが読み込まれていません\n';
+    } else {
+        status += '✅ Firebase SDKが読み込まれています\n';
+        
+        // 初期化状態の確認
+        try {
+            const app = firebase.app();
+            status += `✅ Firebase初期化済み (${app.name})\n`;
+            
+            // 設定の確認
+            const config = app.options;
+            status += `✅ API Key: ${config.apiKey ? '設定済み' : '未設定'}\n`;
+            status += `✅ Auth Domain: ${config.authDomain ? '設定済み' : '未設定'}\n`;
+            status += `✅ Project ID: ${config.projectId ? '設定済み' : '未設定'}\n`;
+            
+        } catch (error) {
+            status += `❌ Firebase初期化エラー: ${error.message}\n`;
+        }
+    }
+    
+    alert(status);
 }
 
 // 手動同期
@@ -2265,6 +2529,87 @@ console.log('公開された関数数:', Object.keys(window).filter(key =>
     ['displayTodayRoutines', 'setupEventListeners', 'loadRoutines'].includes(key)
 ).length);
 
+// メインアプリを表示
+function showMainApp() {
+    console.log('showMainApp called');
+    
+    try {
+        // 認証画面を非表示
+        const authContainer = document.getElementById('authContainer');
+        if (authContainer) {
+            authContainer.style.display = 'none';
+            console.log('認証画面を非表示にしました');
+        }
+        
+        // メインアプリを表示
+        const app = document.getElementById('app');
+        if (app) {
+            app.style.display = 'block';
+            console.log('メインアプリを表示しました');
+        }
+        
+        // ユーザー情報を表示
+        const currentUserElement = document.getElementById('currentUser');
+        if (currentUserElement && currentUserInfo) {
+            currentUserElement.textContent = currentUserInfo.displayName || currentUserInfo.email;
+            console.log('ユーザー情報を表示:', currentUserInfo.displayName || currentUserInfo.email);
+        }
+        
+        // ユーザータイプを設定
+        if (currentUserInfo) {
+            setUserType(currentUserInfo);
+        }
+        
+        // 管理者ボタンの表示/非表示
+        const adminBtn = document.getElementById('adminBtn');
+        if (adminBtn) {
+            if (isAdmin()) {
+                adminBtn.style.display = 'block';
+                console.log('管理者ボタンを表示');
+            } else {
+                adminBtn.style.display = 'none';
+                console.log('管理者ボタンを非表示');
+            }
+        }
+        
+        // 同期状態を更新
+        console.log('showMainApp - updateSyncStatus前のcurrentStorage:', currentStorage);
+        if (typeof updateSyncStatus === 'function') {
+            updateSyncStatus(currentStorage);
+        } else {
+            console.warn('updateSyncStatus関数が見つかりません');
+        }
+        
+        // ストレージタイプに応じた通知
+        let storageText = '';
+        switch (currentStorage) {
+            case 'firebase':
+                storageText = 'Firebase同期';
+                break;
+            case 'google-drive':
+                storageText = 'Google Drive同期';
+                break;
+            case 'local':
+            default:
+                storageText = 'ローカル保存';
+                break;
+        }
+        console.log('showMainApp - 通知用storageText:', storageText, 'currentStorage:', currentStorage);
+        
+        // データを読み込み
+        loadRoutines();
+        
+        // 今日のルーティンを表示
+        displayTodayRoutines();
+        
+        console.log('showMainApp completed');
+        
+    } catch (error) {
+        console.error('showMainApp エラー:', error);
+        showNotification('アプリの表示中にエラーが発生しました', 'error');
+    }
+}
+
 // 画面を切り替え
 function showScreen(screenName) {
     console.log('画面切り替え:', screenName);
@@ -2424,4 +2769,157 @@ window.showMainApp = showMainApp;
 window.showScreen = showScreen;
 window.login = login;
 window.register = register;
+window.handleLogin = handleLogin;
+window.updateSyncStatus = updateSyncStatus;
 window.initializeData = initializeData;
+
+// ログインフォーム処理
+async function handleLogin(event) {
+    event.preventDefault();
+    console.log('ログインフォーム処理開始');
+    
+    try {
+        const formData = new FormData(event.target);
+        const email = formData.get('email');
+        const password = formData.get('password');
+        
+        console.log('ログイン試行:', email);
+        
+        // ログインボタンを無効化
+        const loginBtn = event.target.querySelector('button[type="submit"]');
+        if (loginBtn) {
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'ログイン中...';
+        }
+        
+        // ログイン処理
+        const success = await login(email, password);
+        
+        if (success) {
+            console.log('ログイン成功');
+            showNotification('ログインしました', 'success');
+            
+            // メインアプリを表示
+            showMainApp();
+            
+            // アプリを初期化
+            initializeApp();
+        } else {
+            console.log('ログイン失敗');
+            showNotification('ログインに失敗しました', 'error');
+        }
+    } catch (error) {
+        console.error('ログインフォーム処理エラー:', error);
+        showNotification('ログイン処理中にエラーが発生しました', 'error');
+    } finally {
+        // ログインボタンを再有効化
+        const loginBtn = event.target.querySelector('button[type="submit"]');
+        if (loginBtn) {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'ログイン';
+        }
+    }
+}
+
+// 同期状態を更新
+function updateSyncStatus(status, message = '') {
+    console.log('同期状態更新:', status, message);
+    
+    const syncStatusElement = document.getElementById('syncStatus');
+    if (!syncStatusElement) {
+        console.warn('syncStatus要素が見つかりません');
+        return;
+    }
+    
+    let statusText = '';
+    let statusClass = '';
+    
+    switch (status) {
+        case 'syncing':
+            statusText = '🔄 同期中...';
+            statusClass = 'syncing';
+            break;
+        case 'success':
+            statusText = '✅ 同期完了';
+            statusClass = 'success';
+            break;
+        case 'error':
+            statusText = '❌ 同期エラー';
+            statusClass = 'error';
+            break;
+        case 'offline':
+            statusText = '📱 オフライン';
+            statusClass = 'offline';
+            break;
+        case 'firebase':
+            statusText = '☁️ Firebase';
+            statusClass = 'firebase';
+            break;
+        case 'local':
+            statusText = '💾 ローカル';
+            statusClass = 'local';
+            break;
+        case 'google-drive':
+            statusText = '📁 Google Drive';
+            statusClass = 'google-drive';
+            break;
+        default:
+            statusText = '🟡 準備中...';
+            statusClass = 'default';
+    }
+    
+    if (message) {
+        statusText += ` - ${message}`;
+    }
+    
+    syncStatusElement.textContent = statusText;
+    syncStatusElement.className = `sync-status ${statusClass}`;
+    
+    console.log('同期状態更新完了:', statusText);
+}
+
+// Googleログイン処理
+async function handleGoogleLogin() {
+    console.log('Googleログイン処理開始');
+    
+    try {
+        if (typeof firebase === 'undefined' || !firebase.auth) {
+            console.error('Firebaseが利用できません');
+            showNotification('Firebaseが利用できません', 'error');
+            return;
+        }
+        
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await firebase.auth().signInWithPopup(provider);
+        const user = result.user;
+        
+        currentUserInfo = {
+            id: user.uid,
+            email: user.email,
+            displayName: user.displayName || user.email,
+            isGoogleUser: true
+        };
+        
+        // ローカルストレージに保存
+        localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
+        
+        // Firebaseストレージを自動選択
+        currentStorage = 'firebase';
+        localStorage.setItem('storageType', 'firebase');
+        
+        console.log('Googleログイン成功:', currentUserInfo);
+        showNotification('Googleログインしました', 'success');
+        
+        // メインアプリを表示
+        showMainApp();
+        
+        // アプリを初期化
+        initializeApp();
+        
+    } catch (error) {
+        console.error('Googleログインエラー:', error);
+        showNotification('Googleログインに失敗しました', 'error');
+    }
+}
+
+// ページ読み込み時の初期化
