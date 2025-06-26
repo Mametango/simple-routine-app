@@ -765,34 +765,55 @@ function loadRoutines() {
 
 // 今日のルーティンを表示
 function displayTodayRoutines() {
+    console.log('今日のルーティン表示開始');
+    console.log('現在のユーザーID:', currentUserInfo?.id);
+    console.log('表示前の全ルーティン数:', routines.length);
+    
+    // 現在のユーザーのルーティンのみをフィルタ
+    const myRoutines = routines.filter(routine => {
+        const isMyRoutine = routine.userId === currentUserInfo?.id;
+        if (!isMyRoutine) {
+            console.warn('他人のルーティンを除外:', {
+                id: routine.id,
+                title: routine.title,
+                userId: routine.userId,
+                currentUserId: currentUserInfo?.id
+            });
+        }
+        return isMyRoutine;
+    });
+    
+    console.log('フィルタ後の自分のルーティン数:', myRoutines.length);
+    
     const todayRoutinesList = document.getElementById('todayRoutinesList');
     if (!todayRoutinesList) {
-        console.error('Today routines list element not found');
+        console.error('todayRoutinesList要素が見つかりません');
         return;
     }
     
+    // 今日実行すべきルーティンをフィルタ
     const today = new Date();
-    const todayRoutines = routines.filter(routine => {
-        if (routine.frequency === 'daily') return true;
-        if (routine.frequency === 'weekly') {
-            return routine.weeklyDays && routine.weeklyDays.includes(today.getDay());
+    const todayRoutines = myRoutines.filter(routine => {
+        switch (routine.frequency) {
+            case 'daily':
+                return true;
+            case 'weekly':
+                return routine.weeklyDays && routine.weeklyDays.includes(today.getDay());
+            case 'monthly':
+                return routine.monthlyDate && routine.monthlyDate === today.getDate();
+            default:
+                return false;
         }
-        if (routine.frequency === 'monthly') {
-            return routine.monthlyDate === today.getDate();
-        }
-        return false;
     });
+    
+    console.log('今日実行すべきルーティン数:', todayRoutines.length);
     
     if (todayRoutines.length === 0) {
         todayRoutinesList.innerHTML = `
             <div class="empty-state">
-                <i data-lucide="calendar" class="empty-icon"></i>
+                <i data-lucide="check-circle" class="empty-icon"></i>
                 <h3>今日のルーティンはありません</h3>
-                <p>新しいルーティンを追加して、今日の習慣を始めましょう！</p>
-                <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
-                    <i data-lucide="plus" class="button-icon"></i>
-                    ルーティンを追加
-                </button>
+                <p>新しいルーティンを追加しましょう！</p>
             </div>
         `;
     } else {
@@ -803,36 +824,48 @@ function displayTodayRoutines() {
     if (window.lucide) {
         lucide.createIcons();
     }
+    
+    console.log('今日のルーティン表示完了');
 }
 
 // 全ルーティンを表示
 function displayAllRoutines() {
-    console.log('displayAllRoutines called');
-    console.log('現在のroutines配列:', routines);
-    console.log('routines配列の長さ:', routines.length);
+    console.log('全ルーティン表示開始');
+    console.log('現在のユーザーID:', currentUserInfo?.id);
+    console.log('表示前の全ルーティン数:', routines.length);
+    
+    // 現在のユーザーのルーティンのみをフィルタ
+    const myRoutines = routines.filter(routine => {
+        const isMyRoutine = routine.userId === currentUserInfo?.id;
+        if (!isMyRoutine) {
+            console.warn('他人のルーティンを除外:', {
+                id: routine.id,
+                title: routine.title,
+                userId: routine.userId,
+                currentUserId: currentUserInfo?.id
+            });
+        }
+        return isMyRoutine;
+    });
+    
+    console.log('フィルタ後の自分のルーティン数:', myRoutines.length);
     
     const allRoutinesList = document.getElementById('allRoutinesList');
     if (!allRoutinesList) {
-        console.error('All routines list element not found');
+        console.error('allRoutinesList要素が見つかりません');
         return;
     }
     
-    if (routines.length === 0) {
-        console.log('ルーティンが0件のため、空の状態を表示');
+    if (myRoutines.length === 0) {
         allRoutinesList.innerHTML = `
             <div class="empty-state">
                 <i data-lucide="list" class="empty-icon"></i>
-                <h3>まだルーティンがありません</h3>
-                <p>新しいルーティンを追加して、毎日の習慣を始めましょう！</p>
-                <button class="add-first-routine-btn" onclick="showAddRoutineScreen()">
-                    <i data-lucide="plus" class="button-icon"></i>
-                    ルーティンを追加
-                </button>
+                <h3>ルーティンがありません</h3>
+                <p>新しいルーティンを追加しましょう！</p>
             </div>
         `;
     } else {
-        console.log('ルーティンを表示:', routines.length, '件');
-        allRoutinesList.innerHTML = routines.map(routine => createRoutineHTML(routine)).join('');
+        allRoutinesList.innerHTML = myRoutines.map(routine => createRoutineHTML(routine)).join('');
     }
     
     // Lucideアイコンを初期化
@@ -840,7 +873,7 @@ function displayAllRoutines() {
         lucide.createIcons();
     }
     
-    console.log('displayAllRoutines completed');
+    console.log('全ルーティン表示完了');
 }
 
 // ルーティンのHTMLを生成
@@ -905,13 +938,27 @@ function isRoutineCompletedToday(routineId) {
         return false;
     }
     
-    // completions配列から完了データを検索
-    const completion = completions.find(c => 
+    // 現在のユーザーの完了データのみをフィルタ
+    const myCompletions = completions.filter(completion => {
+        const isMyCompletion = completion.userId === currentUserInfo?.id;
+        if (!isMyCompletion) {
+            console.warn('他人の完了データを除外:', {
+                routineId: completion.routineId,
+                date: completion.date,
+                userId: completion.userId,
+                currentUserId: currentUserInfo?.id
+            });
+        }
+        return isMyCompletion;
+    });
+    
+    // 完了データを検索
+    const completion = myCompletions.find(c => 
         c.routineId === routineId && c.date === today
     );
     
     const isCompleted = completion !== undefined;
-    console.log(`完了チェック [${routineId}]: ${isCompleted ? '完了済み' : '未完了'} (日付: ${today}, completions配列長: ${completions.length})`);
+    console.log(`完了チェック [${routineId}]: ${isCompleted ? '完了済み' : '未完了'} (日付: ${today}, 自分の完了データ数: ${myCompletions.length})`);
     
     return isCompleted;
 }
@@ -2868,6 +2915,26 @@ function handleTabButtonClick(event) {
 
 // 頻度別にルーティンをフィルタリング
 function filterRoutinesByFrequency(frequency, clickedButton) {
+    console.log('頻度別フィルタリング開始:', frequency);
+    console.log('現在のユーザーID:', currentUserInfo?.id);
+    console.log('フィルタ前の全ルーティン数:', routines.length);
+    
+    // 現在のユーザーのルーティンのみをフィルタ
+    const myRoutines = routines.filter(routine => {
+        const isMyRoutine = routine.userId === currentUserInfo?.id;
+        if (!isMyRoutine) {
+            console.warn('他人のルーティンを除外:', {
+                id: routine.id,
+                title: routine.title,
+                userId: routine.userId,
+                currentUserId: currentUserInfo?.id
+            });
+        }
+        return isMyRoutine;
+    });
+    
+    console.log('フィルタ後の自分のルーティン数:', myRoutines.length);
+    
     const tabButtons = document.querySelectorAll('.tab-btn');
     tabButtons.forEach(btn => btn.classList.remove('active'));
     if (clickedButton) {
@@ -2876,9 +2943,9 @@ function filterRoutinesByFrequency(frequency, clickedButton) {
 
     let filteredRoutines;
     if (frequency === 'all') {
-        filteredRoutines = routines;
+        filteredRoutines = myRoutines;
     } else {
-        filteredRoutines = routines.filter(routine => routine.frequency === frequency);
+        filteredRoutines = myRoutines.filter(routine => routine.frequency === frequency);
     }
 
     const allRoutinesList = document.getElementById('allRoutinesList');
@@ -2887,7 +2954,7 @@ function filterRoutinesByFrequency(frequency, clickedButton) {
             allRoutinesList.innerHTML = `
                 <div class="empty-state">
                     <i data-lucide="list" class="empty-icon"></i>
-                    <h3>${getFrequencyText(frequency)}のルーティンはありません</h3>
+                    <h3>ルーティンがありません</h3>
                     <p>新しいルーティンを追加しましょう！</p>
                 </div>
             `;
@@ -2899,6 +2966,8 @@ function filterRoutinesByFrequency(frequency, clickedButton) {
             lucide.createIcons();
         }
     }
+    
+    console.log('頻度別フィルタリング完了:', filteredRoutines.length);
 }
 
 // データの保存
