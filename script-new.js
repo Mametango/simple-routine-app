@@ -3283,9 +3283,14 @@ function manualSync() {
 
 // デバッグ用のデータ状態表示関数
 function showDataDebugInfo() {
+    console.log('showDataDebugInfo開始');
+    
     // ローカルストレージからユーザーデータを取得
     const registeredUsers = JSON.parse(localStorage.getItem('users') || '[]');
     const friendsList = JSON.parse(localStorage.getItem('friendsList') || '[]');
+    
+    console.log('取得したregisteredUsers:', registeredUsers);
+    console.log('取得したfriendsList:', friendsList);
     
     const debugInfo = {
         timestamp: new Date().toISOString(),
