@@ -776,7 +776,7 @@ function isRoutineCompletedToday(routineId) {
 }
 
 // ルーティン完了を切り替え
-function toggleRoutineCompletion(routineId) {
+async function toggleRoutineCompletion(routineId) {
     console.log('ルーティン完了切り替え:', routineId);
     
     const today = new Date().toISOString().split('T')[0];
@@ -804,18 +804,19 @@ function toggleRoutineCompletion(routineId) {
     displayTodayRoutines();
     displayAllRoutines();
     
-    // データを保存
-    saveData();
+    // データを保存（完了を待つ）
+    await saveData();
     
     // Firebaseストレージが選択されている場合は、Firebaseに同期
     if (currentStorage === 'firebase' && currentUserInfo && currentUserInfo.id) {
         console.log('Firebaseストレージが選択されているため、Firebaseに同期します');
-        setTimeout(() => {
-            performActualSync().catch(error => {
-                console.error('Firebase同期エラー:', error);
-                showNotification('Firebase同期に失敗しました', 'error');
-            });
-        }, 500);
+        try {
+            await performActualSync();
+            console.log('Firebase同期完了');
+        } catch (error) {
+            console.error('Firebase同期エラー:', error);
+            showNotification('Firebase同期に失敗しました', 'error');
+        }
     }
 }
 
@@ -840,8 +841,11 @@ function showMainScreen() {
     if (mainScreen) mainScreen.style.display = 'block';
     if (addRoutineScreen) addRoutineScreen.style.display = 'none';
     
-    // ルーティンの表示を更新
-    loadRoutines();
+    // ルーティンの表示を更新（データ再読み込みなし）
+    console.log('showMainScreen - 表示更新前のroutines配列:', routines);
+    displayTodayRoutines();
+    displayAllRoutines();
+    console.log('showMainScreen - 表示更新後のroutines配列:', routines);
 }
 
 // 同期状態を更新
@@ -2250,7 +2254,7 @@ function showEditForm(routine) {
 }
 
 // 編集されたルーティンを保存
-function saveEditedRoutine(routineId) {
+async function saveEditedRoutine(routineId) {
     const title = document.getElementById('editRoutineTitle').value.trim();
     const description = document.getElementById('editRoutineDescription').value.trim();
     const time = document.getElementById('editRoutineTime').value;
@@ -2277,7 +2281,7 @@ function saveEditedRoutine(routineId) {
         updatedAt: new Date().toISOString()
     };
     
-    saveData();
+    await saveData();
     hideEditForm();
     
     // 表示を更新
@@ -2377,7 +2381,7 @@ function selectFrequency(formType, frequency) {
 }
 
 // ルーティンフォームの送信処理
-function handleRoutineFormSubmit(event) {
+async function handleRoutineFormSubmit(event) {
     event.preventDefault();
     console.log('ルーティンフォーム送信');
     
@@ -2440,7 +2444,8 @@ function handleRoutineFormSubmit(event) {
         console.log('routines配列に追加後の長さ:', routines.length);
         console.log('routines配列の内容:', routines);
         
-        saveData();
+        // データを保存（完了を待つ）
+        await saveData();
         
         // フォームをリセット
         event.target.reset();
@@ -2456,14 +2461,9 @@ function handleRoutineFormSubmit(event) {
         if (weeklyDaysRow) weeklyDaysRow.style.display = 'none';
         if (monthlyDateRow) monthlyDateRow.style.display = 'none';
         
-        // メイン画面に戻る
+        // メイン画面に戻る（showMainScreen内で表示更新される）
         console.log('メイン画面に戻る前のroutines配列:', routines);
         showMainScreen();
-        
-        // ルーティンの表示を更新
-        console.log('表示更新前のroutines配列:', routines);
-        displayTodayRoutines();
-        displayAllRoutines();
         
         showNotification('ルーティンを追加しました', 'success');
     } else {
@@ -2544,7 +2544,7 @@ function filterRoutinesByFrequency(frequency) {
 }
 
 // データの保存
-function saveData() {
+async function saveData() {
     console.log('データ保存開始');
     console.log('saveData - currentStorage:', currentStorage);
     
@@ -2564,13 +2564,14 @@ function saveData() {
                     localStorage.setItem('appData', JSON.stringify(data));
                     localStorage.setItem('lastUpdated', data.lastUpdated);
                     
-                    // Firebaseに同期
-                    setTimeout(() => {
-                        performActualSync().catch(error => {
-                            console.error('Firebase同期エラー:', error);
-                            showNotification('Firebase同期に失敗しました', 'error');
-                        });
-                    }, 100);
+                    // Firebaseに同期（完了を待つ）
+                    try {
+                        await performActualSync();
+                        console.log('Firebase同期完了');
+                    } catch (error) {
+                        console.error('Firebase同期エラー:', error);
+                        showNotification('Firebase同期に失敗しました', 'error');
+                    }
                 } else {
                     console.log('ユーザー情報が不足しているため、ローカルストレージに保存');
                     localStorage.setItem('appData', JSON.stringify(data));
@@ -2593,7 +2594,7 @@ function saveData() {
 }
 
 // ルーティンの追加
-function addRoutine(routineData) {
+async function addRoutine(routineData) {
     console.log('ルーティン追加:', routineData);
     
     const newRoutine = {
@@ -2604,7 +2605,7 @@ function addRoutine(routineData) {
     };
     
     routines.push(newRoutine);
-    saveData();
+    await saveData();
     
     // 表示を更新
     displayTodayRoutines();
