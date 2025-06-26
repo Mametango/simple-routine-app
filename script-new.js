@@ -55,20 +55,6 @@ function initializeData() {
     console.log('データ初期化開始');
     
     try {
-        // ルーティンデータの読み込み
-        const savedRoutines = localStorage.getItem('routines');
-        if (savedRoutines) {
-            routines = JSON.parse(savedRoutines);
-            console.log('ルーティンデータ読み込み完了:', routines.length);
-        }
-        
-        // 完了データの読み込み
-        const savedCompletions = localStorage.getItem('completions');
-        if (savedCompletions) {
-            completions = JSON.parse(savedCompletions);
-            console.log('完了データ読み込み完了:', completions.length);
-        }
-        
         // ストレージタイプの読み込み
         const storageType = localStorage.getItem('storageType');
         if (storageType) {
@@ -78,13 +64,114 @@ function initializeData() {
             console.log('initializeData - 保存されたストレージタイプなし、デフォルト値を使用:', currentStorage);
         }
         
-        console.log('データ初期化完了');
+        // Firebaseストレージが選択されている場合は、Firebaseからデータを読み込み
+        if (currentStorage === 'firebase' && currentUserInfo && currentUserInfo.id) {
+            console.log('Firebaseストレージが選択されているため、Firebaseからデータを読み込みます');
+            loadDataFromFirebase();
+        } else {
+            // ローカルストレージからデータを読み込み
+            loadDataFromLocalStorage();
+        }
+        
+        console.log('データ初期化完了 - routines:', routines.length, '件');
     } catch (error) {
         console.error('データ初期化エラー:', error);
         // エラーが発生した場合はデフォルト値を使用
         routines = [];
         completions = [];
         currentStorage = 'local';
+    }
+}
+
+// ローカルストレージからデータを読み込み
+function loadDataFromLocalStorage() {
+    console.log('ローカルストレージからデータ読み込み開始');
+    
+    // appDataからルーティンデータを読み込み
+    const savedAppData = localStorage.getItem('appData');
+    if (savedAppData) {
+        const appData = JSON.parse(savedAppData);
+        routines = appData.routines || [];
+        completions = appData.completions || [];
+        console.log('appDataからルーティンデータ読み込み完了:', routines.length);
+        console.log('appDataから完了データ読み込み完了:', completions.length);
+    } else {
+        // 旧形式のデータも確認
+        const savedRoutines = localStorage.getItem('routines');
+        if (savedRoutines) {
+            routines = JSON.parse(savedRoutines);
+            console.log('旧形式からルーティンデータ読み込み完了:', routines.length);
+        }
+        
+        const savedCompletions = localStorage.getItem('completions');
+        if (savedCompletions) {
+            completions = JSON.parse(savedCompletions);
+            console.log('旧形式から完了データ読み込み完了:', completions.length);
+        }
+    }
+}
+
+// Firebaseからデータを読み込み
+async function loadDataFromFirebase() {
+    console.log('Firebaseからデータ読み込み開始');
+    
+    if (typeof firebase === 'undefined' || !firebase.firestore) {
+        console.error('Firebaseが利用できません');
+        loadDataFromLocalStorage();
+        return;
+    }
+    
+    if (!currentUserInfo || !currentUserInfo.id) {
+        console.error('ユーザー情報が不足しています');
+        loadDataFromLocalStorage();
+        return;
+    }
+    
+    try {
+        const db = firebase.firestore();
+        const userId = currentUserInfo.id;
+        
+        console.log('Firebaseからデータ読み込み - ユーザーID:', userId);
+        
+        const docRef = db.collection('users').doc(userId);
+        const doc = await docRef.get();
+        
+        if (doc.exists) {
+            const firebaseData = doc.data();
+            console.log('Firebaseから読み込み:', firebaseData);
+            
+            if (firebaseData.data) {
+                routines = firebaseData.data.routines || [];
+                completions = firebaseData.data.completions || [];
+                
+                // ローカルストレージにも保存（バックアップ）
+                localStorage.setItem('appData', JSON.stringify({
+                    routines: routines,
+                    completions: completions,
+                    lastUpdated: firebaseData.data.lastUpdated
+                }));
+                localStorage.setItem('lastUpdated', firebaseData.data.lastUpdated);
+                
+                console.log('Firebaseからルーティンデータ読み込み完了:', routines.length);
+                console.log('Firebaseから完了データ読み込み完了:', completions.length);
+                
+                // UIを更新
+                displayTodayRoutines();
+                displayAllRoutines();
+                
+                showNotification('Firebaseからデータを読み込みました', 'success');
+            } else {
+                console.log('Firebaseにデータがありません');
+                loadDataFromLocalStorage();
+            }
+        } else {
+            console.log('Firebaseにドキュメントが存在しません');
+            loadDataFromLocalStorage();
+        }
+    } catch (error) {
+        console.error('Firebaseからデータ読み込みエラー:', error);
+        showNotification('Firebaseからデータ読み込みに失敗しました。ローカルデータを使用します。', 'warning');
+        loadDataFromLocalStorage();
     }
 }
 
@@ -517,13 +604,32 @@ function updateUserInfo() {
 
 // ルーティンを読み込み
 function loadRoutines() {
-    console.log('Loading routines...');
+    console.log('loadRoutines called');
+    console.log('loadRoutines - 現在のroutines配列:', routines);
+    console.log('loadRoutines - routines配列の長さ:', routines.length);
+    console.log('loadRoutines - currentStorage:', currentStorage);
     
-    // 今日のルーティンを表示
-    displayTodayRoutines();
+    // Firebaseストレージが選択されている場合は、Firebaseからデータを読み込み
+    if (currentStorage === 'firebase' && currentUserInfo && currentUserInfo.id) {
+        console.log('Firebaseストレージが選択されているため、Firebaseからデータを読み込みます');
+        loadDataFromFirebase().then(() => {
+            // データ読み込み後にUIを更新
+            displayTodayRoutines();
+            displayAllRoutines();
+        }).catch(error => {
+            console.error('Firebaseからデータ読み込みエラー:', error);
+            // エラーの場合はローカルデータを使用
+            displayTodayRoutines();
+            displayAllRoutines();
+        });
+    } else {
+        // ローカルストレージのデータを使用
+        console.log('ローカルストレージのデータを使用');
+        displayTodayRoutines();
+        displayAllRoutines();
+    }
     
-    // 全ルーティンを表示
-    displayAllRoutines();
+    console.log('loadRoutines completed');
 }
 
 // 今日のルーティンを表示
@@ -570,6 +676,10 @@ function displayTodayRoutines() {
 
 // 全ルーティンを表示
 function displayAllRoutines() {
+    console.log('displayAllRoutines called');
+    console.log('現在のroutines配列:', routines);
+    console.log('routines配列の長さ:', routines.length);
+    
     const allRoutinesList = document.getElementById('allRoutinesList');
     if (!allRoutinesList) {
         console.error('All routines list element not found');
@@ -577,6 +687,7 @@ function displayAllRoutines() {
     }
     
     if (routines.length === 0) {
+        console.log('ルーティンが0件のため、空の状態を表示');
         allRoutinesList.innerHTML = `
             <div class="empty-state">
                 <i data-lucide="list" class="empty-icon"></i>
@@ -589,6 +700,7 @@ function displayAllRoutines() {
             </div>
         `;
     } else {
+        console.log('ルーティンを表示:', routines.length, '件');
         allRoutinesList.innerHTML = routines.map(routine => createRoutineHTML(routine)).join('');
     }
     
@@ -596,6 +708,8 @@ function displayAllRoutines() {
     if (window.lucide) {
         lucide.createIcons();
     }
+    
+    console.log('displayAllRoutines completed');
 }
 
 // ルーティンのHTMLを生成
@@ -652,8 +766,13 @@ function getFrequencyText(frequency) {
 // 今日ルーティンが完了しているかチェック
 function isRoutineCompletedToday(routineId) {
     const today = new Date().toISOString().split('T')[0];
-    const completionKey = `completion_${routineId}_${today}`;
-    return localStorage.getItem(completionKey) === 'true';
+    
+    // completions配列から完了データを検索
+    const completion = completions.find(c => 
+        c.routineId === routineId && c.date === today
+    );
+    
+    return completion !== undefined;
 }
 
 // ルーティン完了を切り替え
@@ -661,15 +780,23 @@ function toggleRoutineCompletion(routineId) {
     console.log('ルーティン完了切り替え:', routineId);
     
     const today = new Date().toISOString().split('T')[0];
-    const completionKey = `completion_${routineId}_${today}`;
     
-    const isCompleted = localStorage.getItem(completionKey) === 'true';
+    // completions配列から完了データを検索
+    const completionIndex = completions.findIndex(c => 
+        c.routineId === routineId && c.date === today
+    );
     
-    if (isCompleted) {
-        localStorage.removeItem(completionKey);
+    if (completionIndex !== -1) {
+        // 完了データを削除
+        completions.splice(completionIndex, 1);
         console.log('ルーティン完了を解除:', routineId);
     } else {
-        localStorage.setItem(completionKey, 'true');
+        // 完了データを追加
+        completions.push({
+            routineId: routineId,
+            date: today,
+            completedAt: new Date().toISOString()
+        });
         console.log('ルーティン完了を設定:', routineId);
     }
     
@@ -679,6 +806,17 @@ function toggleRoutineCompletion(routineId) {
     
     // データを保存
     saveData();
+    
+    // Firebaseストレージが選択されている場合は、Firebaseに同期
+    if (currentStorage === 'firebase' && currentUserInfo && currentUserInfo.id) {
+        console.log('Firebaseストレージが選択されているため、Firebaseに同期します');
+        setTimeout(() => {
+            performActualSync().catch(error => {
+                console.error('Firebase同期エラー:', error);
+                showNotification('Firebase同期に失敗しました', 'error');
+            });
+        }, 500);
+    }
 }
 
 // ルーティン追加画面を表示
@@ -1408,7 +1546,40 @@ async function syncWithFirebase() {
             syncStatus.title = 'Firebaseサーバーと同期中...';
         }
         
-        // データをFirebaseに保存
+        // まずFirebaseからデータを読み込み
+        const docRef = db.collection('users').doc(userId);
+        const doc = await docRef.get();
+        
+        if (doc.exists) {
+            const firebaseData = doc.data();
+            console.log('Firebaseから読み込み:', firebaseData);
+            
+            // Firebaseのデータが新しい場合は、ローカルデータを更新
+            if (firebaseData.data && firebaseData.data.lastUpdated) {
+                const firebaseLastUpdated = new Date(firebaseData.data.lastUpdated);
+                const localLastUpdated = localStorage.getItem('lastUpdated') ? 
+                    new Date(localStorage.getItem('lastUpdated')) : new Date(0);
+                
+                if (firebaseLastUpdated > localLastUpdated) {
+                    console.log('Firebaseのデータが新しいため、ローカルデータを更新');
+                    routines = firebaseData.data.routines || [];
+                    completions = firebaseData.data.completions || [];
+                    localStorage.setItem('appData', JSON.stringify({
+                        routines: routines,
+                        completions: completions,
+                        lastUpdated: firebaseData.data.lastUpdated
+                    }));
+                    localStorage.setItem('lastUpdated', firebaseData.data.lastUpdated);
+                    
+                    // UIを更新
+                    displayTodayRoutines();
+                    displayAllRoutines();
+                    showNotification('Firebaseから最新データを取得しました', 'success');
+                }
+            }
+        }
+        
+        // 現在のデータをFirebaseに保存
         const data = {
             routines: routines || [],
             completions: completions || [],
@@ -1422,7 +1593,7 @@ async function syncWithFirebase() {
         
         console.log('Firebase同期 - 保存データ:', data);
         
-        await db.collection('users').doc(userId).set({
+        await docRef.set({
             data: data,
             updatedAt: new Date(),
             userEmail: currentUserInfo.email
@@ -2266,6 +2437,9 @@ function handleRoutineFormSubmit(event) {
         console.log('新しいルーティン:', newRoutine);
         
         routines.push(newRoutine);
+        console.log('routines配列に追加後の長さ:', routines.length);
+        console.log('routines配列の内容:', routines);
+        
         saveData();
         
         // フォームをリセット
@@ -2283,9 +2457,11 @@ function handleRoutineFormSubmit(event) {
         if (monthlyDateRow) monthlyDateRow.style.display = 'none';
         
         // メイン画面に戻る
+        console.log('メイン画面に戻る前のroutines配列:', routines);
         showMainScreen();
         
         // ルーティンの表示を更新
+        console.log('表示更新前のroutines配列:', routines);
         displayTodayRoutines();
         displayAllRoutines();
         
@@ -2370,6 +2546,7 @@ function filterRoutinesByFrequency(frequency) {
 // データの保存
 function saveData() {
     console.log('データ保存開始');
+    console.log('saveData - currentStorage:', currentStorage);
     
     try {
         const data = {
@@ -2380,21 +2557,23 @@ function saveData() {
         
         switch (currentStorage) {
             case 'firebase':
-                // Firebaseに保存
-                if (typeof firebase !== 'undefined' && firebase.firestore) {
-                    const db = firebase.firestore();
-                    const userId = currentUserInfo?.id || 'unknown';
+                // Firebaseストレージが選択されている場合は、performActualSyncを使用
+                if (currentUserInfo && currentUserInfo.id) {
+                    console.log('Firebaseストレージが選択されているため、performActualSyncを使用');
+                    // ローカルストレージにも保存（バックアップ）
+                    localStorage.setItem('appData', JSON.stringify(data));
+                    localStorage.setItem('lastUpdated', data.lastUpdated);
                     
-                    db.collection('users').doc(userId).set({
-                        data: data,
-                        updatedAt: new Date()
-                    }).then(() => {
-                        console.log('Firebaseに保存完了');
-                    }).catch(error => {
-                        console.error('Firebase保存エラー:', error);
-                        // ローカルにフォールバック
-                        localStorage.setItem('appData', JSON.stringify(data));
-                    });
+                    // Firebaseに同期
+                    setTimeout(() => {
+                        performActualSync().catch(error => {
+                            console.error('Firebase同期エラー:', error);
+                            showNotification('Firebase同期に失敗しました', 'error');
+                        });
+                    }, 100);
+                } else {
+                    console.log('ユーザー情報が不足しているため、ローカルストレージに保存');
+                    localStorage.setItem('appData', JSON.stringify(data));
                 }
                 break;
             case 'google-drive':
