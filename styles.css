@@ -637,20 +637,32 @@ body {
 
 .notification-btn,
 .settings-btn,
-.logout-btn {
+.admin-btn,
+.logout-btn,
+.debug-btn {
     background: none;
     border: none;
-    font-size: 20px;
-    cursor: pointer;
     padding: 8px;
     border-radius: 8px;
-    transition: background-color 0.2s ease;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6b7280;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
 }
 
 .notification-btn:hover,
 .settings-btn:hover,
-.logout-btn:hover {
+.admin-btn:hover,
+.logout-btn:hover,
+.debug-btn:hover {
     background: #f3f4f6;
+    color: #374151;
+    transform: translateY(-1px);
 }
 
 .logout-btn {
