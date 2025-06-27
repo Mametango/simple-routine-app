@@ -513,6 +513,7 @@ function showMain(){
     show("mainView"); 
     addSyncButton(); // 同期ボタンを追加
     addTestButton(); // テストボタンを追加
+    addManagementButtons(); // 管理ボタンを追加
     renderMain(); 
 }
 function renderMain(){
@@ -575,7 +576,17 @@ function renderMain(){
             const done = completions.some(c=>c.rid===r.id&&c.date===today.toISOString().split("T")[0]);
             const li = document.createElement("li");
             li.className = "routine-item"+(done?" completed":"");
-            li.innerHTML = `<div><h3>${r.name}</h3>${r.desc?`<div>${r.desc}</div>`:""}<span class="frequency">${getFreqText(r.frequency)}</span></div><button onclick="toggleComplete('${r.id}')" data-routine-id="${r.id}" data-display-id="${r.displayId}">${done?"✓":"○"}</button>`;
+            li.innerHTML = `
+                <div>
+                    <h3>${r.name}</h3>
+                    ${r.desc?`<div>${r.desc}</div>`:""}
+                    <span class="frequency">${getFreqText(r.frequency)}</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button onclick="toggleComplete('${r.id}')" data-routine-id="${r.id}" data-display-id="${r.displayId}">${done?"✓":"○"}</button>
+                    <button onclick="deleteRoutineFromUI('${r.id}')" class="delete-btn" style="background:#dc3545;padding:6px 10px;font-size:12px;">削除</button>
+                </div>
+            `;
             $("todayList").appendChild(li);
         }
         
@@ -588,7 +599,17 @@ function renderMain(){
             const done = completions.some(c=>c.rid===r.id&&c.date===today.toISOString().split("T")[0]);
             const li = document.createElement("li");
             li.className = "routine-item"+(done?" completed":"");
-            li.innerHTML = `<div><h3>${r.name}</h3>${r.desc?`<div>${r.desc}</div>`:""}<span class="frequency">${getFreqText(r.frequency)}</span></div><button onclick="toggleComplete('${r.id}')" data-routine-id="${r.id}" data-display-id="${r.displayId}">${done?"✓":"○"}</button>`;
+            li.innerHTML = `
+                <div>
+                    <h3>${r.name}</h3>
+                    ${r.desc?`<div>${r.desc}</div>`:""}
+                    <span class="frequency">${getFreqText(r.frequency)}</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button onclick="toggleComplete('${r.id}')" data-routine-id="${r.id}" data-display-id="${r.displayId}">${done?"✓":"○"}</button>
+                    <button onclick="deleteRoutineFromUI('${r.id}')" class="delete-btn" style="background:#dc3545;padding:6px 10px;font-size:12px;">削除</button>
+                </div>
+            `;
             $("allList").appendChild(li);
         }
         
@@ -1469,6 +1490,283 @@ function addTestButton() {
     const logoutBtn = $('logoutBtn');
     if (logoutBtn && logoutBtn.parentNode) {
         logoutBtn.parentNode.appendChild(testButton);
+    }
+}
+
+// ルーティン削除のUI処理
+function deleteRoutineFromUI(uniqueId) {
+    const routine = findRoutineById(uniqueId);
+    if (!routine) {
+        console.error("削除対象のルーティンが見つかりません:", uniqueId);
+        alert("ルーティンが見つかりません");
+        return;
+    }
+    
+    console.log("ルーティン削除確認:", {
+        uniqueId: routine.id,
+        name: routine.name,
+        frequency: routine.frequency
+    });
+    
+    // 削除確認ダイアログ
+    const confirmMessage = `ルーティン「${routine.name}」を削除しますか？\n\nこの操作は取り消せません。`;
+    if (!confirm(confirmMessage)) {
+        console.log("削除をキャンセルしました");
+        return;
+    }
+    
+    // 削除実行
+    const success = deleteRoutine(uniqueId);
+    if (success) {
+        console.log("ルーティン削除完了:", routine.name);
+        alert(`ルーティン「${routine.name}」を削除しました`);
+        
+        // 画面を再描画
+        renderMain();
+        
+        // 自動同期
+        if (currentStorage === 'firebase') {
+            syncToFirebase();
+        }
+    } else {
+        console.error("ルーティン削除に失敗しました");
+        alert("ルーティンの削除に失敗しました");
+    }
+}
+
+// 複数ルーティンの一括削除機能
+function deleteMultipleRoutines(routineIds) {
+    if (!Array.isArray(routineIds) || routineIds.length === 0) {
+        console.error("削除対象のルーティンIDが指定されていません");
+        return;
+    }
+    
+    console.log("複数ルーティン削除開始:", routineIds.length, "件");
+    
+    const routines = routineIds.map(id => findRoutineById(id)).filter(r => r !== null);
+    if (routines.length === 0) {
+        alert("削除対象のルーティンが見つかりません");
+        return;
+    }
+    
+    // 削除確認ダイアログ
+    const routineNames = routines.map(r => r.name).join("\n• ");
+    const confirmMessage = `以下のルーティンを削除しますか？\n\n• ${routineNames}\n\nこの操作は取り消せません。`;
+    if (!confirm(confirmMessage)) {
+        console.log("一括削除をキャンセルしました");
+        return;
+    }
+    
+    // 削除実行
+    let successCount = 0;
+    for (const routine of routines) {
+        const success = deleteRoutine(routine.id);
+        if (success) {
+            successCount++;
+        }
+    }
+    
+    console.log("一括削除完了:", successCount, "/", routines.length, "件");
+    alert(`${successCount}件のルーティンを削除しました`);
+    
+    // 画面を再描画
+    renderMain();
+    
+    // 自動同期
+    if (currentStorage === 'firebase') {
+        syncToFirebase();
+    }
+}
+
+// 完了データの一括削除機能
+function deleteAllCompletions() {
+    const user = getCurrentUser();
+    if (!user) {
+        console.error("ユーザー情報がありません");
+        return;
+    }
+    
+    const completions = getCompletions(user.id);
+    if (completions.length === 0) {
+        alert("削除する完了データがありません");
+        return;
+    }
+    
+    const confirmMessage = `すべての完了データ（${completions.length}件）を削除しますか？\n\nこの操作は取り消せません。`;
+    if (!confirm(confirmMessage)) {
+        console.log("完了データ削除をキャンセルしました");
+        return;
+    }
+    
+    // 完了データをクリア
+    saveCompletions(user.id, []);
+    console.log("完了データ削除完了:", completions.length, "件");
+    alert(`${completions.length}件の完了データを削除しました`);
+    
+    // 画面を再描画
+    renderMain();
+    
+    // 自動同期
+    if (currentStorage === 'firebase') {
+        syncToFirebase();
+    }
+}
+
+// 管理機能用ボタンを追加
+function addManagementButtons() {
+    const mainView = $('mainView');
+    if (!mainView) return;
+    
+    // 既存の管理ボタンを削除
+    const existingManageBtn = document.querySelector('#manageButton');
+    if (existingManageBtn) {
+        existingManageBtn.remove();
+    }
+    
+    const manageButton = document.createElement('button');
+    manageButton.id = 'manageButton';
+    manageButton.textContent = '管理';
+    manageButton.className = 'secondary';
+    manageButton.style.marginLeft = '8px';
+    manageButton.onclick = () => {
+        showManagementMenu();
+    };
+    
+    // ログアウトボタンの横に管理ボタンを追加
+    const logoutBtn = $('logoutBtn');
+    if (logoutBtn && logoutBtn.parentNode) {
+        logoutBtn.parentNode.appendChild(manageButton);
+    }
+}
+
+// 管理メニューの表示
+function showManagementMenu() {
+    const user = getCurrentUser();
+    if (!user) return;
+    
+    const routines = getRoutines(user.id);
+    const completions = getCompletions(user.id);
+    
+    const menuItems = [
+        `ルーティン管理 (${routines.length}件)`,
+        `完了データ削除 (${completions.length}件)`,
+        'テストルーティン削除',
+        '全データリセット',
+        'キャンセル'
+    ];
+    
+    const selected = prompt(
+        '管理メニュー\n\n' + 
+        menuItems.map((item, index) => `${index + 1}. ${item}`).join('\n') +
+        '\n\n番号を入力してください:'
+    );
+    
+    if (!selected) return;
+    
+    const choice = parseInt(selected);
+    switch (choice) {
+        case 1:
+            showRoutineManagement();
+            break;
+        case 2:
+            deleteAllCompletions();
+            break;
+        case 3:
+            deleteTestRoutines();
+            break;
+        case 4:
+            resetAllData();
+            break;
+        case 5:
+            console.log('管理メニューをキャンセルしました');
+            break;
+        default:
+            alert('無効な選択です');
+    }
+}
+
+// ルーティン管理画面
+function showRoutineManagement() {
+    const user = getCurrentUser();
+    if (!user) return;
+    
+    const routines = getRoutines(user.id);
+    if (routines.length === 0) {
+        alert('管理するルーティンがありません');
+        return;
+    }
+    
+    const routineList = routines.map((r, index) => 
+        `${index + 1}. ${r.name} (${getFreqText(r.frequency)})`
+    ).join('\n');
+    
+    const selected = prompt(
+        'ルーティン管理\n\n' + 
+        routineList +
+        '\n\n削除するルーティンの番号を入力してください（複数の場合はカンマ区切り）:\n' +
+        '例: 1,3,5'
+    );
+    
+    if (!selected) return;
+    
+    const indices = selected.split(',').map(s => parseInt(s.trim()) - 1).filter(i => !isNaN(i) && i >= 0 && i < routines.length);
+    
+    if (indices.length === 0) {
+        alert('有効な番号が選択されていません');
+        return;
+    }
+    
+    const selectedRoutines = indices.map(i => routines[i]);
+    const routineIds = selectedRoutines.map(r => r.id);
+    
+    deleteMultipleRoutines(routineIds);
+}
+
+// テストルーティンの削除
+function deleteTestRoutines() {
+    const user = getCurrentUser();
+    if (!user) return;
+    
+    const routines = getRoutines(user.id);
+    const testRoutines = routines.filter(r => 
+        r.name.includes('テスト') || 
+        r.name.includes('test') ||
+        r.id.includes('_test')
+    );
+    
+    if (testRoutines.length === 0) {
+        alert('削除するテストルーティンがありません');
+        return;
+    }
+    
+    const routineIds = testRoutines.map(r => r.id);
+    deleteMultipleRoutines(routineIds);
+}
+
+// 全データリセット
+function resetAllData() {
+    const user = getCurrentUser();
+    if (!user) return;
+    
+    const confirmMessage = `すべてのデータをリセットしますか？\n\nこの操作は取り消せません。\n\n• ルーティン: ${getRoutines(user.id).length}件\n• 完了データ: ${getCompletions(user.id).length}件`;
+    if (!confirm(confirmMessage)) {
+        console.log('データリセットをキャンセルしました');
+        return;
+    }
+    
+    // データをクリア
+    saveRoutines(user.id, []);
+    saveCompletions(user.id, []);
+    
+    console.log('全データリセット完了');
+    alert('すべてのデータをリセットしました');
+    
+    // 画面を再描画
+    renderMain();
+    
+    // 自動同期
+    if (currentStorage === 'firebase') {
+        syncToFirebase();
     }
 }
 </script>
