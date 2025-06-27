@@ -339,6 +339,18 @@ function setupEventListeners() {
             backToMainBtn.addEventListener('click', () => showScreen('main'));
         }
         
+        // ルーティン追加画面の戻るボタン
+        const backBtn = document.querySelector('.back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => showScreen('main'));
+        }
+        
+        // ルーティン追加画面のキャンセルボタン
+        const cancelButton = document.querySelector('.cancel-button');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', () => showScreen('main'));
+        }
+        
         // ストレージ選択モーダル
         const storageModal = document.getElementById('storageModal');
         if (storageModal) {
@@ -2614,8 +2626,8 @@ function showMainApp() {
 function showScreen(screenName) {
     console.log('画面切り替え:', screenName);
     
-    const mainScreen = document.getElementById('mainScreen');
-    const addScreen = document.getElementById('addScreen');
+    const mainScreen = document.getElementById('app');
+    const addScreen = document.getElementById('addRoutineScreen');
     
     if (screenName === 'main') {
         if (mainScreen) mainScreen.style.display = 'block';
