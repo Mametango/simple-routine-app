@@ -2,37 +2,22 @@
 
 // デバッグ情報
 console.log('=== script-new.js 読み込み開始 ===');
-console.log('バージョン: 1.0.8');
+console.log('バージョン: 1.0.9');
 console.log('読み込み時刻:', new Date().toISOString());
-
-// 関数の存在チェックとグローバル公開を即座に実行
-(function() {
-    console.log('=== 関数存在チェック開始 ===');
-    
-    // グローバル変数の定義
-    let currentUserInfo = null;
-    let currentStorage = 'local';
-    let routines = [];
-    let completions = [];
-    let isGoogleLoginInProgress = false; // ログイン処理中のフラグ
-
-    // グローバルフラグを設定（Firebase設定からアクセス可能にする）
-    window.isGoogleLoginInProgress = false;
-    
-    // グローバル変数をwindowに公開
-    window.currentUserInfo = currentUserInfo;
-    window.currentStorage = currentStorage;
-    window.routines = routines;
-    window.completions = completions;
-    
-    console.log('=== 関数存在チェック完了 ===');
-})();
 
 // グローバル変数の定義
 let currentUserInfo = null;
+let currentStorage = 'local';
 let routines = [];
 let completions = [];
 let isGoogleLoginInProgress = false; // ログイン処理中のフラグ
+
+// グローバル変数をwindowに公開
+window.currentUserInfo = currentUserInfo;
+window.currentStorage = currentStorage;
+window.routines = routines;
+window.completions = completions;
+window.isGoogleLoginInProgress = isGoogleLoginInProgress;
 
 // 画面切り替え関数
 function showScreen(screenName) {
@@ -65,7 +50,13 @@ async function handleLogin(email, password) {
             const result = await window.simpleAuth.signIn(email, password);
             if (result.user) {
                 console.log('ログイン成功:', result.user);
+                // グローバル変数を更新
                 currentUserInfo = result.user;
+                window.currentUserInfo = currentUserInfo;
+                
+                // ローカルストレージに保存
+                localStorage.setItem('userInfo', JSON.stringify(result.user));
+                
                 showMainApp();
                 return { success: true, user: result.user };
             } else {
@@ -91,7 +82,13 @@ async function handleRegister(email, password) {
             const result = await window.simpleAuth.signUp(email, password);
             if (result.user) {
                 console.log('登録成功:', result.user);
+                // グローバル変数を更新
                 currentUserInfo = result.user;
+                window.currentUserInfo = currentUserInfo;
+                
+                // ローカルストレージに保存
+                localStorage.setItem('userInfo', JSON.stringify(result.user));
+                
                 showMainApp();
                 return { success: true, user: result.user };
             } else {
@@ -201,13 +198,7 @@ function displayTodayRoutines() {
     
     console.log('フィルタ後の自分のルーティン数:', myRoutines.length);
     
-    const todayRoutinesList = document.getElementById('todayList');
-    if (!todayRoutinesList) {
-        console.error('todayList要素が見つかりません');
-        return;
-    }
-    
-    // 今日実行すべきルーティンをフィルタ
+    // 今日のルーティンをフィルタ
     const today = new Date();
     const todayRoutines = myRoutines.filter(routine => {
         switch (routine.frequency) {
@@ -222,8 +213,14 @@ function displayTodayRoutines() {
         }
     });
     
-    console.log('今日実行すべきルーティン数:', todayRoutines.length);
+    // DOM要素を取得
+    const todayRoutinesList = document.getElementById('todayList');
+    if (!todayRoutinesList) {
+        console.error('todayList要素が見つかりません');
+        return;
+    }
     
+    // ルーティンリストを更新
     if (todayRoutines.length === 0) {
         todayRoutinesList.innerHTML = `
             <div class="empty-state">
@@ -241,7 +238,7 @@ function displayTodayRoutines() {
         lucide.createIcons();
     }
     
-    console.log('今日のルーティン表示完了');
+    console.log('今日のルーティン表示完了:', todayRoutines.length);
 }
 
 // 全ルーティンを表示
@@ -253,25 +250,19 @@ function displayAllRoutines() {
     // 現在のユーザーのルーティンのみをフィルタ
     const myRoutines = routines.filter(routine => {
         const isMyRoutine = isMyData(routine, 'routine');
-        if (!isMyRoutine) {
-            console.warn('他人のルーティンを除外:', {
-                id: routine.id,
-                title: routine.title,
-                userId: routine.userId,
-                currentUserId: currentUserInfo?.id
-            });
-        }
         return isMyRoutine;
     });
     
     console.log('フィルタ後の自分のルーティン数:', myRoutines.length);
     
+    // DOM要素を取得
     const allRoutinesList = document.getElementById('allList');
     if (!allRoutinesList) {
         console.error('allList要素が見つかりません');
         return;
     }
     
+    // ルーティンリストを更新
     if (myRoutines.length === 0) {
         allRoutinesList.innerHTML = `
             <div class="empty-state">
@@ -289,7 +280,7 @@ function displayAllRoutines() {
         lucide.createIcons();
     }
     
-    console.log('全ルーティン表示完了');
+    console.log('全ルーティン表示完了:', myRoutines.length);
 }
 
 // ルーティンのHTMLを生成
@@ -516,7 +507,11 @@ function checkAuthState() {
         const userInfo = localStorage.getItem('userInfo');
         if (userInfo) {
             currentUserInfo = JSON.parse(userInfo);
+            window.currentUserInfo = currentUserInfo;
             console.log('ローカルストレージからユーザー情報を取得:', currentUserInfo);
+            
+            // 認証済みの場合はメインアプリを表示
+            showMainApp();
             return true;
         }
         
@@ -529,7 +524,12 @@ function checkAuthState() {
                     email: user.email,
                     displayName: user.displayName
                 };
+                window.currentUserInfo = currentUserInfo;
+                localStorage.setItem('userInfo', JSON.stringify(currentUserInfo));
                 console.log('Firebase認証状態からユーザー情報を取得:', currentUserInfo);
+                
+                // 認証済みの場合はメインアプリを表示
+                showMainApp();
                 return true;
             }
         }
@@ -647,9 +647,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM読み込み完了 - 初期化開始');
     
     try {
-        // データの初期化
-        initializeData();
-        
         // イベントリスナーの設定
         setupEventListeners();
         
@@ -658,10 +655,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!isAuthenticated) {
             console.log('未認証 - 認証画面を表示');
-            showAuthScreen();
+            showScreen('authView');
         } else {
             console.log('認証済み - メインアプリを表示');
-            // 認証状態変更ハンドラーで処理される
+            // checkAuthState内でshowMainAppが呼ばれる
         }
         
         // Lucideアイコンの初期化
@@ -1987,6 +1984,40 @@ function showNotification(message, type = 'info') {
     
     // シンプルなアラートで表示（後で改善可能）
     alert(`${type.toUpperCase()}: ${message}`);
+}
+
+// ログアウト関数
+async function logout() {
+    console.log('ログアウト開始');
+    
+    try {
+        // Firebase認証からログアウト
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            await firebase.auth().signOut();
+            console.log('Firebase認証からログアウト完了');
+        }
+        
+        // グローバル変数をリセット
+        currentUserInfo = null;
+        window.currentUserInfo = null;
+        routines = [];
+        window.routines = routines;
+        completions = [];
+        window.completions = completions;
+        
+        // ローカルストレージからユーザー情報を削除
+        localStorage.removeItem('userInfo');
+        
+        // 認証画面を表示
+        showScreen('authView');
+        
+        console.log('ログアウト完了');
+        
+    } catch (error) {
+        console.error('ログアウトエラー:', error);
+        // エラーが発生しても認証画面を表示
+        showScreen('authView');
+    }
 }
 
 console.log('=== script-new.js 読み込み完了 ===');
