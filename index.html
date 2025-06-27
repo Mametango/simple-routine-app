@@ -550,10 +550,19 @@ $("loginForm").onsubmit = e=>{
         return;
     }
     
+    // デバッグ: 外部認証システムの状態を確認
+    console.log("=== 認証システム状態チェック ===");
+    console.log("window.simpleAuth存在:", !!window.simpleAuth);
+    console.log("window.simpleAuth.signIn存在:", !!(window.simpleAuth && window.simpleAuth.signIn));
+    console.log("startSimpleAuth関数存在:", typeof startSimpleAuth);
+    console.log("simpleAuthクラス存在:", typeof SimpleAuth);
+    
     // 外部認証システムを使用
     if (window.simpleAuth && window.simpleAuth.signIn) {
+        console.log("外部認証システムを使用");
         window.simpleAuth.signIn(email, pw)
             .then(result => {
+                console.log("外部認証結果:", result);
                 if (result.user) {
                     console.log("ログイン成功、メイン画面表示");
                     setCurrentUser(result.user);
@@ -578,6 +587,7 @@ $("loginForm").onsubmit = e=>{
                 alert("ログイン失敗: " + error.message);
             });
     } else {
+        console.log("フォールバック: 元の認証システムを使用");
         // フォールバック: 元の認証システムを使用
         const user = tryLogin(email, pw);
         if(user) { 
@@ -2131,13 +2141,24 @@ function resetAllData() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== 外部スクリプト初期化開始 ===');
     
+    // スクリプト読み込み状態の確認
+    console.log('=== スクリプト読み込み状態 ===');
+    console.log('SimpleAuthクラス存在:', typeof SimpleAuth);
+    console.log('startSimpleAuth関数存在:', typeof startSimpleAuth);
+    console.log('simpleAuthインスタンス存在:', typeof window.simpleAuth);
+    
     // simpleAuthの初期化
     if (typeof startSimpleAuth === 'function') {
         console.log('simpleAuth初期化開始');
-        window.simpleAuth = startSimpleAuth();
-        console.log('simpleAuth初期化完了');
+        try {
+            window.simpleAuth = startSimpleAuth();
+            console.log('simpleAuth初期化完了:', window.simpleAuth);
+        } catch (error) {
+            console.error('simpleAuth初期化エラー:', error);
+        }
     } else {
         console.warn('startSimpleAuth関数が見つかりません');
+        console.log('利用可能なグローバル関数:', Object.keys(window).filter(key => typeof window[key] === 'function'));
     }
     
     // 認証状態の確認
