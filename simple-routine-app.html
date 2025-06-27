@@ -758,9 +758,21 @@
         };
 
         // Firebase初期化
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase初期化成功');
+            console.log('プロジェクトID:', firebaseConfig.projectId);
+        } catch (error) {
+            console.error('❌ Firebase初期化エラー:', error);
+        }
+        
         const auth = firebase.auth();
         const db = firebase.firestore();
+
+        // Firebase接続テスト
+        auth.onAuthStateChanged(function(user) {
+            console.log('Firebase認証状態:', user ? 'ログイン中' : '未ログイン');
+        });
 
         // セキュリティ対策用のユーティリティ関数
         const SecurityUtils = {
@@ -878,6 +890,8 @@
             const password = document.getElementById('password').value;
             const messageDiv = document.getElementById('authMessage');
 
+            console.log('認証試行:', { email, passwordLength: password.length });
+
             // 入力検証
             if (!SecurityUtils.validateEmail(email)) {
                 showMessage('有効なメールアドレスを入力してください', 'error');
@@ -890,22 +904,28 @@
             }
 
             try {
+                console.log('ログイン試行中...');
                 // 既存ユーザーの確認
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 currentUser = userCredential.user;
+                console.log('✅ ログイン成功:', currentUser.email);
                 showMessage('ログインしました', 'success');
                 await loadUserData();
                 showMainView();
             } catch (error) {
+                console.error('❌ ログインエラー:', error.code, error.message);
                 if (error.code === 'auth/user-not-found') {
                     // 新規登録
                     try {
+                        console.log('新規登録試行中...');
                         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                         currentUser = userCredential.user;
+                        console.log('✅ 新規登録成功:', currentUser.email);
                         showMessage('アカウントを作成しました', 'success');
                         await initializeUserData();
                         showMainView();
                     } catch (signUpError) {
+                        console.error('❌ 新規登録エラー:', signUpError.code, signUpError.message);
                         showMessage('アカウント作成に失敗しました: ' + signUpError.message, 'error');
                     }
                 } else {
