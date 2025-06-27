@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプルルーティン管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .routine-list {
+            margin-top: 20px;
+        }
+
+        .routine-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .routine-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .routine-item.completed {
+            opacity: 0.7;
+            border-left-color: #28a745;
+        }
+
+        .routine-item.completed .routine-title {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .routine-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .routine-description {
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .routine-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .frequency-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(102, 126, 234, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 シンプルルーティン管理</h1>
+            <p>毎日の習慣を簡単に管理</p>
+        </div>
+
+        <div class="content">
+            <!-- 認証画面 -->
+            <div id="authView" class="view active">
+                <h2>ログイン / 新規登録</h2>
+                <form id="authForm">
+                    <div class="form-group">
+                        <label for="email">メールアドレス</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">パスワード</label>
+                        <input type="password" id="password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn">ログイン / 登録</button>
+                </form>
+                <div id="authMessage"></div>
+            </div>
+
+            <!-- メイン画面 -->
+            <div id="mainView" class="view">
+                <!-- ユーザー情報 -->
+                <div class="user-info">
+                    <strong id="userEmail"></strong> でログイン中
+                    <button onclick="logout()" class="btn btn-secondary" style="width: auto; margin-top: 10px;">ログアウト</button>
+                </div>
+
+                <!-- 統計情報 -->
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalRoutines">0</div>
+                        <div class="stat-label">総ルーティン数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="completedToday">0</div>
+                        <div class="stat-label">今日完了</div>
+                    </div>
+                </div>
+
+                <!-- タブ -->
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('today')">今日</div>
+                    <div class="tab" onclick="showTab('all')">すべて</div>
+                    <div class="tab" onclick="showTab('add')">追加</div>
+                </div>
+
+                <!-- 今日のルーティン -->
+                <div id="todayTab" class="tab-content">
+                    <h3>今日のルーティン</h3>
+                    <div id="todayRoutines" class="routine-list"></div>
+                </div>
+
+                <!-- すべてのルーティン -->
+                <div id="allTab" class="tab-content hidden">
+                    <h3>すべてのルーティン</h3>
+                    <div id="allRoutines" class="routine-list"></div>
+                </div>
+
+                <!-- ルーティン追加 -->
+                <div id="addTab" class="tab-content hidden">
+                    <h3>新しいルーティンを追加</h3>
+                    <form id="addRoutineForm">
+                        <div class="form-group">
+                            <label for="routineTitle">タイトル</label>
+                            <input type="text" id="routineTitle" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="routineDescription">説明（任意）</label>
+                            <textarea id="routineDescription" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="routineFrequency">頻度</label>
+                            <select id="routineFrequency" required>
+                                <option value="daily">毎日</option>
+                                <option value="weekly">毎週</option>
+                                <option value="monthly">毎月</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success">追加</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let currentUser = null;
+        let routines = [];
+        let completions = [];
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            checkAuth();
+            setupEventListeners();
+        });
+
+        // データの読み込み
+        function loadData() {
+            try {
+                const savedUser = localStorage.getItem('currentUser');
+                const savedRoutines = localStorage.getItem('routines');
+                const savedCompletions = localStorage.getItem('completions');
+
+                if (savedUser) currentUser = JSON.parse(savedUser);
+                if (savedRoutines) routines = JSON.parse(savedRoutines);
+                if (savedCompletions) completions = JSON.parse(savedCompletions);
+            } catch (error) {
+                console.error('データ読み込みエラー:', error);
+            }
+        }
+
+        // データの保存
+        function saveData() {
+            try {
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                localStorage.setItem('routines', JSON.stringify(routines));
+                localStorage.setItem('completions', JSON.stringify(completions));
+            } catch (error) {
+                console.error('データ保存エラー:', error);
+            }
+        }
+
+        // 認証状態チェック
+        function checkAuth() {
+            if (currentUser) {
+                showMainView();
+            } else {
+                showAuthView();
+            }
+        }
+
+        // イベントリスナーの設定
+        function setupEventListeners() {
+            // 認証フォーム
+            document.getElementById('authForm').addEventListener('submit', handleAuth);
+            
+            // ルーティン追加フォーム
+            document.getElementById('addRoutineForm').addEventListener('submit', handleAddRoutine);
+        }
+
+        // 認証処理
+        function handleAuth(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('authMessage');
+
+            if (!email || !password) {
+                showMessage('メールアドレスとパスワードを入力してください', 'error');
+                return;
+            }
+
+            // シンプルな認証（実際のアプリでは適切なハッシュ化が必要）
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            
+            if (users[email]) {
+                // ログイン
+                if (users[email].password === password) {
+                    currentUser = { email: email };
+                    saveData();
+                    showMainView();
+                    showMessage('ログインしました', 'success');
+                } else {
+                    showMessage('パスワードが正しくありません', 'error');
+                }
+            } else {
+                // 新規登録
+                users[email] = { email: email, password: password };
+                localStorage.setItem('users', JSON.stringify(users));
+                currentUser = { email: email };
+                saveData();
+                showMainView();
+                showMessage('アカウントを作成しました', 'success');
+            }
+        }
+
+        // ルーティン追加
+        function handleAddRoutine(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('routineTitle').value;
+            const description = document.getElementById('routineDescription').value;
+            const frequency = document.getElementById('routineFrequency').value;
+
+            if (!title) {
+                showMessage('タイトルを入力してください', 'error');
+                return;
+            }
+
+            const newRoutine = {
+                id: Date.now().toString(),
+                title: title,
+                description: description,
+                frequency: frequency,
+                createdAt: new Date().toISOString(),
+                userId: currentUser.email
+            };
+
+            routines.push(newRoutine);
+            saveData();
+            updateDisplay();
+            
+            // フォームをリセット
+            document.getElementById('addRoutineForm').reset();
+            showMessage('ルーティンを追加しました', 'success');
+        }
+
+        // ルーティン完了切り替え
+        function toggleRoutine(routineId) {
+            const today = new Date().toDateString();
+            const completionKey = `${routineId}_${today}`;
+            
+            const existingIndex = completions.findIndex(c => c.id === completionKey);
+            
+            if (existingIndex >= 0) {
+                completions.splice(existingIndex, 1);
+            } else {
+                completions.push({
+                    id: completionKey,
+                    routineId: routineId,
+                    completedAt: new Date().toISOString(),
+                    userId: currentUser.email
+                });
+            }
+            
+            saveData();
+            updateDisplay();
+        }
+
+        // ルーティン削除
+        function deleteRoutine(routineId) {
+            if (confirm('このルーティンを削除しますか？')) {
+                routines = routines.filter(r => r.id !== routineId);
+                completions = completions.filter(c => c.routineId !== routineId);
+                saveData();
+                updateDisplay();
+                showMessage('ルーティンを削除しました', 'success');
+            }
+        }
+
+        // 表示更新
+        function updateDisplay() {
+            if (!currentUser) return;
+
+            // ユーザー情報
+            document.getElementById('userEmail').textContent = currentUser.email;
+
+            // 統計情報
+            document.getElementById('totalRoutines').textContent = routines.length;
+            
+            const today = new Date().toDateString();
+            const todayCompletions = completions.filter(c => {
+                const completionDate = new Date(c.completedAt).toDateString();
+                return completionDate === today;
+            });
+            document.getElementById('completedToday').textContent = todayCompletions.length;
+
+            // ルーティン表示
+            displayRoutines();
+        }
+
+        // ルーティン表示
+        function displayRoutines() {
+            const today = new Date().toDateString();
+            
+            // 今日のルーティン
+            const todayRoutines = routines.filter(routine => {
+                if (routine.frequency === 'daily') return true;
+                if (routine.frequency === 'weekly') {
+                    const dayOfWeek = new Date().getDay();
+                    return dayOfWeek === 0; // 日曜日のみ（簡単な実装）
+                }
+                if (routine.frequency === 'monthly') {
+                    const dayOfMonth = new Date().getDate();
+                    return dayOfMonth === 1; // 1日のみ（簡単な実装）
+                }
+                return false;
+            });
+
+            document.getElementById('todayRoutines').innerHTML = createRoutineHTML(todayRoutines, today);
+            document.getElementById('allRoutines').innerHTML = createRoutineHTML(routines, today);
+        }
+
+        // ルーティンHTML生成
+        function createRoutineHTML(routineList, today) {
+            if (routineList.length === 0) {
+                return '<p style="text-align: center; color: #6c757d; padding: 20px;">ルーティンがありません</p>';
+            }
+
+            return routineList.map(routine => {
+                const isCompleted = completions.some(c => {
+                    const completionDate = new Date(c.completedAt).toDateString();
+                    return c.routineId === routine.id && completionDate === today;
+                });
+
+                const frequencyText = {
+                    'daily': '毎日',
+                    'weekly': '毎週',
+                    'monthly': '毎月'
+                }[routine.frequency];
+
+                return `
+                    <div class="routine-item ${isCompleted ? 'completed' : ''}">
+                        <div class="routine-title">${routine.title}</div>
+                        ${routine.description ? `<div class="routine-description">${routine.description}</div>` : ''}
+                        <div class="routine-meta">
+                            <span class="frequency-badge">${frequencyText}</span>
+                            <div>
+                                <button onclick="toggleRoutine('${routine.id}')" class="btn ${isCompleted ? 'btn-secondary' : 'btn-success'}" style="width: auto; margin-right: 10px;">
+                                    ${isCompleted ? '完了取り消し' : '完了'}
+                                </button>
+                                <button onclick="deleteRoutine('${routine.id}')" class="btn btn-danger" style="width: auto;">削除</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // タブ切り替え
+        function showTab(tabName) {
+            // タブボタンの状態更新
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // タブコンテンツの表示切り替え
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+        }
+
+        // ログアウト
+        function logout() {
+            currentUser = null;
+            saveData();
+            showAuthView();
+            showMessage('ログアウトしました', 'success');
+        }
+
+        // 画面切り替え
+        function showMainView() {
+            document.getElementById('authView').classList.remove('active');
+            document.getElementById('mainView').classList.add('active');
+            updateDisplay();
+        }
+
+        function showAuthView() {
+            document.getElementById('mainView').classList.remove('active');
+            document.getElementById('authView').classList.add('active');
+        }
+
+        // メッセージ表示
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('authMessage');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 3000);
+        }
+
+        // 初期表示
+        updateDisplay();
+    </script>
+</body>
+</html> 
