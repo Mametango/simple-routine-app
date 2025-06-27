@@ -323,7 +323,7 @@ function setupEventListeners() {
         });
         
         // タブボタン
-        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabButtons = document.querySelectorAll('.tab-button');
         tabButtons.forEach(button => {
             button.addEventListener('click', handleTabButtonClick);
         });
@@ -2279,25 +2279,47 @@ async function handleRoutineFormSubmit(event) {
     event.preventDefault();
     console.log('ルーティンフォーム送信');
     
-    const title = document.getElementById('routineTitle').value.trim();
+    const title = document.getElementById('routineName').value.trim();
     const description = document.getElementById('routineDescription').value.trim();
-    const time = document.getElementById('routineTime').value;
+    const frequency = document.getElementById('addRoutineFrequency').value || 'daily';
     
     if (!title) {
-        showNotification('タイトルを入力してください', 'warning');
+        showNotification('ルーティン名を入力してください', 'warning');
         return;
     }
     
-    // 頻度を取得
-    const frequency = window.addSelectedFrequency || 'daily';
+    // 週次・月次の追加オプションを取得
+    let weeklyDays = [];
+    let monthlyDate = null;
+    
+    if (frequency === 'weekly') {
+        const weekdayInputs = document.querySelectorAll('.add-weekday-input:checked');
+        weeklyDays = Array.from(weekdayInputs).map(input => parseInt(input.value));
+        if (weeklyDays.length === 0) {
+            showNotification('曜日を選択してください', 'warning');
+            return;
+        }
+    }
+    
+    if (frequency === 'monthly') {
+        const monthlyDateInput = document.getElementById('addMonthlyDateInput');
+        monthlyDate = monthlyDateInput ? parseInt(monthlyDateInput.value) : null;
+        if (!monthlyDate || monthlyDate < 1 || monthlyDate > 31) {
+            showNotification('有効な日付（1-31）を入力してください', 'warning');
+            return;
+        }
+    }
     
     // ルーティンデータを作成
     const routineData = {
         title: title,
         description: description,
-        time: time,
-        frequency: frequency
+        frequency: frequency,
+        weeklyDays: weeklyDays,
+        monthlyDate: monthlyDate
     };
+    
+    console.log('ルーティンデータ:', routineData);
     
     // ルーティンを追加
     await addRoutine(routineData);
@@ -2306,11 +2328,11 @@ async function handleRoutineFormSubmit(event) {
     event.target.reset();
     
     // 頻度オプションをリセット
-    window.addSelectedFrequency = 'daily';
+    document.getElementById('addRoutineFrequency').value = 'daily';
     showFrequencyOptions('add', 'daily');
     
     // メイン画面に戻る
-    showMainScreen();
+    showScreen('main');
 }
 
 // 頻度ボタンのクリック処理
@@ -2321,9 +2343,40 @@ function handleFrequencyButtonClick(event) {
     if (!button) return;
     
     const frequency = button.dataset.frequency;
-    const formType = button.closest('.frequency-options').id.replace('FrequencyOptions', '');
+    console.log('選択された頻度:', frequency);
     
-    selectFrequency(formType, frequency);
+    // ルーティン追加画面の頻度ボタンの場合
+    const addRoutineScreen = document.getElementById('addRoutineScreen');
+    if (addRoutineScreen && addRoutineScreen.contains(button)) {
+        // すべての頻度ボタンのアクティブ状態を解除
+        const allFrequencyButtons = addRoutineScreen.querySelectorAll('.frequency-btn');
+        allFrequencyButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // クリックされたボタンをアクティブにする
+        button.classList.add('active');
+        
+        // 頻度を保存
+        document.getElementById('addRoutineFrequency').value = frequency;
+        
+        // 週次・月次の追加オプションを表示/非表示
+        const weeklyDaysRow = document.getElementById('addWeeklyDaysRow');
+        const monthlyDateRow = document.getElementById('addMonthlyDateRow');
+        
+        if (weeklyDaysRow) {
+            weeklyDaysRow.style.display = frequency === 'weekly' ? 'block' : 'none';
+        }
+        if (monthlyDateRow) {
+            monthlyDateRow.style.display = frequency === 'monthly' ? 'block' : 'none';
+        }
+        
+        return;
+    }
+    
+    // 編集フォームの頻度ボタンの場合（既存の処理）
+    const formType = button.closest('.frequency-options')?.id.replace('FrequencyOptions', '');
+    if (formType) {
+        selectFrequency(formType, frequency);
+    }
 }
 
 // タブボタンのクリック処理
@@ -2638,6 +2691,13 @@ function showScreen(screenName) {
     } else if (screenName === 'add') {
         if (mainScreen) mainScreen.style.display = 'none';
         if (addScreen) addScreen.style.display = 'block';
+        
+        // デフォルトで毎日ボタンを選択
+        const dailyButton = addScreen.querySelector('.frequency-btn[data-frequency="daily"]');
+        if (dailyButton) {
+            dailyButton.classList.add('active');
+            document.getElementById('addRoutineFrequency').value = 'daily';
+        }
         
         // 全ルーティンを表示
         displayAllRoutines();
