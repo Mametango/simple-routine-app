@@ -2,7 +2,7 @@
 
 // デバッグ情報
 console.log('=== script-new.js 読み込み開始 ===');
-console.log('バージョン: 1.0.12');
+console.log('バージョン: 1.0.13');
 console.log('読み込み時刻:', new Date().toISOString());
 
 // グローバル変数の定義
@@ -46,8 +46,23 @@ async function handleLogin(email, password) {
     console.log('ログイン処理開始:', email);
     
     try {
+        // simpleAuthの初期化を確認
+        if (!window.simpleAuth) {
+            console.log('simpleAuthが未初期化、初期化を試行...');
+            if (typeof startSimpleAuth === 'function') {
+                window.simpleAuth = startSimpleAuth();
+                console.log('simpleAuth初期化完了:', window.simpleAuth);
+            } else {
+                console.error('startSimpleAuth関数が見つかりません');
+                return { success: false, message: '認証システムが利用できません' };
+            }
+        }
+        
         if (window.simpleAuth && window.simpleAuth.signIn) {
+            console.log('simpleAuth.signInを呼び出し...');
             const result = await window.simpleAuth.signIn(email, password);
+            console.log('signIn結果:', result);
+            
             if (result.user) {
                 console.log('ログイン成功:', result.user);
                 // グローバル変数を更新
@@ -60,11 +75,13 @@ async function handleLogin(email, password) {
                 showMainApp();
                 return { success: true, user: result.user };
             } else {
-                console.log('ログイン失敗');
-                return { success: false, message: 'ログインに失敗しました' };
+                console.log('ログイン失敗:', result.message);
+                return { success: false, message: result.message || 'ログインに失敗しました' };
             }
         } else {
-            console.log('simpleAuthが利用できません');
+            console.error('simpleAuth.signInが利用できません');
+            console.log('window.simpleAuth:', window.simpleAuth);
+            console.log('window.simpleAuth.signIn:', window.simpleAuth?.signIn);
             return { success: false, message: '認証システムが利用できません' };
         }
     } catch (error) {
@@ -78,8 +95,23 @@ async function handleRegister(email, password) {
     console.log('登録処理開始:', email);
     
     try {
+        // simpleAuthの初期化を確認
+        if (!window.simpleAuth) {
+            console.log('simpleAuthが未初期化、初期化を試行...');
+            if (typeof startSimpleAuth === 'function') {
+                window.simpleAuth = startSimpleAuth();
+                console.log('simpleAuth初期化完了:', window.simpleAuth);
+            } else {
+                console.error('startSimpleAuth関数が見つかりません');
+                return { success: false, message: '認証システムが利用できません' };
+            }
+        }
+        
         if (window.simpleAuth && window.simpleAuth.signUp) {
+            console.log('simpleAuth.signUpを呼び出し...');
             const result = await window.simpleAuth.signUp(email, password);
+            console.log('signUp結果:', result);
+            
             if (result.user) {
                 console.log('登録成功:', result.user);
                 // グローバル変数を更新
@@ -92,11 +124,13 @@ async function handleRegister(email, password) {
                 showMainApp();
                 return { success: true, user: result.user };
             } else {
-                console.log('登録失敗');
+                console.log('登録失敗:', result.message);
                 return { success: false, message: result.message || '登録に失敗しました' };
             }
         } else {
-            console.log('simpleAuthが利用できません');
+            console.error('simpleAuth.signUpが利用できません');
+            console.log('window.simpleAuth:', window.simpleAuth);
+            console.log('window.simpleAuth.signUp:', window.simpleAuth?.signUp);
             return { success: false, message: '認証システムが利用できません' };
         }
     } catch (error) {

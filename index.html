@@ -13,7 +13,18 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="simple-auth.js"></script>
     <script src="simple-storage.js"></script>
-    <script src="script-new.js?v=1.0.12-20250627"></script>
+    <script src="script-new.js?v=1.0.13-20250627"></script>
+    <script>
+        // 即座にsimpleAuthを初期化
+        console.log('=== HTML側でのsimpleAuth初期化開始 ===');
+        if (typeof startSimpleAuth === 'function') {
+            window.simpleAuth = startSimpleAuth();
+            console.log('✅ simpleAuth初期化完了:', window.simpleAuth);
+        } else {
+            console.error('❌ startSimpleAuth関数が見つかりません');
+        }
+        console.log('=== HTML側でのsimpleAuth初期化終了 ===');
+    </script>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
