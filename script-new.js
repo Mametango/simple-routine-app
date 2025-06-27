@@ -1910,19 +1910,20 @@ function logDataState(context) {
 // アプリ初期化関数
 function initializeApp() {
     console.log('アプリ初期化開始');
-    
-    try {
-        // simpleAuthの初期化
-        if (typeof startSimpleAuth === 'function' && !window.simpleAuth) {
-            console.log('simpleAuth初期化開始');
-            try {
-                window.simpleAuth = startSimpleAuth();
-                console.log('simpleAuth初期化完了:', window.simpleAuth);
-            } catch (error) {
-                console.error('simpleAuth初期化エラー:', error);
-            }
+
+    // simpleAuthの初期化
+    if (typeof startSimpleAuth === 'function') {
+        if (!window.simpleAuth) {
+            window.simpleAuth = startSimpleAuth();
+            console.log('simpleAuth初期化完了:', window.simpleAuth);
+        } else {
+            console.log('simpleAuthは既に初期化済み');
         }
-        
+    } else {
+        console.error('startSimpleAuth関数が見つかりません');
+    }
+
+    try {
         // イベントリスナーの設定
         setupEventListeners();
         
