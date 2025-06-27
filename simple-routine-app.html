@@ -245,6 +245,74 @@
         .tab:hover:not(.active) {
             background: rgba(102, 126, 234, 0.1);
         }
+
+        /* フローティング追加ボタン */
+        .floating-add-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .floating-add-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        /* タブコンテンツのデフォルト表示 */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -296,45 +364,50 @@
                 <div class="tabs">
                     <div class="tab active" onclick="showTab('today')">今日</div>
                     <div class="tab" onclick="showTab('all')">すべて</div>
-                    <div class="tab" onclick="showTab('add')">追加</div>
                 </div>
 
                 <!-- 今日のルーティン -->
-                <div id="todayTab" class="tab-content">
+                <div id="todayTab" class="tab-content active">
                     <h3>今日のルーティン</h3>
                     <div id="todayRoutines" class="routine-list"></div>
                 </div>
 
                 <!-- すべてのルーティン -->
-                <div id="allTab" class="tab-content hidden">
+                <div id="allTab" class="tab-content">
                     <h3>すべてのルーティン</h3>
                     <div id="allRoutines" class="routine-list"></div>
                 </div>
-
-                <!-- ルーティン追加 -->
-                <div id="addTab" class="tab-content hidden">
-                    <h3>新しいルーティンを追加</h3>
-                    <form id="addRoutineForm">
-                        <div class="form-group">
-                            <label for="routineTitle">タイトル</label>
-                            <input type="text" id="routineTitle" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="routineDescription">説明（任意）</label>
-                            <textarea id="routineDescription" rows="3"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="routineFrequency">頻度</label>
-                            <select id="routineFrequency" required>
-                                <option value="daily">毎日</option>
-                                <option value="weekly">毎週</option>
-                                <option value="monthly">毎月</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-success">追加</button>
-                    </form>
-                </div>
             </div>
+        </div>
+    </div>
+
+    <!-- フローティング追加ボタン -->
+    <button id="floatingAddBtn" class="floating-add-btn" onclick="openAddModal()">+</button>
+
+    <!-- 追加モーダル -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddModal()">&times;</span>
+            <h3>新しいルーティンを追加</h3>
+            <form id="addRoutineForm">
+                <div class="form-group">
+                    <label for="routineTitle">タイトル</label>
+                    <input type="text" id="routineTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="routineDescription">説明（任意）</label>
+                    <textarea id="routineDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="routineFrequency">頻度</label>
+                    <select id="routineFrequency" required>
+                        <option value="daily">毎日</option>
+                        <option value="weekly">毎週</option>
+                        <option value="monthly">毎月</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">追加</button>
+            </form>
         </div>
     </div>
 
@@ -349,6 +422,8 @@
             loadData();
             checkAuth();
             setupEventListeners();
+            // フローティング追加ボタンを初期状態で非表示
+            document.getElementById('floatingAddBtn').style.display = 'none';
         });
 
         // データの読み込み
@@ -458,8 +533,8 @@
             saveData();
             updateDisplay();
             
-            // フォームをリセット
-            document.getElementById('addRoutineForm').reset();
+            // モーダルを閉じる
+            closeAddModal();
             showMessage('ルーティンを追加しました', 'success');
         }
 
@@ -582,8 +657,27 @@
             event.target.classList.add('active');
 
             // タブコンテンツの表示切り替え
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // モーダル制御
+        function openAddModal() {
+            document.getElementById('addModal').style.display = 'block';
+            document.getElementById('routineTitle').focus();
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+            document.getElementById('addRoutineForm').reset();
+        }
+
+        // モーダル外クリックで閉じる
+        window.onclick = function(event) {
+            const modal = document.getElementById('addModal');
+            if (event.target === modal) {
+                closeAddModal();
+            }
         }
 
         // ログアウト
@@ -598,17 +692,31 @@
         function showMainView() {
             document.getElementById('authView').classList.remove('active');
             document.getElementById('mainView').classList.add('active');
+            document.getElementById('floatingAddBtn').style.display = 'block';
             updateDisplay();
         }
 
         function showAuthView() {
             document.getElementById('mainView').classList.remove('active');
             document.getElementById('authView').classList.add('active');
+            document.getElementById('floatingAddBtn').style.display = 'none';
         }
 
         // メッセージ表示
         function showMessage(message, type) {
-            const messageDiv = document.getElementById('authMessage');
+            let messageDiv = document.getElementById('authMessage');
+            if (!messageDiv) {
+                // メイン画面用のメッセージ要素を作成
+                messageDiv = document.createElement('div');
+                messageDiv.id = 'mainMessage';
+                messageDiv.style.position = 'fixed';
+                messageDiv.style.top = '20px';
+                messageDiv.style.left = '50%';
+                messageDiv.style.transform = 'translateX(-50%)';
+                messageDiv.style.zIndex = '3000';
+                document.body.appendChild(messageDiv);
+            }
+            
             messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
             setTimeout(() => {
                 messageDiv.innerHTML = '';
