@@ -2,7 +2,7 @@
 
 // デバッグ情報
 console.log('=== script-new.js 読み込み開始 ===');
-console.log('バージョン: 1.0.7');
+console.log('バージョン: 1.0.8');
 console.log('読み込み時刻:', new Date().toISOString());
 
 // 関数の存在チェックとグローバル公開を即座に実行
@@ -30,13 +30,116 @@ console.log('読み込み時刻:', new Date().toISOString());
 
 // グローバル変数の定義
 let currentUserInfo = null;
-let currentStorage = 'local';
 let routines = [];
 let completions = [];
 let isGoogleLoginInProgress = false; // ログイン処理中のフラグ
 
-// グローバルフラグを設定（Firebase設定からアクセス可能にする）
-window.isGoogleLoginInProgress = false;
+// 画面切り替え関数
+function showScreen(screenName) {
+    console.log('画面切り替え:', screenName);
+    
+    // すべての画面を非表示
+    const screens = ['authView', 'registerView', 'mainView', 'addRoutineView'];
+    screens.forEach(screen => {
+        const element = document.getElementById(screen);
+        if (element) {
+            element.classList.add('hidden');
+        }
+    });
+    
+    // 指定された画面を表示
+    const targetScreen = document.getElementById(screenName);
+    if (targetScreen) {
+        targetScreen.classList.remove('hidden');
+    } else {
+        console.error('画面が見つかりません:', screenName);
+    }
+}
+
+// ログイン処理関数
+async function handleLogin(email, password) {
+    console.log('ログイン処理開始:', email);
+    
+    try {
+        if (window.simpleAuth && window.simpleAuth.signIn) {
+            const result = await window.simpleAuth.signIn(email, password);
+            if (result.user) {
+                console.log('ログイン成功:', result.user);
+                currentUserInfo = result.user;
+                showMainApp();
+                return { success: true, user: result.user };
+            } else {
+                console.log('ログイン失敗');
+                return { success: false, message: 'ログインに失敗しました' };
+            }
+        } else {
+            console.log('simpleAuthが利用できません');
+            return { success: false, message: '認証システムが利用できません' };
+        }
+    } catch (error) {
+        console.error('ログインエラー:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+// 登録処理関数
+async function handleRegister(email, password) {
+    console.log('登録処理開始:', email);
+    
+    try {
+        if (window.simpleAuth && window.simpleAuth.signUp) {
+            const result = await window.simpleAuth.signUp(email, password);
+            if (result.user) {
+                console.log('登録成功:', result.user);
+                currentUserInfo = result.user;
+                showMainApp();
+                return { success: true, user: result.user };
+            } else {
+                console.log('登録失敗');
+                return { success: false, message: result.message || '登録に失敗しました' };
+            }
+        } else {
+            console.log('simpleAuthが利用できません');
+            return { success: false, message: '認証システムが利用できません' };
+        }
+    } catch (error) {
+        console.error('登録エラー:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+// メインアプリ表示関数
+function showMainApp() {
+    console.log('メインアプリ表示開始');
+    
+    if (!currentUserInfo) {
+        console.error('ユーザー情報がありません');
+        showScreen('authView');
+        return;
+    }
+    
+    // メイン画面を表示
+    showScreen('mainView');
+    
+    // データを読み込み
+    initializeData();
+    
+    // ルーティンを表示
+    displayTodayRoutines();
+    displayAllRoutines();
+    
+    console.log('メインアプリ表示完了');
+}
+
+// ログイン関数（グローバル公開用）
+function login(email, password) {
+    return handleLogin(email, password);
+}
+
+// 登録関数（グローバル公開用）
+function register(email, password) {
+    return handleRegister(email, password);
+}
 
 // セキュリティチェック関数
 function isMyData(data, dataType = 'routine') {
@@ -2568,13 +2671,14 @@ window.showScreen = showScreen;
 window.login = login;
 window.register = register;
 window.handleLogin = handleLogin;
+window.handleRegister = handleRegister;
+window.showMainApp = showMainApp;
 window.updateSyncStatus = updateSyncStatus;
 window.initializeData = initializeData;
 window.handleRoutineFormSubmit = handleRoutineFormSubmit;
 window.handleFrequencyButtonClick = handleFrequencyButtonClick;
 window.handleTabButtonClick = handleTabButtonClick;
 window.addRoutine = addRoutine;
-window.showMainApp = showMainApp;
 window.logout = logout;
 window.showNotification = showNotification;
 window.showDataDebugInfo = showDataDebugInfo;
