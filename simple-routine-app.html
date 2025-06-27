@@ -361,10 +361,6 @@
             box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
         }
 
-        .floating-add-btn.show {
-            display: block;
-        }
-
         /* モーダル */
         .modal {
             display: none;
@@ -780,11 +776,13 @@
         // モーダル制御
         function openAddModal() {
             document.getElementById('addModal').style.display = 'block';
+            document.getElementById('floatingAddBtn').style.display = 'none';
             document.getElementById('routineTitle').focus();
         }
 
         function closeAddModal() {
             document.getElementById('addModal').style.display = 'none';
+            document.getElementById('floatingAddBtn').style.display = 'block';
             document.getElementById('addRoutineForm').reset();
         }
 
@@ -808,14 +806,14 @@
         function showMainView() {
             document.getElementById('authView').classList.remove('active');
             document.getElementById('mainView').classList.add('active');
-            document.getElementById('floatingAddBtn').classList.add('show');
+            document.getElementById('floatingAddBtn').style.display = 'block';
             updateDisplay();
         }
 
         function showAuthView() {
             document.getElementById('mainView').classList.remove('active');
             document.getElementById('authView').classList.add('active');
-            document.getElementById('floatingAddBtn').classList.remove('show');
+            document.getElementById('floatingAddBtn').style.display = 'none';
         }
 
         // メッセージ表示
