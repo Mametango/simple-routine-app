@@ -715,6 +715,10 @@
                 <div id="customOptions" class="form-group" style="display: none;">
                     <div class="custom-selector">
                         <div class="form-group">
+                            <label for="customNumber">数値</label>
+                            <input type="number" id="customNumber" min="1" max="365" placeholder="例: 3" required>
+                        </div>
+                        <div class="form-group">
                             <label for="customInterval">間隔</label>
                             <select id="customInterval" required>
                                 <option value="">選択してください</option>
@@ -723,10 +727,6 @@
                                 <option value="months">月</option>
                                 <option value="years">年</option>
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="customNumber">数値</label>
-                            <input type="number" id="customNumber" min="1" max="365" placeholder="例: 3" required>
                         </div>
                         <div class="form-group">
                             <label for="customStartDate">開始日</label>
