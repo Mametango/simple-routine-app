@@ -469,6 +469,24 @@
             color: white;
             border-color: #667eea;
         }
+
+        /* 毎年選択スタイル */
+        .yearly-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* カスタム頻度スタイル */
+        .custom-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .custom-selector .form-group:last-child {
+            grid-column: 1 / -1;
+        }
     </style>
 </head>
 <body>
@@ -560,6 +578,8 @@
                         <option value="daily">毎日</option>
                         <option value="weekly">毎週</option>
                         <option value="monthly">毎月</option>
+                        <option value="yearly">毎年</option>
+                        <option value="custom">カスタム</option>
                     </select>
                 </div>
                 
@@ -628,6 +648,91 @@
                         <option value="30">30日</option>
                         <option value="31">31日</option>
                     </select>
+                </div>
+
+                <!-- 毎年の月日選択 -->
+                <div id="yearlyOptions" class="form-group" style="display: none;">
+                    <div class="yearly-selector">
+                        <div class="form-group">
+                            <label for="yearlyMonth">月を選択</label>
+                            <select id="yearlyMonth" required>
+                                <option value="">選択してください</option>
+                                <option value="1">1月</option>
+                                <option value="2">2月</option>
+                                <option value="3">3月</option>
+                                <option value="4">4月</option>
+                                <option value="5">5月</option>
+                                <option value="6">6月</option>
+                                <option value="7">7月</option>
+                                <option value="8">8月</option>
+                                <option value="9">9月</option>
+                                <option value="10">10月</option>
+                                <option value="11">11月</option>
+                                <option value="12">12月</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="yearlyDay">日にちを選択</label>
+                            <select id="yearlyDay" required>
+                                <option value="">選択してください</option>
+                                <option value="1">1日</option>
+                                <option value="2">2日</option>
+                                <option value="3">3日</option>
+                                <option value="4">4日</option>
+                                <option value="5">5日</option>
+                                <option value="6">6日</option>
+                                <option value="7">7日</option>
+                                <option value="8">8日</option>
+                                <option value="9">9日</option>
+                                <option value="10">10日</option>
+                                <option value="11">11日</option>
+                                <option value="12">12日</option>
+                                <option value="13">13日</option>
+                                <option value="14">14日</option>
+                                <option value="15">15日</option>
+                                <option value="16">16日</option>
+                                <option value="17">17日</option>
+                                <option value="18">18日</option>
+                                <option value="19">19日</option>
+                                <option value="20">20日</option>
+                                <option value="21">21日</option>
+                                <option value="22">22日</option>
+                                <option value="23">23日</option>
+                                <option value="24">24日</option>
+                                <option value="25">25日</option>
+                                <option value="26">26日</option>
+                                <option value="27">27日</option>
+                                <option value="28">28日</option>
+                                <option value="29">29日</option>
+                                <option value="30">30日</option>
+                                <option value="31">31日</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- カスタム頻度設定 -->
+                <div id="customOptions" class="form-group" style="display: none;">
+                    <div class="custom-selector">
+                        <div class="form-group">
+                            <label for="customInterval">間隔</label>
+                            <select id="customInterval" required>
+                                <option value="">選択してください</option>
+                                <option value="days">日</option>
+                                <option value="weeks">週</option>
+                                <option value="months">月</option>
+                                <option value="years">年</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="customNumber">数値</label>
+                            <input type="number" id="customNumber" min="1" max="365" placeholder="例: 3" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="customStartDate">開始日</label>
+                            <input type="date" id="customStartDate" required>
+                        </div>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-success">追加</button>
             </form>
@@ -736,11 +841,28 @@
             const frequency = document.getElementById('routineFrequency').value;
             const weeklyOptions = document.getElementById('weeklyOptions');
             const monthlyOptions = document.getElementById('monthlyOptions');
+            const yearlyOptions = document.getElementById('yearlyOptions');
+            const customOptions = document.getElementById('customOptions');
             const monthlyDaySelect = document.getElementById('monthlyDay');
+            const yearlyMonthSelect = document.getElementById('yearlyMonth');
+            const yearlyDaySelect = document.getElementById('yearlyDay');
+            const customIntervalSelect = document.getElementById('customInterval');
+            const customNumberInput = document.getElementById('customNumber');
+            const customStartDateInput = document.getElementById('customStartDate');
             
             // すべてのオプションを非表示
             weeklyOptions.style.display = 'none';
             monthlyOptions.style.display = 'none';
+            yearlyOptions.style.display = 'none';
+            customOptions.style.display = 'none';
+            
+            // 必須属性をリセット
+            monthlyDaySelect.required = false;
+            yearlyMonthSelect.required = false;
+            yearlyDaySelect.required = false;
+            customIntervalSelect.required = false;
+            customNumberInput.required = false;
+            customStartDateInput.required = false;
             
             // 選択された頻度に応じてオプションを表示
             if (frequency === 'weekly') {
@@ -748,8 +870,15 @@
             } else if (frequency === 'monthly') {
                 monthlyOptions.style.display = 'block';
                 monthlyDaySelect.required = true;
-            } else {
-                monthlyDaySelect.required = false;
+            } else if (frequency === 'yearly') {
+                yearlyOptions.style.display = 'block';
+                yearlyMonthSelect.required = true;
+                yearlyDaySelect.required = true;
+            } else if (frequency === 'custom') {
+                customOptions.style.display = 'block';
+                customIntervalSelect.required = true;
+                customNumberInput.required = true;
+                customStartDateInput.required = true;
             }
         }
 
@@ -799,6 +928,27 @@
                     return;
                 }
                 frequencyDetails = { selectedDay: parseInt(monthlyDay) };
+            } else if (frequency === 'yearly') {
+                const yearlyMonth = document.getElementById('yearlyMonth').value;
+                const yearlyDay = document.getElementById('yearlyDay').value;
+                if (!yearlyMonth || !yearlyDay) {
+                    showMessage('月と日にちを選択してください', 'error');
+                    return;
+                }
+                frequencyDetails = { selectedMonth: parseInt(yearlyMonth), selectedDay: parseInt(yearlyDay) };
+            } else if (frequency === 'custom') {
+                const customInterval = document.getElementById('customInterval').value;
+                const customNumber = document.getElementById('customNumber').value;
+                const customStartDate = document.getElementById('customStartDate').value;
+                if (!customInterval || !customNumber || !customStartDate) {
+                    showMessage('すべてのオプションを入力してください', 'error');
+                    return;
+                }
+                frequencyDetails = {
+                    interval: customInterval,
+                    number: parseInt(customNumber),
+                    startDate: customStartDate
+                };
             }
 
             const newRoutine = {
@@ -879,6 +1029,8 @@
             const today = new Date().toDateString();
             const currentDayOfWeek = new Date().getDay();
             const currentDayOfMonth = new Date().getDate();
+            const currentMonth = new Date().getMonth() + 1;
+            const currentDate = new Date();
             
             // 今日のルーティン
             const todayRoutines = routines.filter(routine => {
@@ -897,12 +1049,67 @@
                     }
                     return false;
                 }
+
+                if (routine.frequency === 'yearly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedMonth && routine.frequencyDetails.selectedDay) {
+                        return routine.frequencyDetails.selectedMonth === currentMonth && 
+                               routine.frequencyDetails.selectedDay === currentDayOfMonth;
+                    }
+                    return false;
+                }
+
+                if (routine.frequency === 'custom') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.startDate && 
+                        routine.frequencyDetails.interval && routine.frequencyDetails.number) {
+                        return isCustomRoutineDue(routine.frequencyDetails, currentDate);
+                    }
+                    return false;
+                }
                 
                 return false;
             });
 
             document.getElementById('todayRoutines').innerHTML = createRoutineHTML(todayRoutines, today);
             document.getElementById('allRoutines').innerHTML = createRoutineHTML(routines, today);
+        }
+
+        // カスタム頻度のルーティンが今日実行すべきかチェック
+        function isCustomRoutineDue(frequencyDetails, currentDate) {
+            const startDate = new Date(frequencyDetails.startDate);
+            const interval = frequencyDetails.interval;
+            const number = frequencyDetails.number;
+            
+            // 開始日より前の場合は実行しない
+            if (currentDate < startDate) return false;
+            
+            let diffTime, diffDays;
+            
+            switch (interval) {
+                case 'days':
+                    diffTime = currentDate - startDate;
+                    diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays % number === 0;
+                    
+                case 'weeks':
+                    diffTime = currentDate - startDate;
+                    diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays % (number * 7) === 0;
+                    
+                case 'months':
+                    const yearDiff = currentDate.getFullYear() - startDate.getFullYear();
+                    const monthDiff = currentDate.getMonth() - startDate.getMonth();
+                    const totalMonths = yearDiff * 12 + monthDiff;
+                    return totalMonths % number === 0 && currentDate.getDate() === startDate.getDate();
+                    
+                case 'years':
+                    const yearDiff2 = currentDate.getFullYear() - startDate.getFullYear();
+                    return yearDiff2 % number === 0 && 
+                           currentDate.getMonth() === startDate.getMonth() && 
+                           currentDate.getDate() === startDate.getDate();
+                    
+                default:
+                    return false;
+            }
         }
 
         // ルーティンHTML生成
@@ -933,6 +1140,24 @@
                         frequencyText = `毎月${routine.frequencyDetails.selectedDay}日`;
                     } else {
                         frequencyText = '毎月';
+                    }
+                } else if (routine.frequency === 'yearly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedMonth && routine.frequencyDetails.selectedDay) {
+                        frequencyText = `毎年${routine.frequencyDetails.selectedMonth}月${routine.frequencyDetails.selectedDay}日`;
+                    } else {
+                        frequencyText = '毎年';
+                    }
+                } else if (routine.frequency === 'custom') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.interval && routine.frequencyDetails.number) {
+                        const intervalText = {
+                            'days': '日',
+                            'weeks': '週',
+                            'months': '月',
+                            'years': '年'
+                        }[routine.frequencyDetails.interval];
+                        frequencyText = `${routine.frequencyDetails.number}${intervalText}おき`;
+                    } else {
+                        frequencyText = 'カスタム';
                     }
                 }
 
@@ -980,7 +1205,16 @@
             // 頻度オプションをリセット
             document.getElementById('weeklyOptions').style.display = 'none';
             document.getElementById('monthlyOptions').style.display = 'none';
+            document.getElementById('yearlyOptions').style.display = 'none';
+            document.getElementById('customOptions').style.display = 'none';
+            
+            // 必須属性をリセット
             document.getElementById('monthlyDay').required = false;
+            document.getElementById('yearlyMonth').required = false;
+            document.getElementById('yearlyDay').required = false;
+            document.getElementById('customInterval').required = false;
+            document.getElementById('customNumber').required = false;
+            document.getElementById('customStartDate').required = false;
             
             // チェックボックスの選択状態をリセット
             document.querySelectorAll('.day-checkbox').forEach(label => {
