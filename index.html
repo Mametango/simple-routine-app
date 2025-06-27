@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Routine - シンプル版</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <style>
         body { font-family: sans-serif; background: #f6f8fa; margin: 0; }
         .center { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -28,6 +33,13 @@
         .mt-2 { margin-top: 16px; }
         .mb-2 { margin-bottom: 16px; }
         .hidden { display: none !important; }
+        .sync-status { 
+            position: fixed; top: 10px; right: 10px; 
+            padding: 8px 12px; border-radius: 6px; font-size: 12px; 
+            background: #28a745; color: white; z-index: 1000;
+        }
+        .sync-status.error { background: #dc3545; }
+        .sync-status.syncing { background: #ffc107; color: #000; }
     </style>
 </head>
 <body>
@@ -126,6 +138,7 @@
         </form>
     </div>
 </div>
+<div id="syncStatus" class="sync-status"></div>
 <script>
 // --- ユーティリティ ---
 function $(id) { 
@@ -285,6 +298,11 @@ $("loginForm").onsubmit = e=>{
     if(user) { 
         console.log("ログイン成功、メイン画面表示");
         setCurrentUser(user); 
+        
+        // ローカルストレージを使用
+        currentStorage = 'local';
+        localStorage.setItem('storageType', 'local');
+        
         showMain(); 
     }
     else {
@@ -307,6 +325,11 @@ $("registerForm").onsubmit = e=>{
     if(user) { 
         console.log("登録成功、メイン画面表示");
         setCurrentUser(user); 
+        
+        // ローカルストレージを使用
+        currentStorage = 'local';
+        localStorage.setItem('storageType', 'local');
+        
         showMain(); 
     }
     else {
@@ -433,6 +456,7 @@ function toggleComplete(rid){
 function showMain(){ 
     console.log("メイン画面表示開始");
     show("mainView"); 
+    addSyncButton(); // 同期ボタンを追加
     renderMain(); 
 }
 function renderMain(){
@@ -490,13 +514,26 @@ function renderMain(){
 }
 function getFreqText(f){ return f==="daily"?"毎日":f==="weekly"?"毎週":f==="monthly"?"毎月":f; }
 // --- 初期表示 ---
-window.onload = function(){
+window.onload = async function(){
     console.log("ページ読み込み完了");
     try {
+        // ストレージタイプを確認
+        const storageType = localStorage.getItem('storageType') || 'local';
+        currentStorage = storageType;
+        console.log("ストレージタイプ:", currentStorage);
+        
         const user = getCurrentUser();
         console.log("現在のユーザー:", user);
+        
         if(user) {
             console.log("ログイン済み、メイン画面表示");
+            
+            // Firebase同期が有効な場合、初期同期を実行
+            if (currentStorage === 'firebase' && typeof firebase !== 'undefined') {
+                console.log("Firebase初期同期開始");
+                await syncFromFirebase();
+            }
+            
             showMain();
         }
         else {
@@ -509,6 +546,186 @@ window.onload = function(){
         show("authView");
     }
 };
+
+// --- 同期機能 ---
+let currentStorage = 'local'; // 'local' または 'firebase'
+let syncStatus = 'idle'; // 'idle', 'syncing', 'success', 'error'
+
+// 同期状態表示
+function updateSyncStatus(status, message = '') {
+    const statusElement = $('syncStatus');
+    if (!statusElement) return;
+    
+    syncStatus = status;
+    statusElement.className = `sync-status ${status}`;
+    
+    switch (status) {
+        case 'syncing':
+            statusElement.textContent = '同期中...';
+            break;
+        case 'success':
+            statusElement.textContent = '同期完了';
+            setTimeout(() => statusElement.textContent = '', 3000);
+            break;
+        case 'error':
+            statusElement.textContent = `同期エラー: ${message}`;
+            setTimeout(() => statusElement.textContent = '', 5000);
+            break;
+        default:
+            statusElement.textContent = '';
+    }
+}
+
+// Firebase同期機能
+async function syncToFirebase() {
+    if (typeof firebase === 'undefined') {
+        console.error('Firebase SDKが読み込まれていません');
+        return false;
+    }
+    
+    const user = getCurrentUser();
+    if (!user) {
+        console.error('ユーザー情報がありません');
+        return false;
+    }
+    
+    try {
+        updateSyncStatus('syncing');
+        console.log('Firebase同期開始');
+        
+        const db = firebase.firestore();
+        const routines = getRoutines(user.id);
+        const completions = getCompletions(user.id);
+        
+        // ルーティンをFirebaseに保存
+        await db.collection('users').doc(user.id).set({
+            email: user.email,
+            lastSync: new Date().toISOString()
+        });
+        
+        // ルーティンデータを保存
+        await db.collection('users').doc(user.id).collection('routines').doc('data').set({
+            routines: routines,
+            lastUpdated: new Date().toISOString()
+        });
+        
+        // 完了データを保存
+        await db.collection('users').doc(user.id).collection('completions').doc('data').set({
+            completions: completions,
+            lastUpdated: new Date().toISOString()
+        });
+        
+        console.log('Firebase同期完了');
+        updateSyncStatus('success');
+        return true;
+        
+    } catch (error) {
+        console.error('Firebase同期エラー:', error);
+        updateSyncStatus('error', error.message);
+        return false;
+    }
+}
+
+async function syncFromFirebase() {
+    if (typeof firebase === 'undefined') {
+        console.error('Firebase SDKが読み込まれていません');
+        return false;
+    }
+    
+    const user = getCurrentUser();
+    if (!user) {
+        console.error('ユーザー情報がありません');
+        return false;
+    }
+    
+    try {
+        updateSyncStatus('syncing');
+        console.log('Firebaseから同期開始');
+        
+        const db = firebase.firestore();
+        
+        // ルーティンデータを取得
+        const routinesDoc = await db.collection('users').doc(user.id).collection('routines').doc('data').get();
+        if (routinesDoc.exists) {
+            const data = routinesDoc.data();
+            if (data.routines) {
+                saveRoutines(user.id, data.routines);
+                console.log('ルーティン同期完了:', data.routines.length, '件');
+            }
+        }
+        
+        // 完了データを取得
+        const completionsDoc = await db.collection('users').doc(user.id).collection('completions').doc('data').get();
+        if (completionsDoc.exists) {
+            const data = completionsDoc.data();
+            if (data.completions) {
+                saveCompletions(user.id, data.completions);
+                console.log('完了データ同期完了:', data.completions.length, '件');
+            }
+        }
+        
+        console.log('Firebaseから同期完了');
+        updateSyncStatus('success');
+        return true;
+        
+    } catch (error) {
+        console.error('Firebaseから同期エラー:', error);
+        updateSyncStatus('error', error.message);
+        return false;
+    }
+}
+
+// 手動同期ボタン
+function addSyncButton() {
+    const mainView = $('mainView');
+    if (!mainView) return;
+    
+    const syncButton = document.createElement('button');
+    syncButton.textContent = '同期';
+    syncButton.className = 'secondary';
+    syncButton.style.marginLeft = '8px';
+    syncButton.onclick = async () => {
+        await syncToFirebase();
+        renderMain();
+    };
+    
+    // ログアウトボタンの横に同期ボタンを追加
+    const logoutBtn = $('logoutBtn');
+    if (logoutBtn && logoutBtn.parentNode) {
+        logoutBtn.parentNode.appendChild(syncButton);
+    }
+}
+
+// 自動同期（データ変更時）
+function autoSync() {
+    if (currentStorage === 'firebase') {
+        syncToFirebase();
+    }
+}
+
+// 保存関数をオーバーライドして自動同期を追加
+const originalSaveRoutines = saveRoutines;
+const originalSaveCompletions = saveCompletions;
+
+function saveRoutines(uid, routines) {
+    try {
+        localStorage.setItem("routines_"+uid,JSON.stringify(routines));
+        console.log("ルーティン保存完了:", uid, routines.length, "件");
+        autoSync(); // 自動同期
+    } catch (error) {
+        console.error("ルーティン保存エラー:", error);
+    }
+}
+
+function saveCompletions(uid, completions) {
+    try {
+        localStorage.setItem("completions_"+uid,JSON.stringify(completions));
+        console.log("完了データ保存完了:", uid, completions.length, "件");
+        autoSync(); // 自動同期
+    } catch (error) {
+        console.error("完了データ保存エラー:", error);
+    }
+}
 </script>
 </body>
 </html>
