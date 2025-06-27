@@ -313,14 +313,25 @@ function setupEventListeners() {
         // ルーティン追加フォーム
         const routineForm = document.getElementById('routineForm');
         if (routineForm) {
-            routineForm.addEventListener('submit', handleRoutineFormSubmit);
+            routineForm.addEventListener('submit', (event) => {
+                console.log('ルーティンフォームが送信されました');
+                handleRoutineFormSubmit(event);
+            });
+            console.log('routineFormイベントリスナー設定完了');
+        } else {
+            console.warn('routineForm要素が見つかりません');
         }
         
         // 頻度ボタン
         const frequencyButtons = document.querySelectorAll('.frequency-btn');
-        frequencyButtons.forEach(button => {
-            button.addEventListener('click', handleFrequencyButtonClick);
+        console.log('頻度ボタン数:', frequencyButtons.length);
+        frequencyButtons.forEach((button, index) => {
+            button.addEventListener('click', (event) => {
+                console.log(`頻度ボタン${index + 1}がクリックされました:`, button.dataset.frequency);
+                handleFrequencyButtonClick(event);
+            });
         });
+        console.log('頻度ボタンイベントリスナー設定完了');
         
         // タブボタン
         const tabButtons = document.querySelectorAll('.tab-button');
@@ -331,7 +342,13 @@ function setupEventListeners() {
         // 画面切り替えボタン
         const addRoutineBtn = document.getElementById('addRoutineBtn');
         if (addRoutineBtn) {
-            addRoutineBtn.addEventListener('click', () => showScreen('add'));
+            addRoutineBtn.addEventListener('click', () => {
+                console.log('ルーティン追加ボタンがクリックされました');
+                showScreen('add');
+            });
+            console.log('addRoutineBtnイベントリスナー設定完了');
+        } else {
+            console.warn('addRoutineBtn要素が見つかりません');
         }
         
         const backToMainBtn = document.getElementById('backToMainBtn');
@@ -342,13 +359,25 @@ function setupEventListeners() {
         // ルーティン追加画面の戻るボタン
         const backBtn = document.querySelector('.back-btn');
         if (backBtn) {
-            backBtn.addEventListener('click', () => showScreen('main'));
+            backBtn.addEventListener('click', () => {
+                console.log('戻るボタンがクリックされました');
+                showScreen('main');
+            });
+            console.log('backBtnイベントリスナー設定完了');
+        } else {
+            console.warn('backBtn要素が見つかりません');
         }
         
         // ルーティン追加画面のキャンセルボタン
         const cancelButton = document.querySelector('.cancel-button');
         if (cancelButton) {
-            cancelButton.addEventListener('click', () => showScreen('main'));
+            cancelButton.addEventListener('click', () => {
+                console.log('キャンセルボタンがクリックされました');
+                showScreen('main');
+            });
+            console.log('cancelButtonイベントリスナー設定完了');
+        } else {
+            console.warn('cancelButton要素が見つかりません');
         }
         
         // ストレージ選択モーダル
@@ -2677,18 +2706,23 @@ function showMainApp() {
 
 // 画面を切り替え
 function showScreen(screenName) {
-    console.log('画面切り替え:', screenName);
+    console.log('画面切り替え開始:', screenName);
     
     const mainScreen = document.getElementById('app');
     const addScreen = document.getElementById('addRoutineScreen');
     
+    console.log('mainScreen要素:', mainScreen);
+    console.log('addScreen要素:', addScreen);
+    
     if (screenName === 'main') {
+        console.log('メイン画面を表示');
         if (mainScreen) mainScreen.style.display = 'block';
         if (addScreen) addScreen.style.display = 'none';
         
         // 今日のルーティンを表示
         displayTodayRoutines();
     } else if (screenName === 'add') {
+        console.log('ルーティン追加画面を表示');
         if (mainScreen) mainScreen.style.display = 'none';
         if (addScreen) addScreen.style.display = 'block';
         
@@ -2697,11 +2731,14 @@ function showScreen(screenName) {
         if (dailyButton) {
             dailyButton.classList.add('active');
             document.getElementById('addRoutineFrequency').value = 'daily';
+            console.log('毎日ボタンを選択状態にしました');
         }
         
         // 全ルーティンを表示
         displayAllRoutines();
     }
+    
+    console.log('画面切り替え完了');
 }
 
 // ログイン処理
