@@ -13,7 +13,7 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="simple-auth.js"></script>
     <script src="simple-storage.js"></script>
-    <script src="script-new.js?v=1.0.11"></script>
+    <script src="script-new.js?v=1.0.12"></script>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -2107,6 +2107,12 @@ function resetAllData() {
 }
 
 // 外部スクリプトの初期化は script-new.js で処理されるため削除
+
+// 確実にsimpleAuthを初期化
+if (typeof startSimpleAuth === 'function' && !window.simpleAuth) {
+    window.simpleAuth = startSimpleAuth();
+    console.log('HTML側でsimpleAuth初期化完了:', window.simpleAuth);
+}
 </script>
 </body>
 </html>
