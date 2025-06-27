@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>シンプルルーティン管理</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -740,51 +746,115 @@
     </div>
 
     <script>
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1234567890abcdefghijklmnopqrstuvwxyz",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdefghijklmnop"
+        };
+
+        // Firebase初期化
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // セキュリティ対策用のユーティリティ関数
+        const SecurityUtils = {
+            // 簡単なハッシュ関数（実際のアプリではbcrypt等を使用）
+            hashPassword: function(password) {
+                let hash = 0;
+                if (password.length === 0) return hash.toString();
+                for (let i = 0; i < password.length; i++) {
+                    const char = password.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // 32bit整数に変換
+                }
+                return hash.toString();
+            },
+
+            // XSS対策：HTMLエスケープ
+            escapeHtml: function(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            },
+
+            // 入力検証
+            validateEmail: function(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            },
+
+            validatePassword: function(password) {
+                // 最低6文字、英数字を含む
+                return password.length >= 6 && /[a-zA-Z]/.test(password) && /[0-9]/.test(password);
+            },
+
+            validateInput: function(input, maxLength = 100) {
+                // 特殊文字の除去と長さ制限
+                return input.replace(/[<>]/g, '').substring(0, maxLength);
+            },
+
+            // セッション管理
+            generateSessionToken: function() {
+                return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            },
+
+            // データの暗号化（簡単な実装）
+            encryptData: function(data) {
+                try {
+                    return btoa(JSON.stringify(data));
+                } catch (e) {
+                    console.error('暗号化エラー:', e);
+                    return null;
+                }
+            },
+
+            // データの復号化
+            decryptData: function(encryptedData) {
+                try {
+                    return JSON.parse(atob(encryptedData));
+                } catch (e) {
+                    console.error('復号化エラー:', e);
+                    return null;
+                }
+            }
+        };
+
         // グローバル変数
         let currentUser = null;
         let routines = [];
         let completions = [];
+        let sessionToken = null;
 
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
-            loadData();
             checkAuth();
             setupEventListeners();
         });
 
-        // データの読み込み
-        function loadData() {
-            try {
-                const savedUser = localStorage.getItem('currentUser');
-                const savedRoutines = localStorage.getItem('routines');
-                const savedCompletions = localStorage.getItem('completions');
-
-                if (savedUser) currentUser = JSON.parse(savedUser);
-                if (savedRoutines) routines = JSON.parse(savedRoutines);
-                if (savedCompletions) completions = JSON.parse(savedCompletions);
-            } catch (error) {
-                console.error('データ読み込みエラー:', error);
-            }
-        }
-
-        // データの保存
-        function saveData() {
-            try {
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                localStorage.setItem('routines', JSON.stringify(routines));
-                localStorage.setItem('completions', JSON.stringify(completions));
-            } catch (error) {
-                console.error('データ保存エラー:', error);
-            }
+        // データの読み込み（Firebase対応）
+        async function loadData() {
+            // Firebase認証で自動的にデータが読み込まれるため、ここでは何もしない
         }
 
         // 認証状態チェック
         function checkAuth() {
-            if (currentUser) {
-                showMainView();
-            } else {
-                showAuthView();
-            }
+            auth.onAuthStateChanged(async function(user) {
+                if (user) {
+                    currentUser = user;
+                    await loadUserData();
+                    showMainView();
+                } else {
+                    currentUser = null;
+                    routines = [];
+                    completions = [];
+                    showAuthView();
+                }
+            });
         }
 
         // イベントリスナーの設定
@@ -799,40 +869,104 @@
             setupDayCheckboxes();
         }
 
-        // 認証処理
-        function handleAuth(event) {
+        // Firebase認証処理
+        async function handleAuth(event) {
             event.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const messageDiv = document.getElementById('authMessage');
 
-            if (!email || !password) {
-                showMessage('メールアドレスとパスワードを入力してください', 'error');
+            // 入力検証
+            if (!SecurityUtils.validateEmail(email)) {
+                showMessage('有効なメールアドレスを入力してください', 'error');
                 return;
             }
 
-            // シンプルな認証（実際のアプリでは適切なハッシュ化が必要）
-            const users = JSON.parse(localStorage.getItem('users') || '{}');
-            
-            if (users[email]) {
-                // ログイン
-                if (users[email].password === password) {
-                    currentUser = { email: email };
-                    saveData();
-                    showMainView();
-                    showMessage('ログインしました', 'success');
-                } else {
-                    showMessage('パスワードが正しくありません', 'error');
-                }
-            } else {
-                // 新規登録
-                users[email] = { email: email, password: password };
-                localStorage.setItem('users', JSON.stringify(users));
-                currentUser = { email: email };
-                saveData();
+            if (!SecurityUtils.validatePassword(password)) {
+                showMessage('パスワードは6文字以上で英数字を含む必要があります', 'error');
+                return;
+            }
+
+            try {
+                // 既存ユーザーの確認
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                showMessage('ログインしました', 'success');
+                await loadUserData();
                 showMainView();
-                showMessage('アカウントを作成しました', 'success');
+            } catch (error) {
+                if (error.code === 'auth/user-not-found') {
+                    // 新規登録
+                    try {
+                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                        currentUser = userCredential.user;
+                        showMessage('アカウントを作成しました', 'success');
+                        await initializeUserData();
+                        showMainView();
+                    } catch (signUpError) {
+                        showMessage('アカウント作成に失敗しました: ' + signUpError.message, 'error');
+                    }
+                } else {
+                    showMessage('ログインに失敗しました: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // ユーザーデータの初期化
+        async function initializeUserData() {
+            if (!currentUser) return;
+            
+            try {
+                await db.collection('users').doc(currentUser.uid).set({
+                    email: currentUser.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    routines: [],
+                    completions: []
+                });
+                
+                routines = [];
+                completions = [];
+                updateDisplay();
+            } catch (error) {
+                console.error('ユーザーデータ初期化エラー:', error);
+                showMessage('データの初期化に失敗しました', 'error');
+            }
+        }
+
+        // ユーザーデータの読み込み
+        async function loadUserData() {
+            if (!currentUser) return;
+            
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    routines = userData.routines || [];
+                    completions = userData.completions || [];
+                } else {
+                    await initializeUserData();
+                }
+                updateDisplay();
+            } catch (error) {
+                console.error('データ読み込みエラー:', error);
+                showMessage('データの読み込みに失敗しました', 'error');
+            }
+        }
+
+        // データの保存
+        async function saveData() {
+            if (!currentUser) return;
+            
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    routines: routines,
+                    completions: completions,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error('データ保存エラー:', error);
+                showMessage('データの保存に失敗しました', 'error');
             }
         }
 
@@ -898,11 +1032,11 @@
         }
 
         // ルーティン追加
-        function handleAddRoutine(event) {
+        async function handleAddRoutine(event) {
             event.preventDefault();
             
-            const title = document.getElementById('routineTitle').value;
-            const description = document.getElementById('routineDescription').value;
+            const title = SecurityUtils.validateInput(document.getElementById('routineTitle').value, 50);
+            const description = SecurityUtils.validateInput(document.getElementById('routineDescription').value, 200);
             const frequency = document.getElementById('routineFrequency').value;
 
             if (!title) {
@@ -957,12 +1091,12 @@
                 description: description,
                 frequency: frequency,
                 frequencyDetails: frequencyDetails,
-                createdAt: new Date().toISOString(),
-                userId: currentUser.email
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                userId: currentUser.uid
             };
 
             routines.push(newRoutine);
-            saveData();
+            await saveData();
             updateDisplay();
             
             // モーダルを閉じる
@@ -971,7 +1105,7 @@
         }
 
         // ルーティン完了切り替え
-        function toggleRoutine(routineId) {
+        async function toggleRoutine(routineId) {
             const today = new Date().toDateString();
             const completionKey = `${routineId}_${today}`;
             
@@ -983,21 +1117,21 @@
                 completions.push({
                     id: completionKey,
                     routineId: routineId,
-                    completedAt: new Date().toISOString(),
-                    userId: currentUser.email
+                    completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    userId: currentUser.uid
                 });
             }
             
-            saveData();
+            await saveData();
             updateDisplay();
         }
 
         // ルーティン削除
-        function deleteRoutine(routineId) {
+        async function deleteRoutine(routineId) {
             if (confirm('このルーティンを削除しますか？')) {
                 routines = routines.filter(r => r.id !== routineId);
                 completions = completions.filter(c => c.routineId !== routineId);
-                saveData();
+                await saveData();
                 updateDisplay();
                 showMessage('ルーティンを削除しました', 'success');
             }
@@ -1008,14 +1142,14 @@
             if (!currentUser) return;
 
             // ユーザー情報
-            document.getElementById('userEmail').textContent = currentUser.email;
+            document.getElementById('userEmail').textContent = SecurityUtils.escapeHtml(currentUser.email);
 
             // 統計情報
             document.getElementById('totalRoutines').textContent = routines.length;
             
             const today = new Date().toDateString();
             const todayCompletions = completions.filter(c => {
-                const completionDate = new Date(c.completedAt).toDateString();
+                const completionDate = new Date(c.completedAt?.toDate?.() || c.completedAt).toDateString();
                 return completionDate === today;
             });
             document.getElementById('completedToday').textContent = todayCompletions.length;
@@ -1120,7 +1254,7 @@
 
             return routineList.map(routine => {
                 const isCompleted = completions.some(c => {
-                    const completionDate = new Date(c.completedAt).toDateString();
+                    const completionDate = new Date(c.completedAt?.toDate?.() || c.completedAt).toDateString();
                     return c.routineId === routine.id && completionDate === today;
                 });
 
@@ -1161,10 +1295,14 @@
                     }
                 }
 
+                // XSS対策：HTMLエスケープ
+                const safeTitle = SecurityUtils.escapeHtml(routine.title);
+                const safeDescription = routine.description ? SecurityUtils.escapeHtml(routine.description) : '';
+
                 return `
                     <div class="routine-item ${isCompleted ? 'completed' : ''}">
-                        <div class="routine-title">${routine.title}</div>
-                        ${routine.description ? `<div class="routine-description">${routine.description}</div>` : ''}
+                        <div class="routine-title">${safeTitle}</div>
+                        ${safeDescription ? `<div class="routine-description">${safeDescription}</div>` : ''}
                         <div class="routine-meta">
                             <span class="frequency-badge">${frequencyText}</span>
                             <div>
@@ -1231,11 +1369,18 @@
         }
 
         // ログアウト
-        function logout() {
-            currentUser = null;
-            saveData();
-            showAuthView();
-            showMessage('ログアウトしました', 'success');
+        async function logout() {
+            try {
+                await auth.signOut();
+                currentUser = null;
+                routines = [];
+                completions = [];
+                showAuthView();
+                showMessage('ログアウトしました', 'success');
+            } catch (error) {
+                console.error('ログアウトエラー:', error);
+                showMessage('ログアウトに失敗しました', 'error');
+            }
         }
 
         // 画面切り替え
