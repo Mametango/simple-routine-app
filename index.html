@@ -259,8 +259,16 @@ $("logoutBtn").onclick = ()=>{
     clearCurrentUser(); 
     show("authView"); 
 };
-$("showAddRoutine").onclick = ()=>{ show("addRoutineView"); };
-$("cancelAddRoutine").onclick = ()=>{ show("mainView"); };
+$("showAddRoutine").onclick = ()=>{ 
+    console.log("ルーティン追加画面表示");
+    clearAddRoutineForm();
+    show("addRoutineView"); 
+};
+$("cancelAddRoutine").onclick = ()=>{ 
+    console.log("ルーティン追加キャンセル");
+    clearAddRoutineForm();
+    show("mainView"); 
+};
 // --- ログイン・登録 ---
 $("loginForm").onsubmit = e=>{
     e.preventDefault();
@@ -308,6 +316,36 @@ $("registerForm").onsubmit = e=>{
 };
 // --- ルーティン追加 ---
 let addFreq = "daily";
+
+// フォームクリア関数
+function clearAddRoutineForm() {
+    console.log("ルーティン追加フォームクリア");
+    try {
+        // 入力フィールドをクリア
+        $("routineName").value = "";
+        $("routineDesc").value = "";
+        $("monthlyDateInput").value = "";
+        
+        // チェックボックスをクリア
+        [...$("weeklyDays").querySelectorAll("input[type=checkbox]")].forEach(cb => {
+            cb.checked = false;
+        });
+        
+        // 頻度をデフォルトに戻す
+        addFreq = "daily";
+        [...document.querySelectorAll("#addRoutineForm .tab")].forEach(b => b.classList.remove("active"));
+        document.querySelector("#addRoutineForm .tab[data-freq='daily']").classList.add("active");
+        
+        // オプション項目を非表示
+        $("weeklyDays").classList.add("hidden");
+        $("monthlyDate").classList.add("hidden");
+        
+        console.log("フォームクリア完了");
+    } catch (error) {
+        console.error("フォームクリアエラー:", error);
+    }
+}
+
 [...document.querySelectorAll("#addRoutineForm .tab")].forEach(btn=>{
     btn.onclick = function(){
         [...document.querySelectorAll("#addRoutineForm .tab")].forEach(b=>b.classList.remove("active"));
@@ -319,19 +357,55 @@ let addFreq = "daily";
 });
 $("addRoutineForm").onsubmit = e=>{
     e.preventDefault();
+    console.log("ルーティン追加フォーム送信");
     const user = getCurrentUser();
-    if(!user) return;
+    if(!user) {
+        console.error("ユーザー情報がありません");
+        return;
+    }
+    
     const name = $("routineName").value.trim();
-    if(!name) return alert("ルーティン名必須");
+    if(!name) {
+        alert("ルーティン名必須");
+        return;
+    }
+    
     const desc = $("routineDesc").value.trim();
     let weeklyDays = [], monthlyDate = null;
-    if(addFreq==="weekly") weeklyDays = [...$("weeklyDays").querySelectorAll("input:checked")].map(i=>parseInt(i.value));
-    if(addFreq==="monthly") monthlyDate = parseInt($("monthlyDateInput").value)||null;
-    if(addFreq==="weekly" && weeklyDays.length===0) return alert("曜日を選択してください");
-    if(addFreq==="monthly" && (!monthlyDate||monthlyDate<1||monthlyDate>31)) return alert("日付1-31");
+    
+    if(addFreq==="weekly") {
+        weeklyDays = [...$("weeklyDays").querySelectorAll("input:checked")].map(i=>parseInt(i.value));
+    }
+    if(addFreq==="monthly") {
+        monthlyDate = parseInt($("monthlyDateInput").value)||null;
+    }
+    
+    if(addFreq==="weekly" && weeklyDays.length===0) {
+        alert("曜日を選択してください");
+        return;
+    }
+    if(addFreq==="monthly" && (!monthlyDate||monthlyDate<1||monthlyDate>31)) {
+        alert("日付1-31");
+        return;
+    }
+    
     const routines = getRoutines(user.id);
-    routines.push({id:Date.now().toString(),name,desc,frequency:addFreq,weeklyDays,monthlyDate,userId:user.id});
-    saveRoutines(user.id,routines);
+    const newRoutine = {
+        id: Date.now().toString(),
+        name,
+        desc,
+        frequency: addFreq,
+        weeklyDays,
+        monthlyDate,
+        userId: user.id
+    };
+    
+    routines.push(newRoutine);
+    saveRoutines(user.id, routines);
+    console.log("ルーティン追加完了:", newRoutine);
+    
+    // フォームをクリアしてメイン画面に戻る
+    clearAddRoutineForm();
     show("mainView");
     renderMain();
 };
