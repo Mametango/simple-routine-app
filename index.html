@@ -40,6 +40,11 @@
         }
         .sync-status.error { background: #dc3545; }
         .sync-status.syncing { background: #ffc107; color: #000; }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -478,9 +483,30 @@ function renderMain(){
         
         // 今日のルーティン
         const todayR = routines.filter(r=>{
-            if(r.frequency==="daily") return true;
-            if(r.frequency==="weekly") return r.weeklyDays&&r.weeklyDays.includes(today.getDay());
-            if(r.frequency==="monthly") return r.monthlyDate===today.getDate();
+            console.log('ルーティンフィルタリング:', {
+                name: r.name,
+                frequency: r.frequency,
+                weeklyDays: r.weeklyDays,
+                monthlyDate: r.monthlyDate,
+                today: today.getDay(),
+                todayDate: today.getDate()
+            });
+            
+            if(r.frequency==="daily") {
+                console.log('毎日ルーティン:', r.name);
+                return true;
+            }
+            if(r.frequency==="weekly") {
+                const isToday = r.weeklyDays&&r.weeklyDays.includes(today.getDay());
+                console.log('週次ルーティン:', r.name, '今日かどうか:', isToday, '設定曜日:', r.weeklyDays, '今日の曜日:', today.getDay());
+                return isToday;
+            }
+            if(r.frequency==="monthly") {
+                const isToday = r.monthlyDate===today.getDate();
+                console.log('月次ルーティン:', r.name, '今日かどうか:', isToday, '設定日:', r.monthlyDate, '今日の日:', today.getDate());
+                return isToday;
+            }
+            console.log('不明な頻度:', r.name, r.frequency);
             return false;
         });
         console.log("今日のルーティン:", todayR.length, "件");
@@ -561,19 +587,31 @@ function updateSyncStatus(status, message = '') {
     
     switch (status) {
         case 'syncing':
-            statusElement.textContent = '同期中...';
+            statusElement.textContent = '🔄 同期中...';
+            statusElement.style.animation = 'pulse 1s infinite';
             break;
         case 'success':
-            statusElement.textContent = '同期完了';
-            setTimeout(() => statusElement.textContent = '', 3000);
+            statusElement.textContent = '✅ 同期完了';
+            statusElement.style.animation = '';
+            setTimeout(() => {
+                statusElement.textContent = '';
+                statusElement.style.animation = '';
+            }, 3000);
             break;
         case 'error':
-            statusElement.textContent = `同期エラー: ${message}`;
-            setTimeout(() => statusElement.textContent = '', 5000);
+            statusElement.textContent = `❌ 同期エラー: ${message}`;
+            statusElement.style.animation = '';
+            setTimeout(() => {
+                statusElement.textContent = '';
+                statusElement.style.animation = '';
+            }, 5000);
             break;
         default:
             statusElement.textContent = '';
+            statusElement.style.animation = '';
     }
+    
+    console.log('同期状態更新:', status, message);
 }
 
 // Firebase同期機能
@@ -591,11 +629,17 @@ async function syncToFirebase() {
     
     try {
         updateSyncStatus('syncing');
-        console.log('Firebase同期開始');
+        console.log('Firebase同期開始 - ユーザー:', user.email);
         
         const db = firebase.firestore();
         const routines = getRoutines(user.id);
         const completions = getCompletions(user.id);
+        
+        console.log('同期するデータ:', {
+            routines: routines.length,
+            completions: completions.length,
+            routinesData: routines
+        });
         
         // ルーティンをFirebaseに保存
         await db.collection('users').doc(user.id).set({
@@ -615,7 +659,10 @@ async function syncToFirebase() {
             lastUpdated: new Date().toISOString()
         });
         
-        console.log('Firebase同期完了');
+        console.log('Firebase同期完了 - 保存されたデータ:', {
+            routines: routines.length,
+            completions: completions.length
+        });
         updateSyncStatus('success');
         return true;
         
@@ -640,28 +687,75 @@ async function syncFromFirebase() {
     
     try {
         updateSyncStatus('syncing');
-        console.log('Firebaseから同期開始');
+        console.log('Firebaseから同期開始 - ユーザー:', user.email);
         
         const db = firebase.firestore();
         
         // ルーティンデータを取得
         const routinesDoc = await db.collection('users').doc(user.id).collection('routines').doc('data').get();
+        console.log('Firebaseから取得したルーティンドキュメント:', routinesDoc.exists);
+        
         if (routinesDoc.exists) {
             const data = routinesDoc.data();
-            if (data.routines) {
-                saveRoutines(user.id, data.routines);
-                console.log('ルーティン同期完了:', data.routines.length, '件');
+            console.log('Firebaseから取得したルーティンデータ:', data);
+            
+            if (data.routines && Array.isArray(data.routines)) {
+                console.log('Firebaseからルーティンを同期:', data.routines.length, '件');
+                console.log('ルーティン詳細:', data.routines);
+                
+                // 既存のローカルデータとマージ
+                const existingRoutines = getRoutines(user.id);
+                console.log('既存のローカルルーティン:', existingRoutines.length, '件');
+                
+                // 新しいルーティンのみを追加（重複を避ける）
+                const newRoutines = data.routines.filter(fbRoutine => 
+                    !existingRoutines.some(localRoutine => localRoutine.id === fbRoutine.id)
+                );
+                
+                if (newRoutines.length > 0) {
+                    const mergedRoutines = [...existingRoutines, ...newRoutines];
+                    saveRoutines(user.id, mergedRoutines);
+                    console.log('ルーティンマージ完了:', mergedRoutines.length, '件');
+                } else {
+                    console.log('新しいルーティンなし、既存データを維持');
+                }
             }
+        } else {
+            console.log('Firebaseにルーティンデータが存在しません');
         }
         
         // 完了データを取得
         const completionsDoc = await db.collection('users').doc(user.id).collection('completions').doc('data').get();
+        console.log('Firebaseから取得した完了データドキュメント:', completionsDoc.exists);
+        
         if (completionsDoc.exists) {
             const data = completionsDoc.data();
-            if (data.completions) {
-                saveCompletions(user.id, data.completions);
-                console.log('完了データ同期完了:', data.completions.length, '件');
+            console.log('Firebaseから取得した完了データ:', data);
+            
+            if (data.completions && Array.isArray(data.completions)) {
+                console.log('Firebaseから完了データを同期:', data.completions.length, '件');
+                
+                // 既存のローカルデータとマージ
+                const existingCompletions = getCompletions(user.id);
+                console.log('既存のローカル完了データ:', existingCompletions.length, '件');
+                
+                // 新しい完了データのみを追加（重複を避ける）
+                const newCompletions = data.completions.filter(fbCompletion => 
+                    !existingCompletions.some(localCompletion => 
+                        localCompletion.rid === fbCompletion.rid && localCompletion.date === fbCompletion.date
+                    )
+                );
+                
+                if (newCompletions.length > 0) {
+                    const mergedCompletions = [...existingCompletions, ...newCompletions];
+                    saveCompletions(user.id, mergedCompletions);
+                    console.log('完了データマージ完了:', mergedCompletions.length, '件');
+                } else {
+                    console.log('新しい完了データなし、既存データを維持');
+                }
             }
+        } else {
+            console.log('Firebaseに完了データが存在しません');
         }
         
         console.log('Firebaseから同期完了');
@@ -680,13 +774,42 @@ function addSyncButton() {
     const mainView = $('mainView');
     if (!mainView) return;
     
+    // 既存の同期ボタンを削除
+    const existingSyncBtn = document.querySelector('#syncButton');
+    if (existingSyncBtn) {
+        existingSyncBtn.remove();
+    }
+    
     const syncButton = document.createElement('button');
+    syncButton.id = 'syncButton';
     syncButton.textContent = '同期';
     syncButton.className = 'secondary';
     syncButton.style.marginLeft = '8px';
     syncButton.onclick = async () => {
-        await syncToFirebase();
-        renderMain();
+        console.log('手動同期開始');
+        
+        // 同期ボタンを無効化
+        syncButton.disabled = true;
+        syncButton.textContent = '同期中...';
+        
+        try {
+            // まずFirebaseから同期
+            await syncFromFirebase();
+            
+            // 次にFirebaseに同期
+            await syncToFirebase();
+            
+            // 画面を再描画
+            renderMain();
+            
+            console.log('手動同期完了');
+        } catch (error) {
+            console.error('手動同期エラー:', error);
+        } finally {
+            // 同期ボタンを再有効化
+            syncButton.disabled = false;
+            syncButton.textContent = '同期';
+        }
     };
     
     // ログアウトボタンの横に同期ボタンを追加
