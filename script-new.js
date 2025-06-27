@@ -201,9 +201,9 @@ function displayTodayRoutines() {
     
     console.log('フィルタ後の自分のルーティン数:', myRoutines.length);
     
-    const todayRoutinesList = document.getElementById('todayRoutinesList');
+    const todayRoutinesList = document.getElementById('todayList');
     if (!todayRoutinesList) {
-        console.error('todayRoutinesList要素が見つかりません');
+        console.error('todayList要素が見つかりません');
         return;
     }
     
@@ -266,9 +266,9 @@ function displayAllRoutines() {
     
     console.log('フィルタ後の自分のルーティン数:', myRoutines.length);
     
-    const allRoutinesList = document.getElementById('allRoutinesList');
+    const allRoutinesList = document.getElementById('allList');
     if (!allRoutinesList) {
-        console.error('allRoutinesList要素が見つかりません');
+        console.error('allList要素が見つかりません');
         return;
     }
     
@@ -389,141 +389,135 @@ function setupEventListeners() {
     console.log('=== イベントリスナー設定開始 ===');
     
     try {
-        // 重要な要素の存在確認
+        // 要素存在確認
         console.log('要素存在確認:');
-        console.log('- authForm:', !!document.getElementById('authForm'));
-        console.log('- googleLoginBtn:', !!document.getElementById('googleLoginBtn'));
+        console.log('- loginForm:', !!document.getElementById('loginForm'));
         console.log('- registerForm:', !!document.getElementById('registerForm'));
-        console.log('- routineForm:', !!document.getElementById('routineForm'));
-        console.log('- addRoutineBtn:', !!document.getElementById('addRoutineBtn'));
-        console.log('- addRoutineScreen:', !!document.getElementById('addRoutineScreen'));
-        console.log('- app:', !!document.getElementById('app'));
-        console.log('- backBtn:', !!document.querySelector('.back-btn'));
-        console.log('- cancelButton:', !!document.querySelector('.cancel-button'));
-        console.log('- frequencyButtons:', document.querySelectorAll('.frequency-btn').length);
-        console.log('- tabButtons:', document.querySelectorAll('.tab-button').length);
+        console.log('- addRoutineForm:', !!document.getElementById('addRoutineForm'));
+        console.log('- showAddRoutine:', !!document.getElementById('showAddRoutine'));
+        console.log('- addRoutineView:', !!document.getElementById('addRoutineView'));
+        console.log('- logoutBtn:', !!document.getElementById('logoutBtn'));
+        console.log('- showRegister:', !!document.getElementById('showRegister'));
+        console.log('- backToLogin:', !!document.getElementById('backToLogin'));
+        console.log('- cancelAddRoutine:', !!document.getElementById('cancelAddRoutine'));
         
         // ログインフォーム
-        const authForm = document.getElementById('authForm');
-        if (authForm) {
-            authForm.addEventListener('submit', handleLogin);
-            console.log('✅ authFormイベントリスナー設定完了');
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                if (!email || !password) {
+                    alert('メールアドレスとパスワードを入力してください');
+                    return;
+                }
+                
+                const result = await handleLogin(email, password);
+                if (!result.success) {
+                    alert(result.message);
+                }
+            });
         } else {
-            console.warn('❌ authForm要素が見つかりません');
-        }
-        
-        // Googleログインボタン
-        const googleLoginBtn = document.getElementById('googleLoginBtn');
-        if (googleLoginBtn) {
-            googleLoginBtn.addEventListener('click', handleGoogleLogin);
-            console.log('Googleログインボタンイベントリスナー設定完了');
-        } else {
-            console.warn('googleLoginBtn要素が見つかりません');
+            console.log('❌ loginForm要素が見つかりません');
         }
         
         // 登録フォーム
         const registerForm = document.getElementById('registerForm');
         if (registerForm) {
-            registerForm.addEventListener('submit', handleRegister);
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                
+                if (!email || !password) {
+                    alert('メールアドレスとパスワードを入力してください');
+                    return;
+                }
+                
+                const result = await handleRegister(email, password);
+                if (!result.success) {
+                    alert(result.message);
+                }
+            });
+        } else {
+            console.log('❌ registerForm要素が見つかりません');
         }
         
         // ルーティン追加フォーム
-        const routineForm = document.getElementById('routineForm');
-        if (routineForm) {
-            routineForm.addEventListener('submit', (event) => {
-                console.log('ルーティンフォームが送信されました');
-                handleRoutineFormSubmit(event);
-            });
-            console.log('routineFormイベントリスナー設定完了');
+        const addRoutineForm = document.getElementById('addRoutineForm');
+        if (addRoutineForm) {
+            addRoutineForm.addEventListener('submit', handleRoutineFormSubmit);
         } else {
-            console.warn('routineForm要素が見つかりません');
+            console.log('❌ addRoutineForm要素が見つかりません');
         }
         
-        // 頻度ボタン
-        const frequencyButtons = document.querySelectorAll('.frequency-btn');
-        console.log('頻度ボタン数:', frequencyButtons.length);
-        frequencyButtons.forEach((button, index) => {
-            button.addEventListener('click', (event) => {
-                console.log(`頻度ボタン${index + 1}がクリックされました:`, button.dataset.frequency);
-                handleFrequencyButtonClick(event);
+        // ルーティン追加ボタン
+        const showAddRoutineBtn = document.getElementById('showAddRoutine');
+        if (showAddRoutineBtn) {
+            showAddRoutineBtn.addEventListener('click', () => {
+                showScreen('addRoutineView');
             });
-        });
-        console.log('頻度ボタンイベントリスナー設定完了');
-        
-        // タブボタン
-        const tabButtons = document.querySelectorAll('.tab-button');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', handleTabButtonClick);
-        });
-        
-        // 画面切り替えボタン
-        const addRoutineBtn = document.getElementById('addRoutineBtn');
-        if (addRoutineBtn) {
-            addRoutineBtn.addEventListener('click', () => {
-                console.log('ルーティン追加ボタンがクリックされました');
-                showScreen('add');
-            });
-            console.log('addRoutineBtnイベントリスナー設定完了');
         } else {
-            console.warn('addRoutineBtn要素が見つかりません');
-        }
-        
-        const backToMainBtn = document.getElementById('backToMainBtn');
-        if (backToMainBtn) {
-            backToMainBtn.addEventListener('click', () => showScreen('main'));
-        }
-        
-        // ルーティン追加画面の戻るボタン
-        const backBtn = document.querySelector('.back-btn');
-        if (backBtn) {
-            backBtn.addEventListener('click', () => {
-                console.log('戻るボタンがクリックされました');
-                showScreen('main');
-            });
-            console.log('backBtnイベントリスナー設定完了');
-        } else {
-            console.warn('backBtn要素が見つかりません');
-        }
-        
-        // ルーティン追加画面のキャンセルボタン
-        const cancelButton = document.querySelector('.cancel-button');
-        if (cancelButton) {
-            cancelButton.addEventListener('click', () => {
-                console.log('キャンセルボタンがクリックされました');
-                showScreen('main');
-            });
-            console.log('cancelButtonイベントリスナー設定完了');
-        } else {
-            console.warn('cancelButton要素が見つかりません');
-        }
-        
-        // ストレージ選択モーダル
-        const storageModal = document.getElementById('storageModal');
-        if (storageModal) {
-            const closeBtn = storageModal.querySelector('.close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', hideStorageModal);
-            }
-        }
-        
-        // 管理者ダッシュボード
-        const adminBtn = document.getElementById('adminBtn');
-        if (adminBtn) {
-            adminBtn.addEventListener('click', showAdminDashboard);
-        }
-        
-        const closeAdminBtn = document.getElementById('closeAdminBtn');
-        if (closeAdminBtn) {
-            closeAdminBtn.addEventListener('click', hideAdminDashboard);
+            console.log('❌ showAddRoutine要素が見つかりません');
         }
         
         // ログアウトボタン
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', logout);
+            logoutBtn.addEventListener('click', async () => {
+                await logout();
+                showScreen('authView');
+            });
+        } else {
+            console.log('❌ logoutBtn要素が見つかりません');
         }
         
-        console.log('イベントリスナー設定完了');
+        // 新規登録ボタン
+        const showRegisterBtn = document.getElementById('showRegister');
+        if (showRegisterBtn) {
+            showRegisterBtn.addEventListener('click', () => {
+                showScreen('registerView');
+            });
+        } else {
+            console.log('❌ showRegister要素が見つかりません');
+        }
+        
+        // 戻るボタン
+        const backToLoginBtn = document.getElementById('backToLogin');
+        if (backToLoginBtn) {
+            backToLoginBtn.addEventListener('click', () => {
+                showScreen('authView');
+            });
+        } else {
+            console.log('❌ backToLogin要素が見つかりません');
+        }
+        
+        // キャンセルボタン
+        const cancelAddRoutineBtn = document.getElementById('cancelAddRoutine');
+        if (cancelAddRoutineBtn) {
+            cancelAddRoutineBtn.addEventListener('click', () => {
+                showScreen('mainView');
+            });
+        } else {
+            console.log('❌ cancelAddRoutine要素が見つかりません');
+        }
+        
+        // 頻度ボタン
+        const frequencyButtons = document.querySelectorAll('#addRoutineForm .tab');
+        frequencyButtons.forEach(button => {
+            button.addEventListener('click', handleFrequencyButtonClick);
+        });
+        
+        // タブボタン
+        const tabButtons = document.querySelectorAll('#mainView .tab');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', handleTabButtonClick);
+        });
+        
+        console.log('✅ イベントリスナー設定完了');
+        
     } catch (error) {
         console.error('イベントリスナー設定エラー:', error);
     }
@@ -2579,7 +2573,7 @@ function filterRoutinesByFrequency(frequency, clickedButton) {
     }
     
     // ルーティンリストを更新
-    const allRoutinesList = document.getElementById('allRoutinesList');
+    const allRoutinesList = document.getElementById('allList');
     if (allRoutinesList) {
         if (filteredRoutines.length === 0) {
             allRoutinesList.innerHTML = `
