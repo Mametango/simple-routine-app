@@ -815,36 +815,55 @@
     <script>
         // ページ読み込み完了後に初期化を実行
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM読み込み完了 - 初期化開始');
+            console.log('=== DOM読み込み完了 - 初期化開始 ===');
+            console.log('現在のURL:', window.location.href);
+            console.log('ページタイトル:', document.title);
+            
+            // グローバル関数の存在確認
+            console.log('グローバル関数存在確認:');
+            console.log('- setupEventListeners:', typeof setupEventListeners);
+            console.log('- initializeApp:', typeof initializeApp);
+            console.log('- checkAuthState:', typeof checkAuthState);
             
             // イベントリスナーを設定
             if (typeof setupEventListeners === 'function') {
+                console.log('setupEventListeners関数を呼び出し中...');
                 setupEventListeners();
-                console.log('イベントリスナー設定完了');
+                console.log('✅ イベントリスナー設定完了');
             } else {
-                console.error('setupEventListeners関数が見つかりません');
+                console.error('❌ setupEventListeners関数が見つかりません');
             }
             
             // アプリを初期化
             if (typeof initializeApp === 'function') {
+                console.log('initializeApp関数を呼び出し中...');
                 initializeApp();
-                console.log('アプリ初期化完了');
+                console.log('✅ アプリ初期化完了');
             } else {
-                console.error('initializeApp関数が見つかりません');
+                console.error('❌ initializeApp関数が見つかりません');
             }
             
             // 認証状態をチェック
             if (typeof checkAuthState === 'function') {
+                console.log('checkAuthState関数を呼び出し中...');
                 checkAuthState();
-                console.log('認証状態チェック完了');
+                console.log('✅ 認証状態チェック完了');
             } else {
-                console.error('checkAuthState関数が見つかりません');
+                console.error('❌ checkAuthState関数が見つかりません');
             }
+            
+            console.log('=== 初期化処理完了 ===');
         });
         
         // ページ読み込みエラー時の処理
         window.addEventListener('error', function(e) {
-            console.error('ページ読み込みエラー:', e.error);
+            console.error('❌ ページ読み込みエラー:', e.error);
+            console.error('エラー詳細:', e);
+        });
+        
+        // スクリプト読み込みエラーの処理
+        window.addEventListener('load', function() {
+            console.log('=== ページ読み込み完了 ===');
         });
     </script>
 

@@ -283,16 +283,30 @@ function isAdmin() {
 
 // イベントリスナーの設定
 function setupEventListeners() {
-    console.log('イベントリスナー設定開始');
+    console.log('=== イベントリスナー設定開始 ===');
     
     try {
+        // 重要な要素の存在確認
+        console.log('要素存在確認:');
+        console.log('- authForm:', !!document.getElementById('authForm'));
+        console.log('- googleLoginBtn:', !!document.getElementById('googleLoginBtn'));
+        console.log('- registerForm:', !!document.getElementById('registerForm'));
+        console.log('- routineForm:', !!document.getElementById('routineForm'));
+        console.log('- addRoutineBtn:', !!document.getElementById('addRoutineBtn'));
+        console.log('- addRoutineScreen:', !!document.getElementById('addRoutineScreen'));
+        console.log('- app:', !!document.getElementById('app'));
+        console.log('- backBtn:', !!document.querySelector('.back-btn'));
+        console.log('- cancelButton:', !!document.querySelector('.cancel-button'));
+        console.log('- frequencyButtons:', document.querySelectorAll('.frequency-btn').length);
+        console.log('- tabButtons:', document.querySelectorAll('.tab-button').length);
+        
         // ログインフォーム
         const authForm = document.getElementById('authForm');
         if (authForm) {
             authForm.addEventListener('submit', handleLogin);
-            console.log('authFormイベントリスナー設定完了');
+            console.log('✅ authFormイベントリスナー設定完了');
         } else {
-            console.warn('authForm要素が見つかりません');
+            console.warn('❌ authForm要素が見つかりません');
         }
         
         // Googleログインボタン
@@ -410,6 +424,8 @@ function setupEventListeners() {
     } catch (error) {
         console.error('イベントリスナー設定エラー:', error);
     }
+    
+    console.log('=== イベントリスナー設定終了 ===');
 }
 
 // 認証状態をチェック
