@@ -1,41 +1,31 @@
 // Firebase設定ファイル
-// このファイルを実際のFirebaseプロジェクトの設定に置き換えてください
+// Firebaseプロジェクトの実際の設定
 
 const firebaseConfig = {
-    // Firebase Console (https://console.firebase.google.com/) で取得してください
-    
-    // 1. Firebase Consoleでプロジェクトを作成
-    // 2. Authentication > Sign-in method > Email/Password を有効化
-    // 3. Firestore Database > Create database > Start in test mode
-    // 4. Project settings > General > Your apps > Add app > Web app
-    
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyBmkRs7f2a6ejf-qXJZ2F-jMWGnAGdvY0Q",
+    authDomain: "simple-routine-app-33cfc.firebaseapp.com",
+    projectId: "simple-routine-app-33cfc",
+    storageBucket: "simple-routine-app-33cfc.firebasestorage.app",
+    messagingSenderId: "124814607687",
+    appId: "1:124814607687:web:d1b703506cad3ecbaa7862",
+    measurementId: "G-57M4VBMXZM"
 };
 
 // 設定をグローバルに公開
 window.firebaseConfig = firebaseConfig;
 
-// 設定の説明
+// 設定完了メッセージ
 console.log(`
-Firebase設定について：
+✅ Firebase設定完了！
 
-1. Firebase Console (https://console.firebase.google.com/) にアクセス
-2. 新しいプロジェクトを作成
-3. Authentication > Sign-in method > Email/Password を有効化
-4. Firestore Database > Create database > Start in test mode
-5. Project settings > General > Your apps > Add app > Web app
-6. 取得した設定を上記のfirebaseConfigに記入
+プロジェクト: simple-routine-app-33cfc
+認証ドメイン: simple-routine-app-33cfc.firebaseapp.com
 
-注意: 本番環境では、適切なセキュリティルールを設定してください。
+クラウド機能が有効になりました：
+- 🔐 ユーザー認証
+- ☁️ データベース同期
+- 🔒 セキュリティ保護
+- 📱 マルチデバイス対応
 
-現在の設定状態:
-- API Key: ${firebaseConfig.apiKey === 'YOUR_API_KEY' ? '未設定' : '設定済み'}
-- Project ID: ${firebaseConfig.projectId === 'YOUR_PROJECT_ID' ? '未設定' : '設定済み'}
-
-設定が未設定の場合、クラウド機能は動作しません。
+アプリを再読み込みして、新しいアカウントでログインしてください。
 `); 

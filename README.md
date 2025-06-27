@@ -2,51 +2,37 @@
 
 Firebaseを使用したクラウドベースのルーティン管理アプリです。
 
-## セットアップ手順
+## 🚀 デモ
 
-### 1. Firebaseプロジェクトの作成
+**ライブデモ**: https://mametango.github.io/simple-routine-app/
 
-1. [Firebase Console](https://console.firebase.google.com/) にアクセス
-2. 「プロジェクトを追加」をクリック
-3. プロジェクト名を入力（例：simple-routine-app）
-4. Google Analyticsの設定は任意
-5. 「プロジェクトを作成」をクリック
+## ✅ セットアップ完了
 
-### 2. Authentication設定
+Firebase設定が完了しました：
+- **プロジェクト**: simple-routine-app-33cfc
+- **認証ドメイン**: simple-routine-app-33cfc.firebaseapp.com
+- **データベース**: Firestore Database
+- **認証**: Email/Password
 
-1. 左メニューから「Authentication」を選択
-2. 「始める」をクリック
-3. 「Sign-in method」タブを選択
-4. 「メール/パスワード」を有効化
-5. 「保存」をクリック
+## 🔧 セットアップ手順（完了済み）
 
-### 3. Firestore Database設定
+### 1. ✅ Firebaseプロジェクトの作成
+- プロジェクト名: simple-routine-app-33cfc
+- 作成完了
 
-1. 左メニューから「Firestore Database」を選択
-2. 「データベースを作成」をクリック
-3. 「本番環境で開始」または「テストモードで開始」を選択
-4. ロケーションを選択（例：asia-northeast1）
-5. 「完了」をクリック
+### 2. ✅ Authentication設定
+- メール/パスワード認証を有効化
+- 設定完了
 
-### 4. Webアプリの追加
+### 3. ✅ Firestore Database設定
+- データベース作成完了
+- テストモードで開始
 
-1. プロジェクト設定（歯車アイコン）をクリック
-2. 「全般」タブで「アプリを追加」をクリック
-3. Webアイコン（</>）を選択
-4. アプリのニックネームを入力（例：simple-routine-web）
-5. 「アプリを登録」をクリック
-6. 表示される設定をコピー
+### 4. ✅ Webアプリの追加
+- アプリ登録完了
+- 設定適用済み
 
-### 5. 設定の適用
-
-1. `firebase-config.js`ファイルを開く
-2. コピーした設定を`firebaseConfig`オブジェクトに貼り付け
-3. `simple-routine-app.html`の`firebaseConfig`を更新
-
-### 6. セキュリティルール（本番環境用）
-
-Firestore Database > ルールで以下のルールを設定：
-
+### 5. ✅ セキュリティルール設定
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -58,7 +44,7 @@ service cloud.firestore {
 }
 ```
 
-## 機能
+## 🌟 機能
 
 - ✅ ユーザー認証（メール/パスワード）
 - ✅ ルーティンの作成・編集・削除
@@ -66,45 +52,109 @@ service cloud.firestore {
 - ✅ 完了状況の管理
 - ✅ リアルタイム同期
 - ✅ セキュリティ対策
+- ✅ マルチデバイス対応
 
-## セキュリティ機能
+## 🔐 セキュリティ機能
 
-- 🔒 パスワードハッシュ化
+- 🔒 Firebase認証
+- 🔒 パスワード強度チェック
 - 🔒 入力検証（XSS対策）
 - 🔒 データ暗号化
 - 🔒 セッション管理
-- 🔒 Firebase認証
+- 🔒 ユーザー分離
 
-## デプロイ
+## 📱 使用方法
 
-### GitHub Pages
+1. **新規登録**: メールアドレスとパスワードでアカウント作成
+2. **ログイン**: 作成したアカウントでログイン
+3. **ルーティン追加**: 「+」ボタンで新しいルーティンを追加
+4. **頻度設定**: 毎日・毎週・毎月・毎年・カスタムから選択
+5. **完了管理**: 完了ボタンで進捗を記録
 
-1. リポジトリをGitHubにプッシュ
-2. Settings > Pages
-3. Source: Deploy from a branch
-4. Branch: main
-5. 保存
+## 🎯 頻度設定例
 
-### カスタムドメイン
+- **毎日**: 朝の運動、歯磨き
+- **毎週**: 月・水・金のジム通い
+- **毎月**: 15日の家計簿整理
+- **毎年**: 12月25日のクリスマス準備
+- **カスタム**: 3日おきの薬の補充
 
-1. ドメインを購入
-2. Firebase Hostingを使用
-3. カスタムドメインを設定
+## 🔧 技術スタック
 
-## トラブルシューティング
+- **フロントエンド**: HTML5, CSS3, JavaScript (ES6+)
+- **バックエンド**: Firebase
+- **認証**: Firebase Authentication
+- **データベース**: Firestore Database
+- **ホスティング**: GitHub Pages
+
+## 📊 データ構造
+
+### ユーザーコレクション
+```javascript
+users/{userId} {
+  email: string,
+  createdAt: timestamp,
+  updatedAt: timestamp,
+  routines: array,
+  completions: array
+}
+```
+
+### ルーティンデータ
+```javascript
+{
+  id: string,
+  title: string,
+  description: string,
+  frequency: string,
+  frequencyDetails: object,
+  createdAt: timestamp,
+  userId: string
+}
+```
+
+## 🚀 デプロイ
+
+### GitHub Pages（現在のホスト）
+- URL: https://mametango.github.io/simple-routine-app/
+- 自動デプロイ: mainブランチにプッシュで自動更新
+
+### Firebase Hosting（オプション）
+1. Firebase CLIをインストール
+2. `firebase init hosting`
+3. `firebase deploy`
+
+## 🔍 トラブルシューティング
 
 ### 認証エラー
-- Firebase設定が正しく設定されているか確認
-- Authentication > Sign-in methodでメール/パスワードが有効化されているか確認
+- メールアドレスの形式を確認
+- パスワードは6文字以上で英数字を含む必要があります
 
 ### データが保存されない
-- Firestore Databaseが作成されているか確認
-- セキュリティルールが適切に設定されているか確認
+- インターネット接続を確認
+- ブラウザのキャッシュをクリア
 
 ### 表示エラー
-- ブラウザのキャッシュをクリア
+- ブラウザを最新版に更新
 - 開発者ツールでエラーを確認
 
-## ライセンス
+## 📈 今後の改善予定
 
-MIT License 
+- [ ] プッシュ通知機能
+- [ ] データエクスポート機能
+- [ ] 統計・分析機能
+- [ ] テーマカスタマイズ
+- [ ] オフライン機能強化
+
+## 📄 ライセンス
+
+MIT License
+
+## 🤝 コントリビューション
+
+プルリクエストやイシューの報告を歓迎します！
+
+---
+
+**開発者**: AI Assistant  
+**最終更新**: 2024年1月 
