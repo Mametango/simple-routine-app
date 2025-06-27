@@ -610,7 +610,16 @@ window.onload = async function(){
             // Firebase同期が有効な場合、初期同期を実行
             if (currentStorage === 'firebase' && typeof firebase !== 'undefined') {
                 console.log("Firebase初期同期開始");
-                await syncFromFirebase();
+                try {
+                    await syncFromFirebase();
+                    console.log("Firebase初期同期完了");
+                } catch (error) {
+                    console.error("Firebase初期同期エラー:", error);
+                }
+            } else {
+                console.log("Firebase同期が無効またはFirebase SDKが読み込まれていません");
+                console.log("ストレージタイプ:", currentStorage);
+                console.log("Firebase SDK:", typeof firebase !== 'undefined' ? '読み込み済み' : '未読み込み');
             }
             
             showMain();
@@ -667,7 +676,7 @@ function updateSyncStatus(status, message = '') {
     console.log('同期状態更新:', status, message);
 }
 
-// Firebase同期機能
+// Firebase同期機能（改善版）
 async function syncToFirebase() {
     if (typeof firebase === 'undefined') {
         console.error('Firebase SDKが読み込まれていません');
@@ -691,26 +700,43 @@ async function syncToFirebase() {
         console.log('同期するデータ:', {
             routines: routines.length,
             completions: completions.length,
-            routinesData: routines
+            routinesData: routines.map(r => ({
+                id: r.id,
+                displayId: r.displayId,
+                name: r.name,
+                frequency: r.frequency
+            }))
         });
         
-        // ルーティンをFirebaseに保存
-        await db.collection('users').doc(user.id).set({
+        // バッチ処理で一括保存
+        const batch = db.batch();
+        
+        // ユーザー情報を更新
+        const userRef = db.collection('users').doc(user.id);
+        batch.set(userRef, {
             email: user.email,
-            lastSync: new Date().toISOString()
+            lastSync: new Date().toISOString(),
+            lastSyncDirection: 'upload'
         });
         
         // ルーティンデータを保存
-        await db.collection('users').doc(user.id).collection('routines').doc('data').set({
+        const routinesRef = db.collection('users').doc(user.id).collection('routines').doc('data');
+        batch.set(routinesRef, {
             routines: routines,
-            lastUpdated: new Date().toISOString()
+            lastUpdated: new Date().toISOString(),
+            count: routines.length
         });
         
         // 完了データを保存
-        await db.collection('users').doc(user.id).collection('completions').doc('data').set({
+        const completionsRef = db.collection('users').doc(user.id).collection('completions').doc('data');
+        batch.set(completionsRef, {
             completions: completions,
-            lastUpdated: new Date().toISOString()
+            lastUpdated: new Date().toISOString(),
+            count: completions.length
         });
+        
+        // バッチ処理を実行
+        await batch.commit();
         
         console.log('Firebase同期完了 - 保存されたデータ:', {
             routines: routines.length,
@@ -722,6 +748,16 @@ async function syncToFirebase() {
     } catch (error) {
         console.error('Firebase同期エラー:', error);
         updateSyncStatus('error', error.message);
+        
+        // リトライ処理
+        if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+            console.log('ネットワークエラーのため、3秒後にリトライします');
+            setTimeout(async () => {
+                console.log('リトライ開始');
+                await syncToFirebase();
+            }, 3000);
+        }
+        
         return false;
     }
 }
@@ -750,11 +786,13 @@ async function syncFromFirebase() {
         
         if (routinesDoc.exists) {
             const data = routinesDoc.data();
-            console.log('Firebaseから取得したルーティンデータ:', data);
+            console.log('Firebaseから取得したルーティンデータ:', {
+                count: data.routines ? data.routines.length : 0,
+                lastUpdated: data.lastUpdated
+            });
             
             if (data.routines && Array.isArray(data.routines)) {
                 console.log('Firebaseからルーティンを同期:', data.routines.length, '件');
-                console.log('ルーティン詳細:', data.routines);
                 
                 // 既存のローカルデータとマージ
                 const existingRoutines = getRoutines(user.id);
@@ -783,7 +821,10 @@ async function syncFromFirebase() {
         
         if (completionsDoc.exists) {
             const data = completionsDoc.data();
-            console.log('Firebaseから取得した完了データ:', data);
+            console.log('Firebaseから取得した完了データ:', {
+                count: data.completions ? data.completions.length : 0,
+                lastUpdated: data.lastUpdated
+            });
             
             if (data.completions && Array.isArray(data.completions)) {
                 console.log('Firebaseから完了データを同期:', data.completions.length, '件');
@@ -818,11 +859,136 @@ async function syncFromFirebase() {
     } catch (error) {
         console.error('Firebaseから同期エラー:', error);
         updateSyncStatus('error', error.message);
+        
+        // リトライ処理
+        if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
+            console.log('ネットワークエラーのため、3秒後にリトライします');
+            setTimeout(async () => {
+                console.log('リトライ開始');
+                await syncFromFirebase();
+            }, 3000);
+        }
+        
         return false;
     }
 }
 
-// 手動同期ボタン
+// 同期状態の詳細確認
+function checkSyncStatus() {
+    const user = getCurrentUser();
+    if (!user) {
+        console.error("ユーザー情報がありません");
+        return;
+    }
+    
+    console.log("=== 同期状態確認 ===");
+    console.log("ユーザー:", user.email);
+    console.log("ユーザーID:", user.id);
+    console.log("ストレージタイプ:", currentStorage);
+    
+    // ローカルデータ確認
+    const localRoutines = getRoutines(user.id);
+    const localCompletions = getCompletions(user.id);
+    
+    console.log("ローカルデータ:", {
+        routines: localRoutines.length,
+        completions: localCompletions.length,
+        routinesData: localRoutines.map(r => ({
+            id: r.id,
+            displayId: r.displayId,
+            name: r.name,
+            frequency: r.frequency
+        }))
+    });
+    
+    // Firebaseデータ確認
+    if (typeof firebase !== 'undefined') {
+        checkFirebaseData(user.id);
+    } else {
+        console.log("Firebase SDKが読み込まれていません");
+    }
+}
+
+// Firebaseデータの確認
+async function checkFirebaseData(userId) {
+    try {
+        console.log("Firebaseデータ確認開始");
+        const db = firebase.firestore();
+        
+        // ユーザードキュメント確認
+        const userDoc = await db.collection('users').doc(userId).get();
+        console.log("Firebaseユーザードキュメント:", userDoc.exists);
+        
+        if (userDoc.exists) {
+            console.log("ユーザー情報:", userDoc.data());
+        }
+        
+        // ルーティンデータ確認
+        const routinesDoc = await db.collection('users').doc(userId).collection('routines').doc('data').get();
+        console.log("Firebaseルーティンドキュメント:", routinesDoc.exists);
+        
+        if (routinesDoc.exists) {
+            const data = routinesDoc.data();
+            console.log("Firebaseルーティンデータ:", {
+                count: data.routines ? data.routines.length : 0,
+                lastUpdated: data.lastUpdated,
+                routines: data.routines ? data.routines.map(r => ({
+                    id: r.id,
+                    displayId: r.displayId,
+                    name: r.name,
+                    frequency: r.frequency
+                })) : []
+            });
+        }
+        
+        // 完了データ確認
+        const completionsDoc = await db.collection('users').doc(userId).collection('completions').doc('data').get();
+        console.log("Firebase完了データドキュメント:", completionsDoc.exists);
+        
+        if (completionsDoc.exists) {
+            const data = completionsDoc.data();
+            console.log("Firebase完了データ:", {
+                count: data.completions ? data.completions.length : 0,
+                lastUpdated: data.lastUpdated
+            });
+        }
+        
+    } catch (error) {
+        console.error("Firebaseデータ確認エラー:", error);
+    }
+}
+
+// 強制同期機能
+async function forceSync() {
+    console.log("=== 強制同期開始 ===");
+    
+    const user = getCurrentUser();
+    if (!user) {
+        console.error("ユーザー情報がありません");
+        return;
+    }
+    
+    try {
+        // 1. ローカルデータをFirebaseに強制アップロード
+        console.log("1. ローカルデータをFirebaseにアップロード");
+        await syncToFirebase();
+        
+        // 2. Firebaseからデータを強制ダウンロード
+        console.log("2. Firebaseからデータをダウンロード");
+        await syncFromFirebase();
+        
+        // 3. 画面を再描画
+        console.log("3. 画面を再描画");
+        renderMain();
+        
+        console.log("=== 強制同期完了 ===");
+        
+    } catch (error) {
+        console.error("強制同期エラー:", error);
+    }
+}
+
+// 同期ボタンに強制同期機能を追加
 function addSyncButton() {
     const mainView = $('mainView');
     if (!mainView) return;
@@ -865,10 +1031,46 @@ function addSyncButton() {
         }
     };
     
-    // ログアウトボタンの横に同期ボタンを追加
+    // 強制同期ボタンを追加
+    const forceSyncButton = document.createElement('button');
+    forceSyncButton.id = 'forceSyncButton';
+    forceSyncButton.textContent = '強制同期';
+    forceSyncButton.className = 'secondary';
+    forceSyncButton.style.marginLeft = '8px';
+    forceSyncButton.onclick = async () => {
+        console.log('強制同期開始');
+        
+        // ボタンを無効化
+        forceSyncButton.disabled = true;
+        forceSyncButton.textContent = '強制同期中...';
+        
+        try {
+            await forceSync();
+        } catch (error) {
+            console.error('強制同期エラー:', error);
+        } finally {
+            // ボタンを再有効化
+            forceSyncButton.disabled = false;
+            forceSyncButton.textContent = '強制同期';
+        }
+    };
+    
+    // デバッグボタンを追加
+    const debugButton = document.createElement('button');
+    debugButton.id = 'debugButton';
+    debugButton.textContent = 'デバッグ';
+    debugButton.className = 'secondary';
+    debugButton.style.marginLeft = '8px';
+    debugButton.onclick = () => {
+        checkSyncStatus();
+    };
+    
+    // ログアウトボタンの横にボタンを追加
     const logoutBtn = $('logoutBtn');
     if (logoutBtn && logoutBtn.parentNode) {
         logoutBtn.parentNode.appendChild(syncButton);
+        logoutBtn.parentNode.appendChild(forceSyncButton);
+        logoutBtn.parentNode.appendChild(debugButton);
     }
 }
 
