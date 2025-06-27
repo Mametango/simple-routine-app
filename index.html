@@ -512,6 +512,7 @@ function showMain(){
     console.log("メイン画面表示開始");
     show("mainView"); 
     addSyncButton(); // 同期ボタンを追加
+    addTestButton(); // テストボタンを追加
     renderMain(); 
 }
 function renderMain(){
@@ -533,13 +534,22 @@ function renderMain(){
         
         // 今日のルーティン
         const todayR = routines.filter(r=>{
+            const todayDay = today.getDay(); // 0=日曜日, 1=月曜日, ..., 6=土曜日
+            const todayDate = today.getDate(); // 1-31
+            
             console.log('ルーティンフィルタリング:', {
                 name: r.name,
                 frequency: r.frequency,
                 weeklyDays: r.weeklyDays,
                 monthlyDate: r.monthlyDate,
-                today: today.getDay(),
-                todayDate: today.getDate()
+                today: todayDay,
+                todayDate: todayDate,
+                todayString: today.toLocaleDateString('ja-JP', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                })
             });
             
             if(r.frequency==="daily") {
@@ -547,13 +557,13 @@ function renderMain(){
                 return true;
             }
             if(r.frequency==="weekly") {
-                const isToday = r.weeklyDays&&r.weeklyDays.includes(today.getDay());
-                console.log('週次ルーティン:', r.name, '今日かどうか:', isToday, '設定曜日:', r.weeklyDays, '今日の曜日:', today.getDay());
+                const isToday = r.weeklyDays && r.weeklyDays.includes(todayDay);
+                console.log('週次ルーティン:', r.name, '今日かどうか:', isToday, '設定曜日:', r.weeklyDays, '今日の曜日:', todayDay);
                 return isToday;
             }
             if(r.frequency==="monthly") {
-                const isToday = r.monthlyDate===today.getDate();
-                console.log('月次ルーティン:', r.name, '今日かどうか:', isToday, '設定日:', r.monthlyDate, '今日の日:', today.getDate());
+                const isToday = r.monthlyDate === todayDate;
+                console.log('月次ルーティン:', r.name, '今日かどうか:', isToday, '設定日:', r.monthlyDate, '今日の日:', todayDate);
                 return isToday;
             }
             console.log('不明な頻度:', r.name, r.frequency);
@@ -1065,12 +1075,23 @@ function addSyncButton() {
         checkSyncStatus();
     };
     
+    // テストボタンを追加
+    const testButton = document.createElement('button');
+    testButton.id = 'testButton';
+    testButton.textContent = 'テスト追加';
+    testButton.className = 'secondary';
+    testButton.style.marginLeft = '8px';
+    testButton.onclick = () => {
+        addTodayTestRoutine();
+    };
+    
     // ログアウトボタンの横にボタンを追加
     const logoutBtn = $('logoutBtn');
     if (logoutBtn && logoutBtn.parentNode) {
         logoutBtn.parentNode.appendChild(syncButton);
         logoutBtn.parentNode.appendChild(forceSyncButton);
         logoutBtn.parentNode.appendChild(debugButton);
+        logoutBtn.parentNode.appendChild(testButton);
     }
 }
 
@@ -1341,6 +1362,113 @@ function runMigrationIfNeeded() {
         migrateExistingRoutines();
     } else {
         console.log("移行不要 - すべてのルーティンが最新形式");
+    }
+}
+
+// 今日のルーティンをテストするための機能
+function addTodayTestRoutine() {
+    const user = getCurrentUser();
+    if (!user) {
+        console.error("ユーザー情報がありません");
+        return;
+    }
+    
+    const today = new Date();
+    const todayDay = today.getDay();
+    const todayDate = today.getDate();
+    
+    console.log("今日のテストルーティンを追加:", {
+        today: todayDay,
+        todayDate: todayDate,
+        todayString: today.toLocaleDateString('ja-JP', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        })
+    });
+    
+    const routines = getRoutines(user.id);
+    
+    // 今日の曜日に合わせた週次ルーティンを追加
+    const weeklyRoutine = {
+        id: `${Date.now()}_weekly_test`,
+        displayId: Date.now().toString(),
+        name: `今日の週次テスト (${todayDay}曜日)`,
+        desc: "今日の曜日に設定されたテストルーティン",
+        frequency: "weekly",
+        weeklyDays: [todayDay],
+        monthlyDate: null,
+        userId: user.id,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+    };
+    
+    // 今日の日付に合わせた月次ルーティンを追加
+    const monthlyRoutine = {
+        id: `${Date.now()}_monthly_test`,
+        displayId: (Date.now() + 1).toString(),
+        name: `今日の月次テスト (${todayDate}日)`,
+        desc: "今日の日付に設定されたテストルーティン",
+        frequency: "monthly",
+        weeklyDays: [],
+        monthlyDate: todayDate,
+        userId: user.id,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+    };
+    
+    // 毎日のルーティンを追加
+    const dailyRoutine = {
+        id: `${Date.now()}_daily_test`,
+        displayId: (Date.now() + 2).toString(),
+        name: "今日の毎日テスト",
+        desc: "毎日実行されるテストルーティン",
+        frequency: "daily",
+        weeklyDays: [],
+        monthlyDate: null,
+        userId: user.id,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+    };
+    
+    routines.push(weeklyRoutine, monthlyRoutine, dailyRoutine);
+    saveRoutines(user.id, routines);
+    
+    console.log("テストルーティン追加完了:", {
+        weekly: weeklyRoutine.name,
+        monthly: monthlyRoutine.name,
+        daily: dailyRoutine.name
+    });
+    
+    // 画面を再描画
+    renderMain();
+}
+
+// テスト用ボタンを追加
+function addTestButton() {
+    const mainView = $('mainView');
+    if (!mainView) return;
+    
+    // 既存のテストボタンを削除
+    const existingTestBtn = document.querySelector('#testButton');
+    if (existingTestBtn) {
+        existingTestBtn.remove();
+    }
+    
+    const testButton = document.createElement('button');
+    testButton.id = 'testButton';
+    testButton.textContent = 'テスト追加';
+    testButton.className = 'secondary';
+    testButton.style.marginLeft = '8px';
+    testButton.onclick = () => {
+        addTodayTestRoutine();
+    };
+    
+    // ログアウトボタンの横にテストボタンを追加
+    const logoutBtn = $('logoutBtn');
+    if (logoutBtn && logoutBtn.parentNode) {
+        logoutBtn.parentNode.appendChild(testButton);
     }
 }
 </script>
