@@ -2,7 +2,7 @@
 
 // デバッグ情報
 console.log('=== script-new.js 読み込み開始 ===');
-console.log('バージョン: 1.0.10');
+console.log('バージョン: 1.0.11');
 console.log('読み込み時刻:', new Date().toISOString());
 
 // グローバル変数の定義
@@ -475,6 +475,14 @@ function setupEventListeners() {
             });
         } else {
             console.log('❌ cancelAddRoutine要素が見つかりません');
+        }
+        
+        // デバッグ認証ボタン
+        const debugAuthBtn = document.getElementById('debugAuth');
+        if (debugAuthBtn) {
+            debugAuthBtn.addEventListener('click', handleDebugAuth);
+        } else {
+            console.log('❌ debugAuth要素が見つかりません');
         }
         
         // 頻度ボタン
@@ -2059,6 +2067,62 @@ async function logout() {
         console.error('ログアウトエラー:', error);
         // エラーが発生しても認証画面を表示
         showScreen('authView');
+    }
+}
+
+// デバッグ認証処理
+function handleDebugAuth() {
+    console.log('デバッグ認証開始');
+    
+    if (!window.simpleAuth) {
+        alert('認証システムが利用できません');
+        return;
+    }
+    
+    // 全ユーザーを表示
+    const users = window.simpleAuth.listAllUsers();
+    
+    if (users.length === 0) {
+        alert('登録されているユーザーがありません');
+        return;
+    }
+    
+    // パスワードリセットの選択
+    const email = prompt(
+        'パスワードをリセットするユーザーのメールアドレスを入力してください:\n\n' +
+        '登録済みユーザー:\n' +
+        users.map(user => `- ${user.email}`).join('\n')
+    );
+    
+    if (!email) {
+        console.log('パスワードリセットをキャンセルしました');
+        return;
+    }
+    
+    if (!window.simpleAuth.users[email]) {
+        alert('指定されたユーザーが見つかりません');
+        return;
+    }
+    
+    // 新しいパスワードを入力
+    const newPassword = prompt(
+        `ユーザー "${email}" の新しいパスワードを入力してください:`
+    );
+    
+    if (!newPassword) {
+        console.log('パスワードリセットをキャンセルしました');
+        return;
+    }
+    
+    // パスワードをリセット
+    const result = window.simpleAuth.resetPassword(email, newPassword);
+    
+    if (result.success) {
+        alert(`パスワードをリセットしました！\n\nメール: ${email}\n新しいパスワード: ${newPassword}\n\nこのパスワードでログインしてください。`);
+        console.log('パスワードリセット成功:', result.message);
+    } else {
+        alert(`パスワードリセットに失敗しました: ${result.message}`);
+        console.error('パスワードリセット失敗:', result.message);
     }
 }
 

@@ -556,6 +556,65 @@ class SimpleAuth {
             };
         }
     }
+
+    // パスワードリセット（管理者用）
+    resetPassword(email, newPassword) {
+        try {
+            console.log('パスワードリセット開始:', email);
+            
+            if (!this.users[email]) {
+                console.log('ユーザーが見つかりません:', email);
+                return { success: false, message: 'ユーザーが見つかりません' };
+            }
+            
+            // 新しいパスワードをハッシュ化
+            const hashedPassword = this.hashPassword(newPassword);
+            
+            // パスワードを更新
+            this.users[email].password = hashedPassword;
+            localStorage.setItem('simpleAuthUsers', JSON.stringify(this.users));
+            
+            // クラウドに保存
+            this.saveToCloud();
+            
+            console.log('パスワードリセット完了:', email);
+            return { success: true, message: 'パスワードをリセットしました' };
+            
+        } catch (error) {
+            console.error('パスワードリセットエラー:', error);
+            return { success: false, message: error.message };
+        }
+    }
+
+    // ユーザー情報を表示（デバッグ用）
+    showUserInfo(email) {
+        if (!this.users[email]) {
+            console.log('ユーザーが見つかりません:', email);
+            return null;
+        }
+        
+        const userInfo = { ...this.users[email] };
+        delete userInfo.password; // パスワードは除外
+        
+        console.log('ユーザー情報:', userInfo);
+        return userInfo;
+    }
+
+    // 全ユーザーの一覧を表示（デバッグ用）
+    listAllUsers() {
+        console.log('=== 全ユーザー一覧 ===');
+        const userList = [];
+        
+        for (const email in this.users) {
+            const userInfo = { ...this.users[email] };
+            delete userInfo.password; // パスワードは除外
+            userList.push(userInfo);
+            console.log(`- ${email}: ${userInfo.displayName || '名前なし'} (ID: ${userInfo.uid})`);
+        }
+        
+        console.log('=== ユーザー一覧終了 ===');
+        return userList;
+    }
 }
 
 // グローバルインスタンス
