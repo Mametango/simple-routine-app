@@ -8,7 +8,25 @@
 
 ## ❌ エラーの原因と解決方法
 
-### 1. 400 Bad Request エラー
+### 1. auth/configuration-not-found エラー ⚠️ 重要
+
+**原因**: Firebase Authenticationの設定が不完全
+
+**解決方法**:
+1. [Firebase Console](https://console.firebase.google.com/project/simple-routine-app-33cfc) にアクセス
+2. 左メニューから「Authentication」を選択
+3. 「始める」または「Get started」をクリック
+4. 「Sign-in method」タブをクリック
+5. 「メール/パスワード」をクリック
+6. 「有効にする」をクリック
+7. 「保存」をクリック
+
+**詳細手順**:
+```
+Firebase Console → Authentication → Sign-in method → Email/Password → 有効にする
+```
+
+### 2. 400 Bad Request エラー
 
 **原因**: Firebase Authenticationが有効になっていない可能性
 
@@ -19,7 +37,7 @@
 4. 「メール/パスワード」が有効になっているか確認
 5. 無効の場合は「有効にする」をクリック
 
-### 2. ブラウザキャッシュの問題
+### 3. ブラウザキャッシュの問題
 
 **解決方法**:
 1. ブラウザで `Ctrl + Shift + R` (ハードリフレッシュ)
@@ -27,7 +45,7 @@
 3. 開発者ツール（F12）で「Application」タブ
 4. 「Storage」→「Clear storage」をクリック
 
-### 3. Firestore Databaseの設定
+### 4. Firestore Databaseの設定
 
 **確認事項**:
 1. [Firebase Console](https://console.firebase.google.com/project/simple-routine-app-33cfc) で「Firestore Database」
@@ -93,6 +111,7 @@ service cloud.firestore {
 
 ### よくあるエラーコード
 
+- `auth/configuration-not-found`: Authentication設定が不完全（上記手順で解決）
 - `auth/user-not-found`: ユーザーが存在しない（新規登録が必要）
 - `auth/wrong-password`: パスワードが間違っている
 - `auth/invalid-email`: メールアドレス形式が無効
@@ -106,6 +125,22 @@ service cloud.firestore {
 2. インターネット接続状況
 3. ファイアウォール設定
 4. ブラウザ拡張機能の影響
+
+## 🎯 緊急対応手順
+
+### auth/configuration-not-found エラーの場合
+
+1. **Firebase Consoleにアクセス**
+   - https://console.firebase.google.com/project/simple-routine-app-33cfc
+
+2. **Authentication設定**
+   - 左メニュー → Authentication
+   - 「始める」をクリック
+   - Sign-in method → Email/Password → 有効にする
+
+3. **設定完了後**
+   - ブラウザキャッシュをクリア（Ctrl+Shift+R）
+   - アプリを再読み込み
 
 ---
 
