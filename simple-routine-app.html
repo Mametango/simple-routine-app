@@ -261,12 +261,17 @@
             cursor: pointer;
             box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
             transition: all 0.3s;
-            z-index: 1000;
+            z-index: 9999;
+            display: none;
         }
 
         .floating-add-btn:hover {
             transform: scale(1.1);
             box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .floating-add-btn.show {
+            display: block;
         }
 
         /* モーダル */
@@ -422,8 +427,6 @@
             loadData();
             checkAuth();
             setupEventListeners();
-            // フローティング追加ボタンを初期状態で非表示
-            document.getElementById('floatingAddBtn').style.display = 'none';
         });
 
         // データの読み込み
@@ -692,14 +695,14 @@
         function showMainView() {
             document.getElementById('authView').classList.remove('active');
             document.getElementById('mainView').classList.add('active');
-            document.getElementById('floatingAddBtn').style.display = 'block';
+            document.getElementById('floatingAddBtn').classList.add('show');
             updateDisplay();
         }
 
         function showAuthView() {
             document.getElementById('mainView').classList.remove('active');
             document.getElementById('authView').classList.add('active');
-            document.getElementById('floatingAddBtn').style.display = 'none';
+            document.getElementById('floatingAddBtn').classList.remove('show');
         }
 
         // メッセージ表示
