@@ -427,6 +427,48 @@
         .tab-content.active {
             display: block;
         }
+
+        /* 曜日選択スタイル */
+        .day-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .day-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .day-checkbox:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .day-checkbox input[type="checkbox"] {
+            margin-right: 6px;
+            width: auto;
+            padding: 0;
+        }
+
+        .day-checkbox input[type="checkbox"]:checked + span {
+            color: #667eea;
+        }
+
+        .day-checkbox.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -514,10 +556,77 @@
                 </div>
                 <div class="form-group">
                     <label for="routineFrequency">頻度</label>
-                    <select id="routineFrequency" required>
+                    <select id="routineFrequency" required onchange="toggleFrequencyOptions()">
                         <option value="daily">毎日</option>
                         <option value="weekly">毎週</option>
                         <option value="monthly">毎月</option>
+                    </select>
+                </div>
+                
+                <!-- 毎週の曜日選択 -->
+                <div id="weeklyOptions" class="form-group" style="display: none;">
+                    <label>曜日を選択</label>
+                    <div class="day-selector">
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="0"> 日
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="1"> 月
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="2"> 火
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="3"> 水
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="4"> 木
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="5"> 金
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="6"> 土
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 毎月の日にち選択 -->
+                <div id="monthlyOptions" class="form-group" style="display: none;">
+                    <label for="monthlyDay">日にちを選択</label>
+                    <select id="monthlyDay" required>
+                        <option value="">選択してください</option>
+                        <option value="1">1日</option>
+                        <option value="2">2日</option>
+                        <option value="3">3日</option>
+                        <option value="4">4日</option>
+                        <option value="5">5日</option>
+                        <option value="6">6日</option>
+                        <option value="7">7日</option>
+                        <option value="8">8日</option>
+                        <option value="9">9日</option>
+                        <option value="10">10日</option>
+                        <option value="11">11日</option>
+                        <option value="12">12日</option>
+                        <option value="13">13日</option>
+                        <option value="14">14日</option>
+                        <option value="15">15日</option>
+                        <option value="16">16日</option>
+                        <option value="17">17日</option>
+                        <option value="18">18日</option>
+                        <option value="19">19日</option>
+                        <option value="20">20日</option>
+                        <option value="21">21日</option>
+                        <option value="22">22日</option>
+                        <option value="23">23日</option>
+                        <option value="24">24日</option>
+                        <option value="25">25日</option>
+                        <option value="26">26日</option>
+                        <option value="27">27日</option>
+                        <option value="28">28日</option>
+                        <option value="29">29日</option>
+                        <option value="30">30日</option>
+                        <option value="31">31日</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-success">追加</button>
@@ -580,6 +689,9 @@
             
             // ルーティン追加フォーム
             document.getElementById('addRoutineForm').addEventListener('submit', handleAddRoutine);
+            
+            // 曜日選択の設定
+            setupDayCheckboxes();
         }
 
         // 認証処理
@@ -619,6 +731,43 @@
             }
         }
 
+        // 頻度選択の切り替え
+        function toggleFrequencyOptions() {
+            const frequency = document.getElementById('routineFrequency').value;
+            const weeklyOptions = document.getElementById('weeklyOptions');
+            const monthlyOptions = document.getElementById('monthlyOptions');
+            const monthlyDaySelect = document.getElementById('monthlyDay');
+            
+            // すべてのオプションを非表示
+            weeklyOptions.style.display = 'none';
+            monthlyOptions.style.display = 'none';
+            
+            // 選択された頻度に応じてオプションを表示
+            if (frequency === 'weekly') {
+                weeklyOptions.style.display = 'block';
+            } else if (frequency === 'monthly') {
+                monthlyOptions.style.display = 'block';
+                monthlyDaySelect.required = true;
+            } else {
+                monthlyDaySelect.required = false;
+            }
+        }
+
+        // 曜日選択の処理
+        function setupDayCheckboxes() {
+            const checkboxes = document.querySelectorAll('.day-checkbox input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const label = this.parentElement;
+                    if (this.checked) {
+                        label.classList.add('selected');
+                    } else {
+                        label.classList.remove('selected');
+                    }
+                });
+            });
+        }
+
         // ルーティン追加
         function handleAddRoutine(event) {
             event.preventDefault();
@@ -632,11 +781,32 @@
                 return;
             }
 
+            // 頻度別の詳細設定を取得
+            let frequencyDetails = {};
+            
+            if (frequency === 'weekly') {
+                const selectedDays = Array.from(document.querySelectorAll('.day-checkbox input[type="checkbox"]:checked'))
+                    .map(cb => parseInt(cb.value));
+                if (selectedDays.length === 0) {
+                    showMessage('曜日を選択してください', 'error');
+                    return;
+                }
+                frequencyDetails = { selectedDays: selectedDays };
+            } else if (frequency === 'monthly') {
+                const monthlyDay = document.getElementById('monthlyDay').value;
+                if (!monthlyDay) {
+                    showMessage('日にちを選択してください', 'error');
+                    return;
+                }
+                frequencyDetails = { selectedDay: parseInt(monthlyDay) };
+            }
+
             const newRoutine = {
                 id: Date.now().toString(),
                 title: title,
                 description: description,
                 frequency: frequency,
+                frequencyDetails: frequencyDetails,
                 createdAt: new Date().toISOString(),
                 userId: currentUser.email
             };
@@ -707,18 +877,27 @@
         // ルーティン表示
         function displayRoutines() {
             const today = new Date().toDateString();
+            const currentDayOfWeek = new Date().getDay();
+            const currentDayOfMonth = new Date().getDate();
             
             // 今日のルーティン
             const todayRoutines = routines.filter(routine => {
                 if (routine.frequency === 'daily') return true;
+                
                 if (routine.frequency === 'weekly') {
-                    const dayOfWeek = new Date().getDay();
-                    return dayOfWeek === 0; // 日曜日のみ（簡単な実装）
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedDays) {
+                        return routine.frequencyDetails.selectedDays.includes(currentDayOfWeek);
+                    }
+                    return false;
                 }
+                
                 if (routine.frequency === 'monthly') {
-                    const dayOfMonth = new Date().getDate();
-                    return dayOfMonth === 1; // 1日のみ（簡単な実装）
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedDay) {
+                        return routine.frequencyDetails.selectedDay === currentDayOfMonth;
+                    }
+                    return false;
                 }
+                
                 return false;
             });
 
@@ -738,11 +917,24 @@
                     return c.routineId === routine.id && completionDate === today;
                 });
 
-                const frequencyText = {
-                    'daily': '毎日',
-                    'weekly': '毎週',
-                    'monthly': '毎月'
-                }[routine.frequency];
+                let frequencyText = '';
+                if (routine.frequency === 'daily') {
+                    frequencyText = '毎日';
+                } else if (routine.frequency === 'weekly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedDays) {
+                        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+                        const selectedDayNames = routine.frequencyDetails.selectedDays.map(day => dayNames[day]);
+                        frequencyText = `毎週 ${selectedDayNames.join('・')}`;
+                    } else {
+                        frequencyText = '毎週';
+                    }
+                } else if (routine.frequency === 'monthly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedDay) {
+                        frequencyText = `毎月${routine.frequencyDetails.selectedDay}日`;
+                    } else {
+                        frequencyText = '毎月';
+                    }
+                }
 
                 return `
                     <div class="routine-item ${isCompleted ? 'completed' : ''}">
@@ -784,6 +976,16 @@
             document.getElementById('addModal').style.display = 'none';
             document.getElementById('floatingAddBtn').style.display = 'block';
             document.getElementById('addRoutineForm').reset();
+            
+            // 頻度オプションをリセット
+            document.getElementById('weeklyOptions').style.display = 'none';
+            document.getElementById('monthlyOptions').style.display = 'none';
+            document.getElementById('monthlyDay').required = false;
+            
+            // チェックボックスの選択状態をリセット
+            document.querySelectorAll('.day-checkbox').forEach(label => {
+                label.classList.remove('selected');
+            });
         }
 
         // モーダル外クリックで閉じる
