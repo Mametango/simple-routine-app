@@ -2,7 +2,7 @@
 
 // デバッグ情報
 console.log('=== script-new.js 読み込み開始 ===');
-console.log('バージョン: 1.0.9');
+console.log('バージョン: 1.0.10');
 console.log('読み込み時刻:', new Date().toISOString());
 
 // グローバル変数の定義
@@ -1899,6 +1899,49 @@ function logDataState(context) {
     console.log('=== データ状態ログ終了 ===');
 }
 
+// アプリ初期化関数
+function initializeApp() {
+    console.log('アプリ初期化開始');
+    
+    try {
+        // simpleAuthの初期化
+        if (typeof startSimpleAuth === 'function' && !window.simpleAuth) {
+            console.log('simpleAuth初期化開始');
+            try {
+                window.simpleAuth = startSimpleAuth();
+                console.log('simpleAuth初期化完了:', window.simpleAuth);
+            } catch (error) {
+                console.error('simpleAuth初期化エラー:', error);
+            }
+        }
+        
+        // イベントリスナーの設定
+        setupEventListeners();
+        
+        // 認証状態の確認
+        const isAuthenticated = checkAuthState();
+        
+        if (!isAuthenticated) {
+            console.log('未認証 - 認証画面を表示');
+            showScreen('authView');
+        } else {
+            console.log('認証済み - メインアプリを表示');
+            // checkAuthState内でshowMainAppが呼ばれる
+        }
+        
+        // Lucideアイコンの初期化
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+        
+        console.log('アプリ初期化完了');
+        
+    } catch (error) {
+        console.error('アプリ初期化エラー:', error);
+        showNotification('アプリの初期化中にエラーが発生しました', 'error');
+    }
+}
+
 // グローバルスコープに関数を明示的に公開
 window.displayTodayRoutines = displayTodayRoutines;
 window.displayAllRoutines = displayAllRoutines;
@@ -1915,7 +1958,6 @@ window.register = register;
 window.handleLogin = handleLogin;
 window.handleRegister = handleRegister;
 window.showMainApp = showMainApp;
-window.updateSyncStatus = updateSyncStatus;
 window.initializeData = initializeData;
 window.handleRoutineFormSubmit = handleRoutineFormSubmit;
 window.handleFrequencyButtonClick = handleFrequencyButtonClick;
