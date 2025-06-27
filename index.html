@@ -308,6 +308,9 @@ $("loginForm").onsubmit = e=>{
         currentStorage = 'local';
         localStorage.setItem('storageType', 'local');
         
+        // 既存ルーティンの移行を実行
+        runMigrationIfNeeded();
+        
         showMain(); 
     }
     else {
@@ -334,6 +337,9 @@ $("registerForm").onsubmit = e=>{
         // ローカルストレージを使用
         currentStorage = 'local';
         localStorage.setItem('storageType', 'local');
+        
+        // 既存ルーティンの移行を実行
+        runMigrationIfNeeded();
         
         showMain(); 
     }
@@ -418,19 +424,33 @@ $("addRoutineForm").onsubmit = e=>{
     }
     
     const routines = getRoutines(user.id);
+    
+    // ユニークIDを生成（タイムスタンプ + ランダム文字列）
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const uniqueId = `${timestamp}_${randomStr}`;
+    
     const newRoutine = {
-        id: Date.now().toString(),
+        id: uniqueId, // ユニークID
+        displayId: Date.now().toString(), // 表示用ID（従来のID）
         name,
         desc,
         frequency: addFreq,
         weeklyDays,
         monthlyDate,
-        userId: user.id
+        userId: user.id,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString()
     };
     
     routines.push(newRoutine);
     saveRoutines(user.id, routines);
-    console.log("ルーティン追加完了:", newRoutine);
+    console.log("ルーティン追加完了:", {
+        uniqueId: newRoutine.id,
+        displayId: newRoutine.displayId,
+        name: newRoutine.name,
+        frequency: newRoutine.frequency
+    });
     
     // フォームをクリアしてメイン画面に戻る
     clearAddRoutineForm();
@@ -447,13 +467,43 @@ $("addRoutineForm").onsubmit = e=>{
 });
 // --- ルーティン完了 ---
 function toggleComplete(rid){
+    console.log("ルーティン完了切り替え:", rid);
     const user = getCurrentUser();
     if(!user) return;
+    
     let completions = getCompletions(user.id);
     const today = new Date().toISOString().split("T")[0];
-    const idx = completions.findIndex(c=>c.rid===rid&&c.date===today);
-    if(idx!==-1) completions.splice(idx,1);
-    else completions.push({rid,date:today});
+    
+    // ユニークIDまたは表示IDでルーティンを検索
+    const routines = getRoutines(user.id);
+    const routine = routines.find(r => r.id === rid || r.displayId === rid);
+    
+    if (!routine) {
+        console.error("ルーティンが見つかりません:", rid);
+        return;
+    }
+    
+    console.log("対象ルーティン:", {
+        uniqueId: routine.id,
+        displayId: routine.displayId,
+        name: routine.name
+    });
+    
+    // ユニークIDで完了データを管理
+    const idx = completions.findIndex(c=>c.rid===routine.id&&c.date===today);
+    if(idx!==-1) {
+        completions.splice(idx,1);
+        console.log("完了を解除:", routine.name);
+    } else {
+        completions.push({
+            rid: routine.id, // ユニークIDを使用
+            displayRid: routine.displayId, // 表示IDも保存
+            date: today,
+            completedAt: new Date().toISOString()
+        });
+        console.log("完了を設定:", routine.name);
+    }
+    
     saveCompletions(user.id,completions);
     renderMain();
 }
@@ -515,7 +565,7 @@ function renderMain(){
             const done = completions.some(c=>c.rid===r.id&&c.date===today.toISOString().split("T")[0]);
             const li = document.createElement("li");
             li.className = "routine-item"+(done?" completed":"");
-            li.innerHTML = `<div><h3>${r.name}</h3>${r.desc?`<div>${r.desc}</div>`:""}<span class="frequency">${getFreqText(r.frequency)}</span></div><button onclick="toggleComplete('${r.id}')">${done?"✓":"○"}</button>`;
+            li.innerHTML = `<div><h3>${r.name}</h3>${r.desc?`<div>${r.desc}</div>`:""}<span class="frequency">${getFreqText(r.frequency)}</span></div><button onclick="toggleComplete('${r.id}')" data-routine-id="${r.id}" data-display-id="${r.displayId}">${done?"✓":"○"}</button>`;
             $("todayList").appendChild(li);
         }
         
@@ -528,7 +578,7 @@ function renderMain(){
             const done = completions.some(c=>c.rid===r.id&&c.date===today.toISOString().split("T")[0]);
             const li = document.createElement("li");
             li.className = "routine-item"+(done?" completed":"");
-            li.innerHTML = `<div><h3>${r.name}</h3>${r.desc?`<div>${r.desc}</div>`:""}<span class="frequency">${getFreqText(r.frequency)}</span></div><button onclick="toggleComplete('${r.id}')">${done?"✓":"○"}</button>`;
+            li.innerHTML = `<div><h3>${r.name}</h3>${r.desc?`<div>${r.desc}</div>`:""}<span class="frequency">${getFreqText(r.frequency)}</span></div><button onclick="toggleComplete('${r.id}')" data-routine-id="${r.id}" data-display-id="${r.displayId}">${done?"✓":"○"}</button>`;
             $("allList").appendChild(li);
         }
         
@@ -553,6 +603,9 @@ window.onload = async function(){
         
         if(user) {
             console.log("ログイン済み、メイン画面表示");
+            
+            // 既存ルーティンの移行を実行
+            runMigrationIfNeeded();
             
             // Firebase同期が有効な場合、初期同期を実行
             if (currentStorage === 'firebase' && typeof firebase !== 'undefined') {
@@ -847,6 +900,245 @@ function saveCompletions(uid, completions) {
         autoSync(); // 自動同期
     } catch (error) {
         console.error("完了データ保存エラー:", error);
+    }
+}
+
+// --- ルーティン管理機能 ---
+function findRoutineById(uniqueId) {
+    const user = getCurrentUser();
+    if (!user) return null;
+    
+    const routines = getRoutines(user.id);
+    return routines.find(r => r.id === uniqueId);
+}
+
+function findRoutineByDisplayId(displayId) {
+    const user = getCurrentUser();
+    if (!user) return null;
+    
+    const routines = getRoutines(user.id);
+    return routines.find(r => r.displayId === displayId);
+}
+
+function updateRoutine(uniqueId, updates) {
+    const user = getCurrentUser();
+    if (!user) return false;
+    
+    const routines = getRoutines(user.id);
+    const index = routines.findIndex(r => r.id === uniqueId);
+    
+    if (index === -1) {
+        console.error("ルーティンが見つかりません:", uniqueId);
+        return false;
+    }
+    
+    // 更新情報をマージ
+    routines[index] = {
+        ...routines[index],
+        ...updates,
+        lastModified: new Date().toISOString()
+    };
+    
+    saveRoutines(user.id, routines);
+    console.log("ルーティン更新完了:", {
+        uniqueId: routines[index].id,
+        name: routines[index].name,
+        updates: updates
+    });
+    
+    return true;
+}
+
+function deleteRoutine(uniqueId) {
+    const user = getCurrentUser();
+    if (!user) return false;
+    
+    const routines = getRoutines(user.id);
+    const index = routines.findIndex(r => r.id === uniqueId);
+    
+    if (index === -1) {
+        console.error("ルーティンが見つかりません:", uniqueId);
+        return false;
+    }
+    
+    const deletedRoutine = routines[index];
+    routines.splice(index, 1);
+    
+    // 関連する完了データも削除
+    let completions = getCompletions(user.id);
+    completions = completions.filter(c => c.rid !== uniqueId);
+    
+    saveRoutines(user.id, routines);
+    saveCompletions(user.id, completions);
+    
+    console.log("ルーティン削除完了:", {
+        uniqueId: deletedRoutine.id,
+        name: deletedRoutine.name
+    });
+    
+    return true;
+}
+
+// ルーティン情報表示機能（デバッグ用）
+function showRoutineInfo(uniqueId) {
+    const routine = findRoutineById(uniqueId);
+    if (!routine) {
+        console.error("ルーティンが見つかりません:", uniqueId);
+        return;
+    }
+    
+    console.log("ルーティン情報:", {
+        uniqueId: routine.id,
+        displayId: routine.displayId,
+        name: routine.name,
+        desc: routine.desc,
+        frequency: routine.frequency,
+        weeklyDays: routine.weeklyDays,
+        monthlyDate: routine.monthlyDate,
+        userId: routine.userId,
+        createdAt: routine.createdAt,
+        lastModified: routine.lastModified
+    });
+    
+    // 完了データも表示
+    const user = getCurrentUser();
+    if (user) {
+        const completions = getCompletions(user.id);
+        const routineCompletions = completions.filter(c => c.rid === uniqueId);
+        console.log("完了データ:", routineCompletions);
+    }
+}
+
+// 全ルーティンの一覧表示（デバッグ用）
+function listAllRoutines() {
+    const user = getCurrentUser();
+    if (!user) {
+        console.error("ユーザー情報がありません");
+        return;
+    }
+    
+    const routines = getRoutines(user.id);
+    console.log("全ルーティン一覧:", routines.map(r => ({
+        uniqueId: r.id,
+        displayId: r.displayId,
+        name: r.name,
+        frequency: r.frequency,
+        createdAt: r.createdAt
+    })));
+}
+
+// 既存ルーティンの移行機能
+function migrateExistingRoutines() {
+    const user = getCurrentUser();
+    if (!user) {
+        console.error("ユーザー情報がありません");
+        return;
+    }
+    
+    const routines = getRoutines(user.id);
+    let hasChanges = false;
+    
+    console.log("既存ルーティンの移行開始:", routines.length, "件");
+    
+    for (let i = 0; i < routines.length; i++) {
+        const routine = routines[i];
+        
+        // ユニークIDがない場合、追加
+        if (!routine.id || routine.id === routine.displayId) {
+            const timestamp = Date.now() + i; // 順序を保つため少しずつずらす
+            const randomStr = Math.random().toString(36).substring(2, 8);
+            const uniqueId = `${timestamp}_${randomStr}`;
+            
+            routines[i] = {
+                ...routine,
+                id: uniqueId,
+                displayId: routine.id || routine.displayId || Date.now().toString(),
+                createdAt: routine.createdAt || new Date().toISOString(),
+                lastModified: new Date().toISOString()
+            };
+            
+            hasChanges = true;
+            console.log("ルーティン移行完了:", {
+                name: routine.name,
+                oldId: routine.id,
+                newUniqueId: uniqueId,
+                displayId: routines[i].displayId
+            });
+        }
+    }
+    
+    if (hasChanges) {
+        saveRoutines(user.id, routines);
+        console.log("移行完了 - 保存されたルーティン:", routines.length, "件");
+        
+        // 完了データも移行
+        migrateExistingCompletions();
+    } else {
+        console.log("移行不要 - すべてのルーティンにユニークIDが設定済み");
+    }
+}
+
+// 既存完了データの移行機能
+function migrateExistingCompletions() {
+    const user = getCurrentUser();
+    if (!user) return;
+    
+    const completions = getCompletions(user.id);
+    const routines = getRoutines(user.id);
+    let hasChanges = false;
+    
+    console.log("既存完了データの移行開始:", completions.length, "件");
+    
+    for (let i = 0; i < completions.length; i++) {
+        const completion = completions[i];
+        
+        // ユニークIDがない場合、対応するルーティンを検索して設定
+        if (!completion.rid || completion.rid === completion.displayRid) {
+            const routine = routines.find(r => 
+                r.displayId === completion.rid || 
+                r.id === completion.rid ||
+                r.displayId === completion.displayRid
+            );
+            
+            if (routine) {
+                completions[i] = {
+                    ...completion,
+                    rid: routine.id,
+                    displayRid: routine.displayId,
+                    completedAt: completion.completedAt || new Date().toISOString()
+                };
+                
+                hasChanges = true;
+                console.log("完了データ移行完了:", {
+                    date: completion.date,
+                    routineName: routine.name,
+                    newRid: routine.id
+                });
+            }
+        }
+    }
+    
+    if (hasChanges) {
+        saveCompletions(user.id, completions);
+        console.log("完了データ移行完了 - 保存された完了データ:", completions.length, "件");
+    } else {
+        console.log("完了データ移行不要 - すべての完了データにユニークIDが設定済み");
+    }
+}
+
+// 初期化時に移行を実行
+function runMigrationIfNeeded() {
+    const user = getCurrentUser();
+    if (!user) return;
+    
+    const routines = getRoutines(user.id);
+    const needsMigration = routines.some(r => !r.id || r.id === r.displayId);
+    
+    if (needsMigration) {
+        console.log("移行が必要なルーティンを検出");
+        migrateExistingRoutines();
+    } else {
+        console.log("移行不要 - すべてのルーティンが最新形式");
     }
 }
 </script>
