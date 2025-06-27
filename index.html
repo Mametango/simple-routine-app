@@ -2,879 +2,439 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#4f46e5">
-    <title>My Routine - ログイン</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="simple-firebase-setup.css">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
-
-    <!-- Google Drive API -->
-    <script src="https://apis.google.com/js/api.js"></script>
-    
-    <!-- Google Drive Config -->
-    <script src="google-drive-config.js"></script>
-    
-    <!-- Google Drive Storage -->
-    <script src="google-drive-storage.js"></script>
-    
-    <!-- Simple Auth and Storage -->
-    <script src="simple-auth.js?v=1.0.1"></script>
-    <script src="simple-storage.js?v=1.0.1"></script>
-    
-    <!-- Main Application Script -->
-    <script src="script-new.js?v=1.0.7"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Routine - シンプル版</title>
+    <style>
+        body { font-family: sans-serif; background: #f6f8fa; margin: 0; }
+        .center { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: #fff; padding: 32px 24px; border-radius: 12px; box-shadow: 0 4px 16px #0001; min-width: 320px; max-width: 400px; }
+        h1, h2 { text-align: center; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; }
+        input[type=email], input[type=password], input[type=text], input[type=number], textarea {
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px;
+        }
+        button, .btn { padding: 10px 18px; border: none; border-radius: 6px; background: #667eea; color: #fff; font-size: 16px; cursor: pointer; margin-right: 8px; }
+        button.secondary, .btn.secondary { background: #aaa; }
+        .link-btn { background: none; color: #667eea; border: none; cursor: pointer; text-decoration: underline; font-size: 15px; margin: 0 8px; }
+        .routine-list { margin: 0; padding: 0; list-style: none; }
+        .routine-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .routine-item:last-child { border-bottom: none; }
+        .routine-item.completed h3 { text-decoration: line-through; color: #aaa; }
+        .frequency { font-size: 12px; color: #667eea; margin-left: 8px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+        .tab { padding: 6px 14px; border-radius: 6px; border: 1px solid #667eea; background: #fff; color: #667eea; cursor: pointer; }
+        .tab.active { background: #667eea; color: #fff; }
+        .mt-2 { margin-top: 16px; }
+        .mb-2 { margin-bottom: 16px; }
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
-    <!-- 認証コンテナ -->
-    <div class="auth-container" id="authContainer">
-        <div class="auth-card">
-            <div class="auth-header">
-                <div class="app-logo">
-                    <i data-lucide="target" class="logo-icon"></i>
-                    <h1 class="app-title">My Routine</h1>
-                </div>
-                <p class="auth-subtitle">毎日の習慣を管理して、より良い生活を</p>
+<div id="authView" class="center">
+    <div class="card">
+        <h1>My Routine</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginEmail">メールアドレス</label>
+                <input type="email" id="loginEmail" required>
             </div>
-
-            <form id="authForm" class="auth-form">
-                <!-- Googleログインをメインに配置 -->
-                <div class="primary-login">
-                    <button type="button" id="googleLoginBtn" class="google-login-btn primary">
-                        <svg class="google-icon" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                        </svg>
-                        <span class="btn-text">Googleでログイン</span>
-                    </button>
-                    
-                    <div class="login-benefits">
-                        <div class="benefit-item">
-                            <i data-lucide="shield-check" class="benefit-icon"></i>
-                            <span>安全で簡単</span>
-                        </div>
-                        <div class="benefit-item">
-                            <i data-lucide="cloud" class="benefit-icon"></i>
-                            <span>クラウド同期</span>
-                        </div>
-                        <div class="benefit-item">
-                            <i data-lucide="zap" class="benefit-icon"></i>
-                            <span>ワンクリック</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="divider">
-                    <span>または</span>
-                </div>
-
-                <!-- メール/パスワードログイン（セカンダリ） -->
-                <div class="secondary-login">
-                    <h3 class="section-title">メールアドレスでログイン</h3>
-                    
-                    <div class="form-group">
-                        <label for="email" class="form-label">メールアドレス</label>
-                        <div class="input-wrapper">
-                            <i data-lucide="mail" class="input-icon"></i>
-                            <input type="email" id="email" name="email" placeholder="your@email.com" required class="form-input" autocomplete="email">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password" class="form-label">パスワード</label>
-                        <div class="input-wrapper">
-                            <i data-lucide="lock" class="input-icon"></i>
-                            <input type="password" id="password" name="password" placeholder="パスワードを入力" required class="form-input" autocomplete="current-password">
-                            <button type="button" id="togglePassword" class="password-toggle">
-                                <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ログイン状態保持チェックボックス -->
-                    <div class="form-group checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="rememberMe" class="checkbox-input">
-                            <span class="checkbox-custom"></span>
-                            ログイン状態を保持する
-                        </label>
-                    </div>
-
-                    <div class="error-message" id="authError" style="display: none;"></div>
-
-                    <button type="submit" class="auth-button secondary" id="authButton">
-                        <i data-lucide="log-in" class="button-icon"></i>
-                        ログイン
-                    </button>
-                </div>
-            </form>
-
-            <div class="auth-footer">
-                <div class="footer-links">
-                    <p class="register-link">
-                        アカウントをお持ちでない方は
-                        <a href="register.html" class="link-primary">新規登録</a>
-                    </p>
-                </div>
-                
-                <!-- ヘルプセクション -->
-                <div class="help-section">
-                    <details class="help-details">
-                        <summary class="help-summary">
-                            <i data-lucide="help-circle" class="help-icon"></i>
-                            ログインに問題がありますか？
-                        </summary>
-                        <div class="help-content">
-                            <div class="help-item">
-                                <button type="button" id="firebaseDebugBtn" class="help-btn">
-                                    <i data-lucide="settings"></i>
-                                    Firebase設定確認
-                                </button>
-                            </div>
-                            <div class="help-item">
-                                <a href="#" class="help-btn" id="fixFirebaseConfigBtn">
-                                    <i data-lucide="wrench"></i>
-                                    Firebase設定修正
-                                </a>
-                            </div>
-                        </div>
-                    </details>
-                </div>
+            <div class="form-group">
+                <label for="loginPassword">パスワード</label>
+                <input type="password" id="loginPassword" required>
             </div>
+            <button type="submit">ログイン</button>
+        </form>
+        <div class="mt-2" style="text-align:center;">
+            <button class="link-btn" id="showRegister">新規登録</button>
+            <button class="link-btn" id="demoLogin">デモログイン</button>
         </div>
     </div>
-
-    <!-- メインアプリ -->
-    <div class="app" id="app" style="display: none;">
-        <header class="header">
-            <div class="header-content">
-                <h1 class="title">
-                    <i data-lucide="target" class="title-icon"></i>
-                    My Routine
-                </h1>
-                <p class="subtitle">毎日の習慣を管理して、より良い生活を</p>
+</div>
+<div id="registerView" class="center hidden">
+    <div class="card">
+        <h2>新規登録</h2>
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="registerEmail">メールアドレス</label>
+                <input type="email" id="registerEmail" required>
             </div>
-            <div class="user-section">
-                <div class="user-info">
-                    <i data-lucide="user" style="width: 16px; height: 16px;"></i>
-                    <span id="currentUser">ユーザー</span>
-                    <div id="userTypeDisplay" class="user-type-display"></div>
-                </div>
-                <div class="sync-status-container">
-                    <span id="syncStatus" class="sync-status">🟡 同期中...</span>
-                </div>
-                <div class="header-buttons">
-                    <button id="syncBtn" class="sync-btn" title="手動同期">
-                        <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
-                    </button>
-                    <button id="debugBtn" class="debug-btn" title="デバッグ情報" onclick="showDataDebugInfo()">
-                        <i data-lucide="bug" style="width: 16px; height: 16px;"></i>
-                    </button>
-                    <button id="notificationBtn" class="notification-btn">🔔</button>
-                    <button id="settingsBtn" class="settings-btn">⚙️</button>
-                    <!-- 管理者ボタン（管理者のみ表示） -->
-                    <button id="adminBtn" class="admin-btn" style="display: none;" title="管理者ダッシュボード">
-                        <i data-lucide="shield" style="width: 16px; height: 16px;"></i>
-                    </button>
-                    <!-- ログアウトボタン -->
-                    <button id="logoutBtn" class="logout-btn" title="ログアウト">
-                        <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
-                    </button>
-                </div>
+            <div class="form-group">
+                <label for="registerPassword">パスワード</label>
+                <input type="password" id="registerPassword" required>
             </div>
-        </header>
-
-        <!-- 今日のルーティンセクション -->
-        <section class="today-section">
-            <div class="section-header">
-                <h2 class="section-title">
-                    <i data-lucide="calendar" class="section-icon"></i>
-                    今日のルーティン
-                </h2>
-                <button id="addRoutineBtn" class="add-routine-btn">
-                    <i data-lucide="plus" class="button-icon"></i>
-                    追加
-                </button>
-                <button id="debugRoutineBtn" class="debug-btn" onclick="debugRoutineAddition()" style="margin-left: 10px;">
-                    <i data-lucide="bug" class="button-icon"></i>
-                    デバッグ
-                </button>
-            </div>
-            
-            <div class="today-routines" id="todayRoutines">
-                <div class="today-routines-list" id="todayRoutinesList">
-                    <!-- 今日のルーティンがここに表示されます -->
-                </div>
-            </div>
-        </section>
-
-        <!-- 全ルーティンセクション -->
-        <section class="all-routines-section">
-            <div class="section-header">
-                <h2 class="section-title">
-                    <i data-lucide="list" class="section-icon"></i>
-                    すべてのルーティン
-                </h2>
-            </div>
-            
-            <div class="frequency-tabs">
-                <button class="tab-button active" data-frequency="all">
-                    <i data-lucide="list" class="tab-icon"></i>
-                    全て
-                </button>
-                <button class="tab-button" data-frequency="daily">
-                    <i data-lucide="sun" class="tab-icon"></i>
-                    毎日
-                </button>
-                <button class="tab-button" data-frequency="weekly">
-                    <i data-lucide="calendar-days" class="tab-icon"></i>
-                    毎週
-                </button>
-                <button class="tab-button" data-frequency="monthly">
-                    <i data-lucide="calendar" class="tab-icon"></i>
-                    毎月
-                </button>
-            </div>
-            
-            <div class="all-routines" id="allRoutines">
-                <div class="all-routines-list" id="allRoutinesList">
-                    <!-- すべてのルーティンがここに表示されます -->
-                </div>
-            </div>
-        </section>
-
-        <!-- ルーティン追加画面 -->
-        <div id="addRoutineScreen" class="add-routine-screen" style="display: none;">
-            <div class="screen-header">
-                <button class="back-btn">
-                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
-                    戻る
-                </button>
-                <h1 class="screen-title">ルーティンを追加</h1>
-                <div class="header-spacer"></div>
-            </div>
-            
-            <div class="form-container">
-                <form id="routineForm" class="form">
-                    <div class="form-group">
-                        <label for="routineName" class="form-label">ルーティン名</label>
-                        <input type="text" id="routineName" class="form-input" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="routineDescription" class="form-label">説明（任意）</label>
-                        <textarea id="routineDescription" class="form-textarea" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">頻度</label>
-                        <div class="frequency-buttons">
-                            <button type="button" class="frequency-btn" data-frequency="daily">毎日</button>
-                            <button type="button" class="frequency-btn" data-frequency="weekly">毎週</button>
-                            <button type="button" class="frequency-btn" data-frequency="monthly">毎月</button>
-                        </div>
-                        <input type="hidden" id="addRoutineFrequency" value="">
-                    </div>
-                    <div id="frequencyOptions" class="frequency-options" style="display: none;">
-                        <!-- 頻度オプションが動的に追加されます -->
-                    </div>
-                    <div class="form-row" id="addWeeklyDaysRow" style="display: none;">
-                        <div class="form-group">
-                            <label class="form-label">曜日</label>
-                            <div class="weekday-checkboxes">
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="1" class="add-weekday-input"> 月
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="2" class="add-weekday-input"> 火
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="3" class="add-weekday-input"> 水
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="4" class="add-weekday-input"> 木
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="5" class="add-weekday-input"> 金
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="6" class="add-weekday-input"> 土
-                                </label>
-                                <label class="weekday-checkbox">
-                                    <input type="checkbox" value="0" class="add-weekday-input"> 日
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-row" id="addMonthlyDateRow" style="display: none;">
-                        <div class="form-group">
-                            <label for="addMonthlyDateInput" class="form-label">毎月の日付</label>
-                            <input type="number" id="addMonthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
-                        </div>
-                    </div>
-                    <div class="form-buttons">
-                        <button type="submit" class="save-button">保存</button>
-                        <button type="button" class="cancel-button">キャンセル</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- 編集フォーム -->
-        <div class="form-container" id="editFormContainer" style="display: none;">
-            <div class="form">
-                <input type="text" placeholder="ルーティンのタイトル" id="editTitleInput" class="form-input" autocomplete="off" inputmode="text">
-                <textarea placeholder="説明（オプション）" id="editDescriptionInput" class="form-textarea" autocomplete="off"></textarea>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="editFrequencyInput" class="form-label">頻度</label>
-                        <select id="editFrequencyInput" class="form-select">
-                            <option value="daily">毎日</option>
-                            <option value="weekly">毎週</option>
-                            <option value="monthly">毎月</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="editTimeInput" class="form-label">時間</label>
-                        <input type="time" id="editTimeInput" class="form-input">
-                    </div>
-                </div>
-                <div class="form-row" id="editWeeklyDaysRow" style="display: none;">
-                    <div class="form-group">
-                        <label class="form-label">曜日</label>
-                        <div class="weekday-checkboxes">
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="1" class="edit-weekday-input"> 月
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="2" class="edit-weekday-input"> 火
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="3" class="edit-weekday-input"> 水
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="4" class="edit-weekday-input"> 木
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="5" class="edit-weekday-input"> 金
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="6" class="edit-weekday-input"> 土
-                            </label>
-                            <label class="weekday-checkbox">
-                                <input type="checkbox" value="0" class="edit-weekday-input"> 日
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-row" id="editMonthlyDateRow" style="display: none;">
-                    <div class="form-group">
-                        <label for="editMonthlyDateInput" class="form-label">毎月の日付</label>
-                        <input type="number" id="editMonthlyDateInput" class="form-input" min="1" max="31" placeholder="1-31">
-                    </div>
-                </div>
-                <div class="form-buttons">
-                    <button class="save-button" id="editSaveButton">保存</button>
-                    <button class="cancel-button" id="editCancelButton">キャンセル</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ストレージ選択モーダル -->
-        <div id="storageModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>ストレージを選択</h3>
-                    <button class="modal-close">
-                        <i data-lucide="x"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="storage-option" data-storage-type="local">
-                        <i data-lucide="hard-drive" class="storage-icon"></i>
-                        <div class="storage-info">
-                            <h4>ローカルストレージ</h4>
-                            <p>データはこのデバイスに保存されます</p>
-                        </div>
-                        <i data-lucide="check" class="storage-check"></i>
-                    </div>
-                    <div class="storage-option" data-storage-type="firebase">
-                        <i data-lucide="cloud" class="storage-icon"></i>
-                        <div class="storage-info">
-                            <h4>Firebase</h4>
-                            <p>データはクラウドに同期されます</p>
-                        </div>
-                        <i data-lucide="check" class="storage-check"></i>
-                    </div>
-                    <div class="storage-option" data-storage-type="google-drive">
-                        <i data-lucide="folder" class="storage-icon"></i>
-                        <div class="storage-info">
-                            <h4>Google Drive</h4>
-                            <p>データはGoogle Driveに保存されます</p>
-                        </div>
-                        <i data-lucide="check" class="storage-check"></i>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-btn secondary">キャンセル</button>
-                    <button class="modal-btn primary">選択</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 広告エリア -->
-        <div id="adContainer" class="ad-container" style="display: none;">
-            <div class="ad-placeholder">
-                <div class="ad-content">
-                    <h3>広告エリア</h3>
-                    <p>ここに広告が表示されます</p>
-                    <small>一般ユーザーのみ表示</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- 管理者ダッシュボード画面 -->
-        <div id="adminDashboardScreen" class="admin-dashboard-screen" style="display: none;">
-            <div class="screen-header">
-                <button class="back-btn" id="adminBackBtn">
-                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
-                    戻る
-                </button>
-                <h1 class="screen-title">管理者ダッシュボード</h1>
-                <div class="header-spacer"></div>
-            </div>
-            
-            <div class="admin-content">
-                <div class="admin-tabs">
-                    <button class="admin-tab-btn active" data-tab="users">
-                        <i data-lucide="users" class="tab-icon"></i>
-                        ユーザー管理
-                    </button>
-                    <button class="admin-tab-btn" data-tab="friends">
-                        <i data-lucide="heart" class="tab-icon"></i>
-                        友達管理
-                    </button>
-                    <button class="admin-tab-btn" data-tab="stats">
-                        <i data-lucide="bar-chart-3" class="tab-icon"></i>
-                        統計
-                    </button>
-                </div>
-                
-                <div class="admin-tab-content">
-                    <!-- ユーザー管理タブ -->
-                    <div id="usersTab" class="admin-tab-panel active">
-                        <div class="admin-section">
-                            <div class="section-header">
-                                <h3>ユーザー一覧</h3>
-                                <div class="search-box">
-                                    <i data-lucide="search" class="search-icon"></i>
-                                    <input type="text" id="userSearchInput" placeholder="ユーザーを検索..." class="search-input">
-                                </div>
-                            </div>
-                            
-                            <div class="users-list" id="usersList">
-                                <!-- ユーザーリストがここに表示されます -->
-                            </div>
-                            
-                            <!-- デバッグ情報セクション -->
-                            <div class="admin-section">
-                                <h3>デバッグ情報</h3>
-                                <div class="debug-info">
-                                    <button onclick="showDataDebugInfo()" class="debug-btn">
-                                        <i data-lucide="bug"></i>
-                                        詳細デバッグ情報を表示
-                                    </button>
-                                    <div class="debug-details" id="debugDetails" style="display: none;">
-                                        <pre id="debugOutput"></pre>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 友達管理タブ -->
-                    <div id="friendsTab" class="admin-tab-panel">
-                        <div class="admin-section">
-                            <div class="section-header">
-                                <h3>友達リスト</h3>
-                                <button class="add-friend-btn" id="addFriendBtn">
-                                    <i data-lucide="user-plus" class="btn-icon"></i>
-                                    友達を追加
-                                </button>
-                            </div>
-                            
-                            <div class="friends-list" id="friendsList">
-                                <!-- 友達リストがここに表示されます -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 統計タブ -->
-                    <div id="statsTab" class="admin-tab-panel">
-                        <div class="admin-section">
-                            <h3>アプリ統計</h3>
-                            <div class="stats-grid">
-                                <div class="stat-card">
-                                    <div class="stat-icon">
-                                        <i data-lucide="users"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <h4>総ユーザー数</h4>
-                                        <p id="totalUsersCount">0</p>
-                                    </div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-icon">
-                                        <i data-lucide="heart"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <h4>友達数</h4>
-                                        <p id="friendsCount">0</p>
-                                    </div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-icon">
-                                        <i data-lucide="list"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <h4>総ルーティン数</h4>
-                                        <p id="totalRoutinesCount">0</p>
-                                    </div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-icon">
-                                        <i data-lucide="check-circle"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <h4>完了率</h4>
-                                        <p id="completionRate">0%</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 詳細統計セクション -->
-                        <div class="admin-section">
-                            <h3>ユーザー詳細統計</h3>
-                            <div class="detailed-stats">
-                                <div class="stat-row">
-                                    <div class="stat-label">管理者ユーザー:</div>
-                                    <div class="stat-value" id="adminUsersCount">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">一般ユーザー:</div>
-                                    <div class="stat-value" id="generalUsersCount">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">友達ユーザー:</div>
-                                    <div class="stat-value" id="friendUsersCount">0</div>
-                                </div>
-                                <div class="stat-row">
-                                    <div class="stat-label">Google連携ユーザー:</div>
-                                    <div class="stat-value" id="googleUsersCount">0</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- デバッグ情報セクション -->
-                        <div class="admin-section">
-                            <h3>デバッグ情報</h3>
-                            <div class="debug-info">
-                                <button onclick="showDataDebugInfo()" class="debug-btn">
-                                    <i data-lucide="bug"></i>
-                                    詳細デバッグ情報を表示
-                                </button>
-                                <div class="debug-details" id="debugDetails" style="display: none;">
-                                    <pre id="debugOutput"></pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 友達追加モーダル -->
-        <div id="addFriendModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>友達を追加</h3>
-                    <button class="modal-close" id="closeAddFriendModal">
-                        <i data-lucide="x"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="friendEmail" class="form-label">メールアドレス</label>
-                        <input type="email" id="friendEmail" class="form-input" placeholder="friend@example.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="friendName" class="form-label">表示名（任意）</label>
-                        <input type="text" id="friendName" class="form-input" placeholder="友達の名前">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-btn secondary" id="cancelAddFriend">キャンセル</button>
-                    <button class="modal-btn primary" id="confirmAddFriend">追加</button>
-                </div>
-            </div>
-        </div>
+            <button type="submit">登録</button>
+            <button type="button" class="secondary" id="backToLogin">戻る</button>
+        </form>
     </div>
-
-    <!-- 認証モーダル -->
-    <div id="authModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <div id="loginForm">
-                <h2>ログイン</h2>
-                <input type="text" id="loginUsername" placeholder="ユーザー名" required>
-                <input type="password" id="loginPassword" placeholder="パスワード" required>
-                <button onclick="login()">ログイン</button>
-                <p>アカウントをお持ちでない方は <a href="#" onclick="showRegister()">新規登録</a></p>
-            </div>
-            <div id="registerForm" style="display: none;">
-                <h2>新規登録</h2>
-                <input type="text" id="registerUsername" placeholder="ユーザー名" required>
-                <input type="password" id="registerPassword" placeholder="パスワード" required>
-                <input type="password" id="confirmPassword" placeholder="パスワード確認" required>
-                <button onclick="register()">登録</button>
-                <p>既にアカウントをお持ちの方は <a href="#" onclick="showLogin()">ログイン</a></p>
-            </div>
+</div>
+<div id="mainView" class="center hidden">
+    <div class="card" style="width:100%;max-width:500px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 style="margin-bottom:0;">今日のルーティン</h2>
+            <button id="logoutBtn" class="secondary">ログアウト</button>
         </div>
-    </div>
-
-    <!-- Firebase設定修正モーダル -->
-    <div id="firebaseConfigModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Firebase設定の修正</h2>
-            <p>ログインに問題がある場合、Firebase設定を確認・修正してください。</p>
-            
-            <div class="firebase-config-section">
-                <h3>現在の設定</h3>
-                <div id="currentConfig" class="config-display">
-                    <p>設定を読み込み中...</p>
-                </div>
-            </div>
-            
-            <div class="firebase-config-section">
-                <h3>新しい設定を入力</h3>
-                <p>Firebaseコンソールから取得した設定を入力してください：</p>
-                
-                <div class="form-group">
-                    <label for="newApiKey">API Key:</label>
-                    <input type="text" id="newApiKey" placeholder="AIzaSy...">
-                </div>
-                
-                <div class="form-group">
-                    <label for="newAuthDomain">Auth Domain:</label>
-                    <input type="text" id="newAuthDomain" placeholder="your-app.firebaseapp.com">
-                </div>
-                
-                <div class="form-group">
-                    <label for="newProjectId">Project ID:</label>
-                    <input type="text" id="newProjectId" placeholder="your-project-id">
-                </div>
-                
-                <div class="form-group">
-                    <label for="newStorageBucket">Storage Bucket:</label>
-                    <input type="text" id="newStorageBucket" placeholder="your-app.appspot.com">
-                </div>
-                
-                <div class="form-group">
-                    <label for="newMessagingSenderId">Messaging Sender ID:</label>
-                    <input type="text" id="newMessagingSenderId" placeholder="123456789012">
-                </div>
-                
-                <div class="form-group">
-                    <label for="newAppId">App ID:</label>
-                    <input type="text" id="newAppId" placeholder="1:123456789012:web:abcdefghijklmnop">
-                </div>
-            </div>
-            
-            <div class="modal-buttons">
-                <button onclick="validateAndUpdateFirebaseConfig()" class="primary-btn">設定を更新</button>
-                <button onclick="closeFirebaseConfigModal()" class="secondary-btn">キャンセル</button>
-            </div>
+        <ul id="todayList" class="routine-list mb-2"></ul>
+        <div class="tabs mb-2">
+            <button class="tab active" data-freq="all">全て</button>
+            <button class="tab" data-freq="daily">毎日</button>
+            <button class="tab" data-freq="weekly">毎週</button>
+            <button class="tab" data-freq="monthly">毎月</button>
         </div>
+        <ul id="allList" class="routine-list mb-2"></ul>
+        <button id="showAddRoutine" class="mt-2">ルーティン追加</button>
     </div>
-
-    <!-- 設定モーダル -->
-    <div id="settingsModal" class="modal" style="display: none;">
-        <div class="modal-content settings-content">
-            <span class="close">&times;</span>
-            <h2>設定</h2>
-            
-            <!-- 通知設定 -->
-            <div class="settings-section">
-                <h3>🔔 通知設定</h3>
-                <div class="setting-item">
-                    <label>
-                        <input type="checkbox" id="enableNotifications" checked>
-                        通知を有効にする
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <label>デフォルト通知時刻（時間指定なしの場合）:</label>
-                    <input type="time" id="defaultNotificationTime" value="08:00">
-                </div>
-                <div class="setting-item">
-                    <label>通知音:</label>
-                    <select id="notificationSound">
-                        <option value="default">デフォルト</option>
-                        <option value="gentle">優しい音</option>
-                        <option value="alert">アラート音</option>
-                        <option value="none">音なし</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>通知の表示時間:</label>
-                    <select id="notificationDuration">
-                        <option value="5">5秒</option>
-                        <option value="10" selected>10秒</option>
-                        <option value="15">15秒</option>
-                        <option value="30">30秒</option>
-                    </select>
+</div>
+<div id="addRoutineView" class="center hidden">
+    <div class="card">
+        <h2>ルーティン追加</h2>
+        <form id="addRoutineForm">
+            <div class="form-group">
+                <label for="routineName">ルーティン名</label>
+                <input type="text" id="routineName" required>
+            </div>
+            <div class="form-group">
+                <label for="routineDesc">説明（任意）</label>
+                <textarea id="routineDesc" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>頻度</label>
+                <div class="tabs">
+                    <button type="button" class="tab active" data-freq="daily">毎日</button>
+                    <button type="button" class="tab" data-freq="weekly">毎週</button>
+                    <button type="button" class="tab" data-freq="monthly">毎月</button>
                 </div>
             </div>
-
-            <!-- アカウント設定 -->
-            <div class="settings-section">
-                <h3>👤 アカウント設定</h3>
-                <div class="setting-item">
-                    <label>現在のユーザー名:</label>
-                    <span id="currentUsername" class="current-value"></span>
-                </div>
-                <div class="setting-item">
-                    <label>パスワード変更:</label>
-                    <input type="password" id="newPassword" placeholder="新しいパスワード">
-                    <input type="password" id="confirmNewPassword" placeholder="新しいパスワード確認">
-                    <button onclick="changePassword()" class="small-btn">パスワード変更</button>
-                </div>
-                <div class="setting-item">
-                    <button onclick="deleteAccount()" class="danger-btn">アカウント削除</button>
+            <div class="form-group hidden" id="weeklyDays">
+                <label>曜日</label>
+                <div>
+                    <label><input type="checkbox" value="0">日</label>
+                    <label><input type="checkbox" value="1">月</label>
+                    <label><input type="checkbox" value="2">火</label>
+                    <label><input type="checkbox" value="3">水</label>
+                    <label><input type="checkbox" value="4">木</label>
+                    <label><input type="checkbox" value="5">金</label>
+                    <label><input type="checkbox" value="6">土</label>
                 </div>
             </div>
-
-            <!-- データ管理 -->
-            <div class="settings-section">
-                <h3>💾 データ管理</h3>
-                <div class="setting-item">
-                    <button onclick="exportData()" class="small-btn">データをエクスポート</button>
-                    <button onclick="importData()" class="small-btn">データをインポート</button>
-                </div>
-                <div class="setting-item">
-                    <button onclick="clearAllData()" class="danger-btn">全データを削除</button>
-                </div>
+            <div class="form-group hidden" id="monthlyDate">
+                <label>日付</label>
+                <input type="number" id="monthlyDateInput" min="1" max="31">
             </div>
-
-            <!-- 表示設定 -->
-            <div class="settings-section">
-                <h3>🎨 表示設定</h3>
-                <div class="setting-item">
-                    <label>テーマ:</label>
-                    <select id="themeSelect">
-                        <option value="light" selected>ライト</option>
-                        <option value="dark">ダーク</option>
-                        <option value="auto">自動</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>言語:</label>
-                    <select id="languageSelect">
-                        <option value="ja" selected>日本語</option>
-                        <option value="en">English</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="settings-actions">
-                <button onclick="saveSettings()" class="primary-btn">設定を保存</button>
-                <button onclick="closeSettings()" class="secondary-btn">キャンセル</button>
-            </div>
-            
-            <!-- ログアウトボタン -->
-            <div class="logout-section">
-                <button onclick="logout()" class="logout-btn-large">ログアウト</button>
-            </div>
-        </div>
+            <button type="submit">保存</button>
+            <button type="button" class="secondary" id="cancelAddRoutine">キャンセル</button>
+        </form>
     </div>
-
-    <!-- ファイルインポート用の隠しinput -->
-    <input type="file" id="importFile" accept=".json" style="display: none;">
-
-    <!-- ページ読み込み時の初期化 -->
-    <script>
-        // ページ読み込み完了後に初期化を実行
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('=== DOM読み込み完了 - 初期化開始 ===');
-            console.log('現在のURL:', window.location.href);
-            console.log('ページタイトル:', document.title);
-            
-            // グローバル関数の存在確認
-            console.log('グローバル関数存在確認:');
-            console.log('- setupEventListeners:', typeof setupEventListeners);
-            console.log('- initializeApp:', typeof initializeApp);
-            console.log('- checkAuthState:', typeof checkAuthState);
-            
-            // イベントリスナーを設定
-            if (typeof setupEventListeners === 'function') {
-                console.log('setupEventListeners関数を呼び出し中...');
-                setupEventListeners();
-                console.log('✅ イベントリスナー設定完了');
-            } else {
-                console.error('❌ setupEventListeners関数が見つかりません');
-            }
-            
-            // アプリを初期化
-            if (typeof initializeApp === 'function') {
-                console.log('initializeApp関数を呼び出し中...');
-                initializeApp();
-                console.log('✅ アプリ初期化完了');
-            } else {
-                console.error('❌ initializeApp関数が見つかりません');
-            }
-            
-            // 認証状態をチェック
-            if (typeof checkAuthState === 'function') {
-                console.log('checkAuthState関数を呼び出し中...');
-                checkAuthState();
-                console.log('✅ 認証状態チェック完了');
-            } else {
-                console.error('❌ checkAuthState関数が見つかりません');
-            }
-            
-            console.log('=== 初期化処理完了 ===');
-        });
+</div>
+<script>
+// --- ユーティリティ ---
+function $(id) { 
+    const element = document.getElementById(id);
+    if (!element) {
+        console.error("要素が見つかりません:", id);
+    }
+    return element;
+}
+function show(view) {
+    console.log("画面切り替え:", view);
+    ["authView","registerView","mainView","addRoutineView"].forEach(v=>{
+        const element = $(v);
+        if (element) element.classList.add("hidden");
+    });
+    const targetElement = $(view);
+    if (targetElement) targetElement.classList.remove("hidden");
+}
+function getUserList() {
+    try {
+        const users = JSON.parse(localStorage.getItem("users")||"[]");
+        console.log("ユーザーリスト取得:", users.length, "件");
+        return users;
+    } catch (error) {
+        console.error("ユーザーリスト取得エラー:", error);
+        return [];
+    }
+}
+function saveUserList(users) {
+    try {
+        localStorage.setItem("users",JSON.stringify(users));
+        console.log("ユーザーリスト保存完了:", users.length, "件");
+    } catch (error) {
+        console.error("ユーザーリスト保存エラー:", error);
+    }
+}
+function getCurrentUser() {
+    try {
+        const user = JSON.parse(localStorage.getItem("currentUser")||"null");
+        console.log("現在のユーザー取得:", user);
+        return user;
+    } catch (error) {
+        console.error("現在のユーザー取得エラー:", error);
+        return null;
+    }
+}
+function setCurrentUser(user) {
+    try {
+        localStorage.setItem("currentUser",JSON.stringify(user));
+        console.log("現在のユーザー設定:", user);
+    } catch (error) {
+        console.error("現在のユーザー設定エラー:", error);
+    }
+}
+function clearCurrentUser() {
+    try {
+        localStorage.removeItem("currentUser");
+        console.log("現在のユーザー削除完了");
+    } catch (error) {
+        console.error("現在のユーザー削除エラー:", error);
+    }
+}
+function getRoutines(uid) {
+    try {
+        const routines = JSON.parse(localStorage.getItem("routines_"+uid)||"[]");
+        console.log("ルーティン取得:", uid, routines.length, "件");
+        return routines;
+    } catch (error) {
+        console.error("ルーティン取得エラー:", error);
+        return [];
+    }
+}
+function saveRoutines(uid, routines) {
+    try {
+        localStorage.setItem("routines_"+uid,JSON.stringify(routines));
+        console.log("ルーティン保存完了:", uid, routines.length, "件");
+    } catch (error) {
+        console.error("ルーティン保存エラー:", error);
+    }
+}
+function getCompletions(uid) {
+    try {
+        const completions = JSON.parse(localStorage.getItem("completions_"+uid)||"[]");
+        console.log("完了データ取得:", uid, completions.length, "件");
+        return completions;
+    } catch (error) {
+        console.error("完了データ取得エラー:", error);
+        return [];
+    }
+}
+function saveCompletions(uid, completions) {
+    try {
+        localStorage.setItem("completions_"+uid,JSON.stringify(completions));
+        console.log("完了データ保存完了:", uid, completions.length, "件");
+    } catch (error) {
+        console.error("完了データ保存エラー:", error);
+    }
+}
+// --- 認証 ---
+function tryLogin(email, password) {
+    console.log("ログイン試行:", email);
+    const users = getUserList();
+    console.log("登録済みユーザー数:", users.length);
+    const user = users.find(u=>u.email===email&&u.password===password);
+    console.log("ログイン結果:", user ? "成功" : "失敗");
+    return user || null;
+}
+function tryRegister(email, password) {
+    console.log("登録試行:", email);
+    let users = getUserList();
+    if(users.find(u=>u.email===email)) {
+        console.log("既に登録済み");
+        return false;
+    }
+    const user = {id:Date.now().toString(),email,password};
+    users.push(user); 
+    saveUserList(users); 
+    console.log("登録成功:", user);
+    return user;
+}
+// --- 画面遷移 ---
+$("showRegister").onclick = ()=>{ show("registerView"); };
+$("backToLogin").onclick = ()=>{ show("authView"); };
+$("demoLogin").onclick = ()=>{
+    console.log("デモログイン実行");
+    setCurrentUser({id:"demo",email:"demo@example.com"});
+    showMain();
+};
+$("logoutBtn").onclick = ()=>{ 
+    console.log("ログアウト実行");
+    clearCurrentUser(); 
+    show("authView"); 
+};
+$("showAddRoutine").onclick = ()=>{ show("addRoutineView"); };
+$("cancelAddRoutine").onclick = ()=>{ show("mainView"); };
+// --- ログイン・登録 ---
+$("loginForm").onsubmit = e=>{
+    e.preventDefault();
+    console.log("ログインフォーム送信");
+    const email = $("loginEmail").value, pw = $("loginPassword").value;
+    console.log("入力値:", {email, password: pw ? "入力済み" : "未入力"});
+    
+    if (!email || !pw) {
+        alert("メールアドレスとパスワードを入力してください");
+        return;
+    }
+    
+    const user = tryLogin(email,pw);
+    if(user) { 
+        console.log("ログイン成功、メイン画面表示");
+        setCurrentUser(user); 
+        showMain(); 
+    }
+    else {
+        console.log("ログイン失敗");
+        alert("ログイン失敗: メールアドレスまたはパスワードが正しくありません");
+    }
+};
+$("registerForm").onsubmit = e=>{
+    e.preventDefault();
+    console.log("登録フォーム送信");
+    const email = $("registerEmail").value, pw = $("registerPassword").value;
+    console.log("入力値:", {email, password: pw ? "入力済み" : "未入力"});
+    
+    if (!email || !pw) {
+        alert("メールアドレスとパスワードを入力してください");
+        return;
+    }
+    
+    const user = tryRegister(email,pw);
+    if(user) { 
+        console.log("登録成功、メイン画面表示");
+        setCurrentUser(user); 
+        showMain(); 
+    }
+    else {
+        console.log("登録失敗");
+        alert("既に登録されています");
+    }
+};
+// --- ルーティン追加 ---
+let addFreq = "daily";
+[...document.querySelectorAll("#addRoutineForm .tab")].forEach(btn=>{
+    btn.onclick = function(){
+        [...document.querySelectorAll("#addRoutineForm .tab")].forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        addFreq = btn.dataset.freq;
+        $("weeklyDays").classList.toggle("hidden",addFreq!=="weekly");
+        $("monthlyDate").classList.toggle("hidden",addFreq!=="monthly");
+    };
+});
+$("addRoutineForm").onsubmit = e=>{
+    e.preventDefault();
+    const user = getCurrentUser();
+    if(!user) return;
+    const name = $("routineName").value.trim();
+    if(!name) return alert("ルーティン名必須");
+    const desc = $("routineDesc").value.trim();
+    let weeklyDays = [], monthlyDate = null;
+    if(addFreq==="weekly") weeklyDays = [...$("weeklyDays").querySelectorAll("input:checked")].map(i=>parseInt(i.value));
+    if(addFreq==="monthly") monthlyDate = parseInt($("monthlyDateInput").value)||null;
+    if(addFreq==="weekly" && weeklyDays.length===0) return alert("曜日を選択してください");
+    if(addFreq==="monthly" && (!monthlyDate||monthlyDate<1||monthlyDate>31)) return alert("日付1-31");
+    const routines = getRoutines(user.id);
+    routines.push({id:Date.now().toString(),name,desc,frequency:addFreq,weeklyDays,monthlyDate,userId:user.id});
+    saveRoutines(user.id,routines);
+    show("mainView");
+    renderMain();
+};
+// --- タブ切替 ---
+[...document.querySelectorAll("#mainView .tab")].forEach(btn=>{
+    btn.onclick = function(){
+        [...document.querySelectorAll("#mainView .tab")].forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        renderMain();
+    };
+});
+// --- ルーティン完了 ---
+function toggleComplete(rid){
+    const user = getCurrentUser();
+    if(!user) return;
+    let completions = getCompletions(user.id);
+    const today = new Date().toISOString().split("T")[0];
+    const idx = completions.findIndex(c=>c.rid===rid&&c.date===today);
+    if(idx!==-1) completions.splice(idx,1);
+    else completions.push({rid,date:today});
+    saveCompletions(user.id,completions);
+    renderMain();
+}
+// --- メイン画面描画 ---
+function showMain(){ 
+    console.log("メイン画面表示開始");
+    show("mainView"); 
+    renderMain(); 
+}
+function renderMain(){
+    console.log("メイン画面描画開始");
+    const user = getCurrentUser();
+    if(!user) {
+        console.error("ユーザー情報がありません");
+        show("authView");
+        return;
+    }
+    
+    try {
+        $("todayList").innerHTML = "";
+        $("allList").innerHTML = "";
+        const routines = getRoutines(user.id);
+        const completions = getCompletions(user.id);
+        const today = new Date();
+        console.log("描画データ:", {routines: routines.length, completions: completions.length});
         
-        // ページ読み込みエラー時の処理
-        window.addEventListener('error', function(e) {
-            console.error('❌ ページ読み込みエラー:', e.error);
-            console.error('エラー詳細:', e);
+        // 今日のルーティン
+        const todayR = routines.filter(r=>{
+            if(r.frequency==="daily") return true;
+            if(r.frequency==="weekly") return r.weeklyDays&&r.weeklyDays.includes(today.getDay());
+            if(r.frequency==="monthly") return r.monthlyDate===today.getDate();
+            return false;
         });
+        console.log("今日のルーティン:", todayR.length, "件");
         
-        // スクリプト読み込みエラーの処理
-        window.addEventListener('load', function() {
-            console.log('=== ページ読み込み完了 ===');
-        });
-    </script>
-
-    <!-- JavaScriptファイルの読み込み -->
-    <script src="firebase-config.js"></script>
-    <script src="simple-auth.js"></script>
-    <script src="simple-storage.js"></script>
-    <script src="script-new.js"></script>
+        for(const r of todayR){
+            const done = completions.some(c=>c.rid===r.id&&c.date===today.toISOString().split("T")[0]);
+            const li = document.createElement("li");
+            li.className = "routine-item"+(done?" completed":"");
+            li.innerHTML = `<div><h3>${r.name}</h3>${r.desc?`<div>${r.desc}</div>`:""}<span class="frequency">${getFreqText(r.frequency)}</span></div><button onclick="toggleComplete('${r.id}')">${done?"✓":"○"}</button>`;
+            $("todayList").appendChild(li);
+        }
+        
+        // 全ルーティン
+        const freq = document.querySelector("#mainView .tab.active").dataset.freq;
+        const allR = freq==="all"?routines:routines.filter(r=>r.frequency===freq);
+        console.log("表示ルーティン:", freq, allR.length, "件");
+        
+        for(const r of allR){
+            const done = completions.some(c=>c.rid===r.id&&c.date===today.toISOString().split("T")[0]);
+            const li = document.createElement("li");
+            li.className = "routine-item"+(done?" completed":"");
+            li.innerHTML = `<div><h3>${r.name}</h3>${r.desc?`<div>${r.desc}</div>`:""}<span class="frequency">${getFreqText(r.frequency)}</span></div><button onclick="toggleComplete('${r.id}')">${done?"✓":"○"}</button>`;
+            $("allList").appendChild(li);
+        }
+        
+        console.log("メイン画面描画完了");
+    } catch (error) {
+        console.error("メイン画面描画エラー:", error);
+        alert("画面描画エラーが発生しました。ページを再読み込みしてください。");
+    }
+}
+function getFreqText(f){ return f==="daily"?"毎日":f==="weekly"?"毎週":f==="monthly"?"毎月":f; }
+// --- 初期表示 ---
+window.onload = function(){
+    console.log("ページ読み込み完了");
+    try {
+        const user = getCurrentUser();
+        console.log("現在のユーザー:", user);
+        if(user) {
+            console.log("ログイン済み、メイン画面表示");
+            showMain();
+        }
+        else {
+            console.log("未ログイン、認証画面表示");
+            show("authView");
+        }
+    } catch (error) {
+        console.error("初期化エラー:", error);
+        alert("初期化エラーが発生しました。ページを再読み込みしてください。");
+        show("authView");
+    }
+};
+</script>
 </body>
 </html>
