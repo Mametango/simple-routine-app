@@ -9,6 +9,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <!-- Additional Scripts -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="simple-auth.js"></script>
+    <script src="simple-storage.js"></script>
+    <script src="script-new.js?v=1.0.8"></script>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
@@ -545,23 +550,55 @@ $("loginForm").onsubmit = e=>{
         return;
     }
     
-    const user = tryLogin(email,pw);
-    if(user) { 
-        console.log("ログイン成功、メイン画面表示");
-        setCurrentUser(user); 
-        
-        // ローカルストレージを使用
-        currentStorage = 'local';
-        localStorage.setItem('storageType', 'local');
-        
-        // 既存ルーティンの移行を実行
-        runMigrationIfNeeded();
-        
-        showMain(); 
-    }
-    else {
-        console.log("ログイン失敗");
-        alert("ログイン失敗: メールアドレスまたはパスワードが正しくありません");
+    // 外部認証システムを使用
+    if (window.simpleAuth && window.simpleAuth.signIn) {
+        window.simpleAuth.signIn(email, pw)
+            .then(result => {
+                if (result.user) {
+                    console.log("ログイン成功、メイン画面表示");
+                    setCurrentUser(result.user);
+                    
+                    // ローカルストレージを使用
+                    currentStorage = 'local';
+                    localStorage.setItem('storageType', 'local');
+                    
+                    // 既存ルーティンの移行を実行
+                    if (typeof runMigrationIfNeeded === 'function') {
+                        runMigrationIfNeeded();
+                    }
+                    
+                    showMain();
+                } else {
+                    console.log("ログイン失敗");
+                    alert("ログイン失敗: メールアドレスまたはパスワードが正しくありません");
+                }
+            })
+            .catch(error => {
+                console.error("ログインエラー:", error);
+                alert("ログイン失敗: " + error.message);
+            });
+    } else {
+        // フォールバック: 元の認証システムを使用
+        const user = tryLogin(email, pw);
+        if(user) { 
+            console.log("ログイン成功、メイン画面表示");
+            setCurrentUser(user); 
+            
+            // ローカルストレージを使用
+            currentStorage = 'local';
+            localStorage.setItem('storageType', 'local');
+            
+            // 既存ルーティンの移行を実行
+            if (typeof runMigrationIfNeeded === 'function') {
+                runMigrationIfNeeded();
+            }
+            
+            showMain(); 
+        }
+        else {
+            console.log("ログイン失敗");
+            alert("ログイン失敗: メールアドレスまたはパスワードが正しくありません");
+        }
     }
 };
 $("registerForm").onsubmit = e=>{
@@ -575,23 +612,55 @@ $("registerForm").onsubmit = e=>{
         return;
     }
     
-    const user = tryRegister(email,pw);
-    if(user) { 
-        console.log("登録成功、メイン画面表示");
-        setCurrentUser(user); 
-        
-        // ローカルストレージを使用
-        currentStorage = 'local';
-        localStorage.setItem('storageType', 'local');
-        
-        // 既存ルーティンの移行を実行
-        runMigrationIfNeeded();
-        
-        showMain(); 
-    }
-    else {
-        console.log("登録失敗");
-        alert("既に登録されています");
+    // 外部認証システムを使用
+    if (window.simpleAuth && window.simpleAuth.signUp) {
+        window.simpleAuth.signUp(email, pw)
+            .then(result => {
+                if (result.user) {
+                    console.log("登録成功、メイン画面表示");
+                    setCurrentUser(result.user);
+                    
+                    // ローカルストレージを使用
+                    currentStorage = 'local';
+                    localStorage.setItem('storageType', 'local');
+                    
+                    // 既存ルーティンの移行を実行
+                    if (typeof runMigrationIfNeeded === 'function') {
+                        runMigrationIfNeeded();
+                    }
+                    
+                    showMain();
+                } else {
+                    console.log("登録失敗");
+                    alert("登録失敗: " + (result.message || "既に登録されています"));
+                }
+            })
+            .catch(error => {
+                console.error("登録エラー:", error);
+                alert("登録失敗: " + error.message);
+            });
+    } else {
+        // フォールバック: 元の認証システムを使用
+        const user = tryRegister(email, pw);
+        if(user) { 
+            console.log("登録成功、メイン画面表示");
+            setCurrentUser(user); 
+            
+            // ローカルストレージを使用
+            currentStorage = 'local';
+            localStorage.setItem('storageType', 'local');
+            
+            // 既存ルーティンの移行を実行
+            if (typeof runMigrationIfNeeded === 'function') {
+                runMigrationIfNeeded();
+            }
+            
+            showMain(); 
+        }
+        else {
+            console.log("登録失敗");
+            alert("既に登録されています");
+        }
     }
 };
 // --- ルーティン追加 ---
@@ -2057,6 +2126,32 @@ function resetAllData() {
         syncToFirebase();
     }
 }
+
+// 外部スクリプトの初期化
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== 外部スクリプト初期化開始 ===');
+    
+    // simpleAuthの初期化
+    if (typeof startSimpleAuth === 'function') {
+        console.log('simpleAuth初期化開始');
+        window.simpleAuth = startSimpleAuth();
+        console.log('simpleAuth初期化完了');
+    } else {
+        console.warn('startSimpleAuth関数が見つかりません');
+    }
+    
+    // 認証状態の確認
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+        console.log('既存ユーザーでログイン中:', currentUser.email);
+        showMain();
+    } else {
+        console.log('未ログイン、認証画面を表示');
+        show("authView");
+    }
+    
+    console.log('=== 外部スクリプト初期化完了 ===');
+});
 </script>
 </body>
 </html>
