@@ -993,9 +993,64 @@
             setupEventListeners();
         });
 
-        // データの読み込み（Firebase対応）
-        async function loadData() {
-            // Firebase認証で自動的にデータが読み込まれるため、ここでは何もしない
+        // ユーザーデータの読み込み
+        async function loadUserData() {
+            if (!currentUser) return;
+            
+            try {
+                console.log('ユーザーデータ読み込み開始:', currentUser.uid);
+                
+                // リアルタイムリスナーを設定
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                
+                // リアルタイムリスナーでデータの変更を監視
+                userDocRef.onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        console.log('リアルタイムデータ更新:', userData);
+                        
+                        routines = userData.routines || [];
+                        completions = userData.completions || [];
+                        
+                        updateDisplay();
+                        showMessage('データが同期されました', 'success');
+                    } else {
+                        console.log('ユーザーデータが存在しないため初期化します');
+                        initializeUserData();
+                    }
+                }, (error) => {
+                    console.error('リアルタイムリスナーエラー:', error);
+                    // エラーが発生した場合は通常の読み込みを試行
+                    loadUserDataFallback();
+                });
+                
+            } catch (error) {
+                console.error('データ読み込みエラー:', error);
+                showMessage('データの読み込みに失敗しました', 'error');
+                // フォールバック読み込み
+                loadUserDataFallback();
+            }
+        }
+
+        // フォールバック読み込み（リアルタイムリスナーが失敗した場合）
+        async function loadUserDataFallback() {
+            if (!currentUser) return;
+            
+            try {
+                console.log('フォールバック読み込み開始');
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    routines = userData.routines || [];
+                    completions = userData.completions || [];
+                } else {
+                    await initializeUserData();
+                }
+                updateDisplay();
+            } catch (error) {
+                console.error('フォールバック読み込みエラー:', error);
+                showMessage('データの読み込みに失敗しました', 'error');
+            }
         }
 
         // 認証状態チェック
@@ -1016,13 +1071,16 @@
                         emailVerified: user.emailVerified
                     });
                     currentUser = user;
+                    showSyncStatus('syncing');
                     await loadUserData();
                     showMainView();
+                    showSyncStatus('synced');
                 } else {
                     console.log('ユーザー未認証');
                     currentUser = null;
                     routines = [];
                     completions = [];
+                    showSyncStatus('error');
                     showAuthView();
                 }
             });
@@ -1149,39 +1207,78 @@
             }
         }
 
-        // ユーザーデータの読み込み
-        async function loadUserData() {
-            if (!currentUser) return;
-            
-            try {
-                const userDoc = await db.collection('users').doc(currentUser.uid).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    routines = userData.routines || [];
-                    completions = userData.completions || [];
-                } else {
-                    await initializeUserData();
-                }
-                updateDisplay();
-            } catch (error) {
-                console.error('データ読み込みエラー:', error);
-                showMessage('データの読み込みに失敗しました', 'error');
-            }
-        }
-
         // データの保存
         async function saveData() {
             if (!currentUser) return;
             
             try {
+                console.log('データ保存開始:', {
+                    routinesCount: routines.length,
+                    completionsCount: completions.length
+                });
+                
                 await db.collection('users').doc(currentUser.uid).update({
                     routines: routines,
                     completions: completions,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                
+                console.log('✅ データ保存成功');
+                showMessage('データが保存されました', 'success');
+                
             } catch (error) {
                 console.error('データ保存エラー:', error);
                 showMessage('データの保存に失敗しました', 'error');
+                
+                // 保存に失敗した場合は再試行
+                setTimeout(() => {
+                    console.log('データ保存再試行中...');
+                    saveData();
+                }, 2000);
+            }
+        }
+
+        // 同期状態の表示
+        function showSyncStatus(status = 'synced') {
+            const syncIndicator = document.getElementById('syncIndicator');
+            if (!syncIndicator) {
+                // 同期状態表示要素を作成
+                const indicator = document.createElement('div');
+                indicator.id = 'syncIndicator';
+                indicator.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    padding: 8px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    z-index: 1000;
+                    transition: all 0.3s ease;
+                `;
+                document.body.appendChild(indicator);
+            }
+            
+            const indicator = document.getElementById('syncIndicator');
+            
+            switch (status) {
+                case 'syncing':
+                    indicator.textContent = '🔄 同期中...';
+                    indicator.style.backgroundColor = '#ffc107';
+                    indicator.style.color = '#000';
+                    break;
+                case 'synced':
+                    indicator.textContent = '✅ 同期済み';
+                    indicator.style.backgroundColor = '#28a745';
+                    indicator.style.color = '#fff';
+                    break;
+                case 'error':
+                    indicator.textContent = '❌ 同期エラー';
+                    indicator.style.backgroundColor = '#dc3545';
+                    indicator.style.color = '#fff';
+                    break;
+                default:
+                    indicator.style.display = 'none';
             }
         }
 
@@ -1310,6 +1407,7 @@
                 userId: currentUser.uid
             };
 
+            showSyncStatus('syncing');
             routines.push(newRoutine);
             await saveData();
             updateDisplay();
@@ -1317,6 +1415,7 @@
             // モーダルを閉じる
             closeAddModal();
             showMessage('ルーティンを追加しました', 'success');
+            showSyncStatus('synced');
         }
 
         // ルーティン完了切り替え
@@ -1325,6 +1424,8 @@
             const completionKey = `${routineId}_${today}`;
             
             const existingIndex = completions.findIndex(c => c.id === completionKey);
+            
+            showSyncStatus('syncing');
             
             if (existingIndex >= 0) {
                 completions.splice(existingIndex, 1);
@@ -1339,16 +1440,19 @@
             
             await saveData();
             updateDisplay();
+            showSyncStatus('synced');
         }
 
         // ルーティン削除
         async function deleteRoutine(routineId) {
             if (confirm('このルーティンを削除しますか？')) {
+                showSyncStatus('syncing');
                 routines = routines.filter(r => r.id !== routineId);
                 completions = completions.filter(c => c.routineId !== routineId);
                 await saveData();
                 updateDisplay();
                 showMessage('ルーティンを削除しました', 'success');
+                showSyncStatus('synced');
             }
         }
 
@@ -1371,6 +1475,9 @@
 
             // ルーティン表示
             displayRoutines();
+            
+            // 同期状態を表示
+            showSyncStatus('synced');
         }
 
         // ルーティン表示
