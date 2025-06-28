@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同期デバッグツール</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .device-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .sync-test {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .realtime-status {
+            background: #f3e5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 同期デバッグツール</h1>
+        <p>WEBとモバイル間の同期問題を調査・解決します</p>
+
+        <div class="grid">
+            <div>
+                <div class="test-section">
+                    <h3>1. デバイス情報確認</h3>
+                    <div id="deviceInfo" class="device-info"></div>
+                    <button onclick="checkDeviceInfo()">デバイス情報確認</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>2. Firebase接続確認</h3>
+                    <div id="firebaseStatus"></div>
+                    <button onclick="checkFirebaseConnection()">Firebase接続確認</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>3. 認証状態確認</h3>
+                    <div id="authStatus"></div>
+                    <button onclick="checkAuthStatus()">認証状態確認</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>4. リアルタイムリスナー確認</h3>
+                    <div id="realtimeStatus" class="realtime-status"></div>
+                    <button onclick="checkRealtimeListener()">リスナー確認</button>
+                    <button onclick="testRealtimeUpdate()">リアルタイム更新テスト</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="test-section">
+                    <h3>5. データ読み込みテスト</h3>
+                    <div id="dataLoadStatus"></div>
+                    <button onclick="testDataLoad()">データ読み込みテスト</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>6. データ保存テスト</h3>
+                    <input type="text" id="testData" placeholder="テストデータ" value="同期テストデータ">
+                    <button onclick="testDataSave()">データ保存テスト</button>
+                    <div id="dataSaveStatus"></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>7. 同期テスト</h3>
+                    <div id="syncTestStatus" class="sync-test"></div>
+                    <button onclick="testSync()">同期テスト実行</button>
+                    <button onclick="forceSync()">強制同期</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>8. ネットワーク状態確認</h3>
+                    <div id="networkStatus"></div>
+                    <button onclick="checkNetworkStatus()">ネットワーク確認</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>9. 詳細ログ</h3>
+            <div id="debugLog" class="log"></div>
+            <button onclick="clearLog()">ログクリア</button>
+            <button onclick="exportLog()">ログエクスポート</button>
+        </div>
+
+        <div class="test-section">
+            <h3>10. 同期問題の解決手順</h3>
+            <div class="status info">
+                <strong>同期問題の解決手順:</strong><br><br>
+                1. <strong>デバイス情報確認:</strong> 各デバイスの識別情報を確認<br>
+                2. <strong>Firebase接続確認:</strong> ネットワークとFirebase接続を確認<br>
+                3. <strong>認証状態確認:</strong> 同じアカウントでログインしているか確認<br>
+                4. <strong>リアルタイムリスナー確認:</strong> リアルタイム同期が動作しているか確認<br>
+                5. <strong>データ読み込み/保存テスト:</strong> 基本的なデータ操作を確認<br>
+                6. <strong>同期テスト:</strong> 複数デバイス間の同期を確認<br>
+                7. <strong>ネットワーク状態確認:</strong> 接続品質と安定性を確認<br>
+                8. <strong>強制同期:</strong> 問題がある場合は強制同期を実行
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmkRs7f2a6ejf-qXJZ2F-jMWGnAGdvY0Q",
+            authDomain: "simple-routine-app-33cfc.firebaseapp.com",
+            projectId: "simple-routine-app-33cfc",
+            storageBucket: "simple-routine-app-33cfc.firebasestorage.app",
+            messagingSenderId: "124814607687",
+            appId: "1:124814607687:web:d1b703506cad3ecbaa7862",
+            measurementId: "G-57M4VBMXZM"
+        };
+
+        let auth, db;
+        let currentUser = null;
+        let realtimeListener = null;
+        let testData = [];
+
+        // ログ出力
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            const debugLog = document.getElementById('debugLog');
+            debugLog.textContent += logEntry;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // 結果表示
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // 1. デバイス情報確認
+        function checkDeviceInfo() {
+            log('=== デバイス情報確認開始 ===');
+            
+            const deviceInfo = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine,
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                windowWidth: window.innerWidth,
+                windowHeight: window.innerHeight,
+                devicePixelRatio: window.devicePixelRatio,
+                timestamp: new Date().toISOString(),
+                deviceId: getDeviceId()
+            };
+            
+            const deviceInfoDiv = document.getElementById('deviceInfo');
+            deviceInfoDiv.innerHTML = `
+                <strong>デバイス情報:</strong><br>
+                <strong>デバイスID:</strong> ${deviceInfo.deviceId}<br>
+                <strong>ユーザーエージェント:</strong> ${deviceInfo.userAgent}<br>
+                <strong>プラットフォーム:</strong> ${deviceInfo.platform}<br>
+                <strong>言語:</strong> ${deviceInfo.language}<br>
+                <strong>オンライン状態:</strong> ${deviceInfo.onLine ? 'オンライン' : 'オフライン'}<br>
+                <strong>画面サイズ:</strong> ${deviceInfo.screenWidth}x${deviceInfo.screenHeight}<br>
+                <strong>ウィンドウサイズ:</strong> ${deviceInfo.windowWidth}x${deviceInfo.windowHeight}<br>
+                <strong>ピクセル比:</strong> ${deviceInfo.devicePixelRatio}<br>
+                <strong>タイムスタンプ:</strong> ${deviceInfo.timestamp}
+            `;
+            
+            log('デバイス情報確認完了', 'success');
+            showResult('deviceInfo', '✅ デバイス情報確認完了', 'success');
+        }
+
+        // デバイスID取得
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
+        // 2. Firebase接続確認
+        async function checkFirebaseConnection() {
+            log('=== Firebase接続確認開始 ===');
+            
+            try {
+                // Firebase初期化
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                auth = firebase.auth();
+                db = firebase.firestore();
+                
+                log('✅ Firebase初期化成功');
+                showResult('firebaseStatus', '✅ Firebase初期化成功', 'success');
+                
+                // 接続テスト
+                const testDoc = await db.collection('test').doc('connection').get();
+                log('✅ Firestore接続成功');
+                showResult('firebaseStatus', '✅ Firestore接続正常', 'success');
+                
+            } catch (error) {
+                log(`❌ Firebase接続エラー: ${error.message}`, 'error');
+                showResult('firebaseStatus', `❌ Firebase接続エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 3. 認証状態確認
+        async function checkAuthStatus() {
+            log('=== 認証状態確認開始 ===');
+            
+            if (!auth) {
+                showResult('authStatus', '❌ Firebase Authが初期化されていません', 'error');
+                return;
+            }
+
+            try {
+                const user = auth.currentUser;
+                if (user) {
+                    currentUser = user;
+                    log(`✅ 認証済み: ${user.email}`);
+                    showResult('authStatus', `✅ 認証済み: ${user.email}`, 'success');
+                } else {
+                    log('❌ 未認証');
+                    showResult('authStatus', '❌ 未認証 - ログインが必要です', 'error');
+                }
+            } catch (error) {
+                log(`❌ 認証確認エラー: ${error.message}`, 'error');
+                showResult('authStatus', `❌ 認証確認エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 4. リアルタイムリスナー確認
+        async function checkRealtimeListener() {
+            log('=== リアルタイムリスナー確認開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('realtimeStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                // 既存のリスナーをクリア
+                if (realtimeListener) {
+                    realtimeListener();
+                }
+
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                
+                realtimeListener = userDocRef.onSnapshot((doc) => {
+                    log('リアルタイムデータ更新を受信:', doc.exists ? 'データあり' : 'データなし');
+                    
+                    if (doc.exists) {
+                        const data = doc.data();
+                        log('受信データ:', data);
+                        testData = data.routines || [];
+                        
+                        const realtimeStatusDiv = document.getElementById('realtimeStatus');
+                        realtimeStatusDiv.innerHTML = `
+                            <strong>リアルタイム更新受信:</strong><br>
+                            <strong>タイムスタンプ:</strong> ${new Date().toLocaleTimeString()}<br>
+                            <strong>ルーティン数:</strong> ${data.routines?.length || 0}<br>
+                            <strong>完了データ数:</strong> ${data.completions?.length || 0}<br>
+                            <strong>最終更新:</strong> ${data.lastSyncTimestamp || '不明'}<br>
+                            <strong>更新デバイス:</strong> ${data.lastSyncDevice || '不明'}
+                        `;
+                    }
+                    
+                    showResult('realtimeStatus', '✅ リアルタイムリスナー正常動作', 'success');
+                }, (error) => {
+                    log(`❌ リアルタイムリスナーエラー: ${error.message}`, 'error');
+                    showResult('realtimeStatus', `❌ リアルタイムリスナーエラー: ${error.message}`, 'error');
+                });
+                
+            } catch (error) {
+                log(`❌ リアルタイムリスナー設定エラー: ${error.message}`, 'error');
+                showResult('realtimeStatus', `❌ リアルタイムリスナー設定エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // リアルタイム更新テスト
+        async function testRealtimeUpdate() {
+            log('=== リアルタイム更新テスト開始 ===');
+            
+            if (!currentUser || !db) {
+                log('❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                const testRoutine = {
+                    id: 'test_' + Date.now(),
+                    title: 'リアルタイムテスト',
+                    description: 'リアルタイム同期のテスト用ルーティン',
+                    frequency: 'daily',
+                    createdAt: new Date().toISOString(),
+                    userId: currentUser.uid
+                };
+
+                await db.collection('users').doc(currentUser.uid).update({
+                    routines: firebase.firestore.FieldValue.arrayUnion(testRoutine),
+                    lastSyncTimestamp: new Date().toISOString(),
+                    lastSyncDevice: navigator.userAgent,
+                    deviceId: getDeviceId()
+                });
+
+                log('✅ リアルタイム更新テストデータを送信');
+                
+            } catch (error) {
+                log(`❌ リアルタイム更新テストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 5. データ読み込みテスト
+        async function testDataLoad() {
+            log('=== データ読み込みテスト開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('dataLoadStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    log('データ読み込み成功:', userData);
+                    
+                    showResult('dataLoadStatus', `
+                        ✅ データ読み込み成功<br>
+                        <strong>ルーティン数:</strong> ${userData.routines?.length || 0}<br>
+                        <strong>完了データ数:</strong> ${userData.completions?.length || 0}<br>
+                        <strong>最終更新:</strong> ${userData.lastSyncTimestamp || '不明'}<br>
+                        <strong>更新デバイス:</strong> ${userData.lastSyncDevice || '不明'}
+                    `, 'success');
+                } else {
+                    log('ユーザーデータが存在しません');
+                    showResult('dataLoadStatus', '⚠️ ユーザーデータが存在しません', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ データ読み込みエラー: ${error.message}`, 'error');
+                showResult('dataLoadStatus', `❌ データ読み込みエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 6. データ保存テスト
+        async function testDataSave() {
+            log('=== データ保存テスト開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('dataSaveStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            const testDataValue = document.getElementById('testData').value;
+            
+            try {
+                const testRoutine = {
+                    id: 'save_test_' + Date.now(),
+                    title: testDataValue,
+                    description: 'データ保存テスト用',
+                    frequency: 'daily',
+                    createdAt: new Date().toISOString(),
+                    userId: currentUser.uid
+                };
+
+                await db.collection('users').doc(currentUser.uid).update({
+                    routines: firebase.firestore.FieldValue.arrayUnion(testRoutine),
+                    lastSyncTimestamp: new Date().toISOString(),
+                    lastSyncDevice: navigator.userAgent,
+                    deviceId: getDeviceId()
+                });
+
+                log('✅ データ保存テスト成功');
+                showResult('dataSaveStatus', '✅ データ保存テスト成功', 'success');
+                
+            } catch (error) {
+                log(`❌ データ保存テストエラー: ${error.message}`, 'error');
+                showResult('dataSaveStatus', `❌ データ保存テストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 7. 同期テスト
+        async function testSync() {
+            log('=== 同期テスト開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('syncTestStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                // 現在のデータを読み込み
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                let currentData = { routines: [], completions: [] };
+                
+                if (userDoc.exists) {
+                    currentData = userDoc.data();
+                }
+
+                // テストデータを追加
+                const testRoutine = {
+                    id: 'sync_test_' + Date.now(),
+                    title: '同期テスト',
+                    description: '同期機能のテスト用ルーティン',
+                    frequency: 'daily',
+                    createdAt: new Date().toISOString(),
+                    userId: currentUser.uid
+                };
+
+                const updatedRoutines = [...(currentData.routines || []), testRoutine];
+
+                // データを保存
+                await db.collection('users').doc(currentUser.uid).set({
+                    routines: updatedRoutines,
+                    completions: currentData.completions || [],
+                    lastSyncTimestamp: new Date().toISOString(),
+                    lastSyncDevice: navigator.userAgent,
+                    deviceId: getDeviceId(),
+                    syncVersion: '1.0.2'
+                }, { merge: true });
+
+                log('✅ 同期テスト成功');
+                showResult('syncTestStatus', `
+                    ✅ 同期テスト成功<br>
+                    <strong>更新タイムスタンプ:</strong> ${new Date().toLocaleTimeString()}<br>
+                    <strong>デバイスID:</strong> ${getDeviceId()}<br>
+                    <strong>ルーティン数:</strong> ${updatedRoutines.length}
+                `, 'success');
+                
+            } catch (error) {
+                log(`❌ 同期テストエラー: ${error.message}`, 'error');
+                showResult('syncTestStatus', `❌ 同期テストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 強制同期
+        async function forceSync() {
+            log('=== 強制同期開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('syncTestStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                // 現在のデータを完全に上書き
+                const forceData = {
+                    routines: [
+                        {
+                            id: 'force_sync_' + Date.now(),
+                            title: '強制同期テスト',
+                            description: '強制同期で作成されたルーティン',
+                            frequency: 'daily',
+                            createdAt: new Date().toISOString(),
+                            userId: currentUser.uid
+                        }
+                    ],
+                    completions: [],
+                    lastSyncTimestamp: new Date().toISOString(),
+                    lastSyncDevice: navigator.userAgent,
+                    deviceId: getDeviceId(),
+                    syncVersion: '1.0.2',
+                    forceSync: true
+                };
+
+                await db.collection('users').doc(currentUser.uid).set(forceData);
+
+                log('✅ 強制同期成功');
+                showResult('syncTestStatus', `
+                    ✅ 強制同期成功<br>
+                    <strong>強制同期タイムスタンプ:</strong> ${new Date().toLocaleTimeString()}<br>
+                    <strong>デバイスID:</strong> ${getDeviceId()}<br>
+                    <strong>データを完全にリセットしました</strong>
+                `, 'success');
+                
+            } catch (error) {
+                log(`❌ 強制同期エラー: ${error.message}`, 'error');
+                showResult('syncTestStatus', `❌ 強制同期エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 8. ネットワーク状態確認
+        function checkNetworkStatus() {
+            log('=== ネットワーク状態確認開始 ===');
+            
+            const networkInfo = {
+                onLine: navigator.onLine,
+                connection: navigator.connection || '不明',
+                effectiveType: navigator.connection?.effectiveType || '不明',
+                downlink: navigator.connection?.downlink || '不明',
+                rtt: navigator.connection?.rtt || '不明',
+                timestamp: new Date().toISOString()
+            };
+            
+            const networkStatusDiv = document.getElementById('networkStatus');
+            networkStatusDiv.innerHTML = `
+                <strong>ネットワーク情報:</strong><br>
+                <strong>オンライン状態:</strong> ${networkInfo.onLine ? 'オンライン' : 'オフライン'}<br>
+                <strong>接続タイプ:</strong> ${networkInfo.connection}<br>
+                <strong>効果的な接続タイプ:</strong> ${networkInfo.effectiveType}<br>
+                <strong>ダウンリンク速度:</strong> ${networkInfo.downlink} Mbps<br>
+                <strong>RTT:</strong> ${networkInfo.rtt} ms<br>
+                <strong>タイムスタンプ:</strong> ${networkInfo.timestamp}
+            `;
+            
+            log('ネットワーク状態確認完了', 'success');
+            showResult('networkStatus', '✅ ネットワーク状態確認完了', 'success');
+        }
+
+        // ログクリア
+        function clearLog() {
+            document.getElementById('debugLog').textContent = '';
+            log('ログをクリアしました');
+        }
+
+        // ログエクスポート
+        function exportLog() {
+            const logContent = document.getElementById('debugLog').textContent;
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sync-debug-log-${new Date().toISOString().slice(0, 19)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            log('ログをエクスポートしました');
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('同期デバッグツール初期化完了');
+            checkDeviceInfo();
+            checkFirebaseConnection();
+        });
+    </script>
+</body>
+</html> 

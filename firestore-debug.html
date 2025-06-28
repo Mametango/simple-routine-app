@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore接続・保存デバッグツール</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 2px solid #dc3545;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .connection-test {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .save-test {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .data-viewer {
+            background: #f3e5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .security-test {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firestore接続・保存デバッグツール</h1>
+        <p>Cloud Firestoreへの接続とデータ保存状況を詳しく調査します</p>
+
+        <div class="grid">
+            <div>
+                <div class="test-section">
+                    <h3>1. Firebase初期化確認</h3>
+                    <div id="firebaseInitStatus" class="connection-test"></div>
+                    <button onclick="checkFirebaseInit()">Firebase初期化確認</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>2. Firestore接続テスト</h3>
+                    <div id="firestoreConnectionStatus" class="connection-test"></div>
+                    <button onclick="testFirestoreConnection()">接続テスト</button>
+                    <button onclick="testFirestoreWrite()">書き込みテスト</button>
+                    <button onclick="testFirestoreRead()">読み込みテスト</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>3. 認証状態確認</h3>
+                    <div id="authStatus" class="connection-test"></div>
+                    <button onclick="checkAuthStatus()">認証状態確認</button>
+                    <button onclick="testAuth()">匿名認証テスト</button>
+                    <button onclick="testEmailAuth()">メール認証テスト</button>
+                    <div style="margin-top: 10px;">
+                        <input type="email" id="testEmail" placeholder="テスト用メールアドレス" value="test@example.com" style="width: 200px;">
+                        <input type="password" id="testPassword" placeholder="パスワード" value="test123456" style="width: 150px;">
+                    </div>
+                </div>
+
+                <div class="test-section">
+                    <h3>4. セキュリティルールテスト</h3>
+                    <div id="securityStatus" class="security-test"></div>
+                    <button onclick="testSecurityRules()">セキュリティルールテスト</button>
+                    <button onclick="testUserDocumentAccess()">ユーザードキュメントアクセステスト</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="test-section">
+                    <h3>5. データ保存テスト</h3>
+                    <div id="saveTestStatus" class="save-test"></div>
+                    <input type="text" id="testTitle" placeholder="テストタイトル" value="Firestore保存テスト">
+                    <textarea id="testDescription" placeholder="テスト説明" rows="3">Firestoreへのデータ保存をテストするためのルーティンです</textarea>
+                    <button onclick="testDataSave()">データ保存テスト</button>
+                    <button onclick="testDataUpdate()">データ更新テスト</button>
+                    <button onclick="testDataDelete()">データ削除テスト</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>6. データ読み込み・表示</h3>
+                    <div id="dataViewerStatus" class="data-viewer"></div>
+                    <button onclick="loadAndDisplayData()">データ読み込み・表示</button>
+                    <button onclick="refreshData()">データ更新</button>
+                    <button onclick="exportData()">データエクスポート</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>7. リアルタイム監視</h3>
+                    <div id="realtimeStatus" class="data-viewer"></div>
+                    <button onclick="startRealtimeMonitoring()">リアルタイム監視開始</button>
+                    <button onclick="stopRealtimeMonitoring()">リアルタイム監視停止</button>
+                </div>
+
+                <div class="test-section">
+                    <h3>8. エラー診断</h3>
+                    <div id="errorDiagnosis" class="security-test"></div>
+                    <button onclick="runErrorDiagnosis()">エラー診断実行</button>
+                    <button onclick="checkNetworkStatus()">ネットワーク状態確認</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>9. 詳細ログ</h3>
+            <div id="debugLog" class="log"></div>
+            <button onclick="clearLog()">ログクリア</button>
+            <button onclick="exportLog()">ログエクスポート</button>
+        </div>
+
+        <div class="test-section">
+            <h3>10. 問題解決手順</h3>
+            <div class="status info">
+                <strong>Firestore接続・保存問題の解決手順:</strong><br><br>
+                1. <strong>Firebase初期化確認:</strong> SDKの読み込みと初期化を確認<br>
+                2. <strong>Firestore接続テスト:</strong> 基本的な読み書き操作を確認<br>
+                3. <strong>認証状態確認:</strong> ユーザー認証が正常か確認<br>
+                4. <strong>セキュリティルールテスト:</strong> Firestoreルールによる制限を確認<br>
+                5. <strong>データ保存テスト:</strong> 実際のデータ保存を確認<br>
+                6. <strong>データ読み込み・表示:</strong> 保存されたデータの確認<br>
+                7. <strong>リアルタイム監視:</strong> リアルタイム更新の確認<br>
+                8. <strong>エラー診断:</strong> 具体的な問題の特定と解決
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmkRs7f2a6ejf-qXJZ2F-jMWGnAGdvY0Q",
+            authDomain: "simple-routine-app-33cfc.firebaseapp.com",
+            projectId: "simple-routine-app-33cfc",
+            storageBucket: "simple-routine-app-33cfc.firebasestorage.app",
+            messagingSenderId: "124814607687",
+            appId: "1:124814607687:web:d1b703506cad3ecbaa7862",
+            measurementId: "G-57M4VBMXZM"
+        };
+
+        let auth, db;
+        let currentUser = null;
+        let realtimeListener = null;
+        let testData = [];
+
+        // ログ出力
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            const debugLog = document.getElementById('debugLog');
+            if (debugLog) {
+                debugLog.textContent += logEntry;
+                debugLog.scrollTop = debugLog.scrollHeight;
+            }
+            console.log(`[${String(type).toUpperCase()}] ${message}`);
+        }
+
+        // 結果表示
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `<div class="status ${type}">${message}</div>`;
+            }
+        }
+
+        // 1. Firebase初期化確認
+        function checkFirebaseInit() {
+            log('=== Firebase初期化確認開始 ===');
+            
+            try {
+                // Firebase SDK確認
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDKが読み込まれていません');
+                }
+                
+                log('✅ Firebase SDK読み込み確認');
+                
+                // 設定確認
+                log('Firebase設定確認: ' + JSON.stringify(firebaseConfig));
+                
+                // 初期化確認
+                if (firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                    log('✅ Firebase初期化実行');
+                } else {
+                    log('✅ Firebase既に初期化済み');
+                }
+                
+                auth = firebase.auth();
+                db = firebase.firestore();
+                
+                log('✅ Firebase Auth & Firestore初期化完了');
+                showResult('firebaseInitStatus', '✅ Firebase初期化成功', 'success');
+                
+            } catch (error) {
+                log(`❌ Firebase初期化エラー: ${error.message}`, 'error');
+                showResult('firebaseInitStatus', `❌ Firebase初期化エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 2. Firestore接続テスト
+        async function testFirestoreConnection() {
+            log('=== Firestore接続テスト開始 ===');
+            
+            if (!db) {
+                showResult('firestoreConnectionStatus', '❌ Firestoreが初期化されていません', 'error');
+                return;
+            }
+
+            try {
+                // 基本的な読み込みテスト
+                const testDoc = await db.collection('test').doc('connection').get();
+                log('✅ Firestore読み込み接続成功');
+                
+                showResult('firestoreConnectionStatus', '✅ Firestore接続正常', 'success');
+                
+            } catch (error) {
+                log(`❌ Firestore接続エラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                showResult('firestoreConnectionStatus', `❌ Firestore接続エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // Firestore書き込みテスト
+        async function testFirestoreWrite() {
+            log('=== Firestore書き込みテスト開始 ===');
+            
+            if (!db) {
+                showResult('firestoreConnectionStatus', '❌ Firestoreが初期化されていません', 'error');
+                return;
+            }
+
+            try {
+                const testData = {
+                    timestamp: new Date().toISOString(),
+                    message: 'Firestore書き込みテスト',
+                    device: navigator.userAgent
+                };
+
+                await db.collection('test').doc('write-test').set(testData);
+                log('✅ Firestore書き込み成功: ' + JSON.stringify(testData));
+                
+                showResult('firestoreConnectionStatus', '✅ Firestore書き込み成功', 'success');
+                
+            } catch (error) {
+                log(`❌ Firestore書き込みエラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                showResult('firestoreConnectionStatus', `❌ Firestore書き込みエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // Firestore読み込みテスト
+        async function testFirestoreRead() {
+            log('=== Firestore読み込みテスト開始 ===');
+            
+            if (!db) {
+                showResult('firestoreConnectionStatus', '❌ Firestoreが初期化されていません', 'error');
+                return;
+            }
+
+            try {
+                const testDoc = await db.collection('test').doc('write-test').get();
+                
+                if (testDoc.exists) {
+                    const data = testDoc.data();
+                    log('✅ Firestore読み込み成功: ' + JSON.stringify(data));
+                    showResult('firestoreConnectionStatus', `✅ Firestore読み込み成功: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    log('⚠️ テストドキュメントが存在しません');
+                    showResult('firestoreConnectionStatus', '⚠️ テストドキュメントが存在しません', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Firestore読み込みエラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                showResult('firestoreConnectionStatus', `❌ Firestore読み込みエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 3. 認証状態確認
+        async function checkAuthStatus() {
+            log('=== 認証状態確認開始 ===');
+            
+            if (!auth) {
+                showResult('authStatus', '❌ Firebase Authが初期化されていません', 'error');
+                return;
+            }
+
+            try {
+                const user = auth.currentUser;
+                if (user) {
+                    currentUser = user;
+                    log(`✅ 認証済み: ${user.email || 'anonymous'} (UID: ${user.uid})`);
+                    showResult('authStatus', `✅ 認証済み: ${user.email || 'anonymous'}<br><strong>UID:</strong> ${user.uid}`, 'success');
+                } else {
+                    log('❌ 未認証');
+                    showResult('authStatus', '❌ 未認証 - ログインが必要です', 'error');
+                }
+            } catch (error) {
+                log(`❌ 認証確認エラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                showResult('authStatus', `❌ 認証確認エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 認証テスト
+        async function testAuth() {
+            log('=== 匿名認証テスト開始 ===');
+            
+            if (!auth) {
+                showResult('authStatus', '❌ Firebase Authが初期化されていません', 'error');
+                return;
+            }
+
+            try {
+                // 匿名認証を試行
+                const userCredential = await auth.signInAnonymously();
+                currentUser = userCredential.user;
+                
+                log(`✅ 匿名認証成功: ${currentUser.uid}`);
+                showResult('authStatus', `✅ 匿名認証成功<br><strong>UID:</strong> ${currentUser.uid}`, 'success');
+                
+            } catch (error) {
+                log(`❌ 匿名認証テストエラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                showResult('authStatus', `❌ 匿名認証テストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // メール認証テスト
+        async function testEmailAuth() {
+            log('=== メール認証テスト開始 ===');
+            
+            if (!auth) {
+                showResult('authStatus', '❌ Firebase Authが初期化されていません', 'error');
+                return;
+            }
+
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+
+            if (!email || !password) {
+                showResult('authStatus', '❌ メールアドレスとパスワードを入力してください', 'error');
+                return;
+            }
+
+            try {
+                // まずサインアップを試行
+                let userCredential;
+                try {
+                    userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    log(`✅ 新規ユーザー作成成功: ${email}`);
+                } catch (signUpError) {
+                    if (signUpError.code === 'auth/email-already-in-use') {
+                        // 既存ユーザーの場合はサインイン
+                        userCredential = await auth.signInWithEmailAndPassword(email, password);
+                        log(`✅ 既存ユーザーログイン成功: ${email}`);
+                    } else {
+                        throw signUpError;
+                    }
+                }
+                
+                currentUser = userCredential.user;
+                
+                log(`✅ メール認証成功: ${currentUser.email} (UID: ${currentUser.uid})`);
+                showResult('authStatus', `✅ メール認証成功<br><strong>メール:</strong> ${currentUser.email}<br><strong>UID:</strong> ${currentUser.uid}`, 'success');
+                
+            } catch (error) {
+                log(`❌ メール認証テストエラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                showResult('authStatus', `❌ メール認証テストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 4. セキュリティルールテスト
+        async function testSecurityRules() {
+            log('=== セキュリティルールテスト開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('securityStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                // ユーザー固有のドキュメントへの書き込みテスト
+                const testData = {
+                    timestamp: new Date().toISOString(),
+                    userId: currentUser.uid,
+                    test: 'security-rules-test'
+                };
+
+                await db.collection('users').doc(currentUser.uid).collection('test').doc('security-test').set(testData);
+                log('✅ セキュリティルール書き込みテスト成功');
+                
+                // 読み込みテスト
+                const testDoc = await db.collection('users').doc(currentUser.uid).collection('test').doc('security-test').get();
+                if (testDoc.exists) {
+                    log('✅ セキュリティルール読み込みテスト成功');
+                    showResult('securityStatus', '✅ セキュリティルールテスト成功', 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ セキュリティルールテストエラー: ${error.message}`, 'error');
+                showResult('securityStatus', `❌ セキュリティルールテストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // ユーザードキュメントアクセステスト
+        async function testUserDocumentAccess() {
+            log('=== ユーザードキュメントアクセステスト開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('securityStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                // ユーザードキュメントへの直接書き込みテスト
+                const userData = {
+                    email: currentUser.email || 'anonymous',
+                    lastAccess: new Date().toISOString(),
+                    deviceInfo: navigator.userAgent
+                };
+
+                await db.collection('users').doc(currentUser.uid).set(userData, { merge: true });
+                log('✅ ユーザードキュメント書き込み成功');
+                
+                // 読み込みテスト
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (userDoc.exists) {
+                    const data = userDoc.data();
+                    log('✅ ユーザードキュメント読み込み成功:', data);
+                    showResult('securityStatus', '✅ ユーザードキュメントアクセステスト成功', 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ ユーザードキュメントアクセステストエラー: ${error.message}`, 'error');
+                showResult('securityStatus', `❌ ユーザードキュメントアクセステストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 5. データ保存テスト
+        async function testDataSave() {
+            log('=== データ保存テスト開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('saveTestStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            const title = document.getElementById('testTitle').value;
+            const description = document.getElementById('testDescription').value;
+            
+            try {
+                const testRoutine = {
+                    id: 'firestore_test_' + Date.now(),
+                    title: title,
+                    description: description,
+                    frequency: 'daily',
+                    createdAt: new Date().toISOString(),
+                    userId: currentUser.uid,
+                    testData: true
+                };
+
+                log('保存するデータ: ' + JSON.stringify(testRoutine));
+
+                // ユーザードキュメントの存在確認
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                const userDoc = await userDocRef.get();
+
+                if (userDoc.exists) {
+                    // ドキュメントが存在する場合はupdate
+                    await userDocRef.update({
+                        routines: firebase.firestore.FieldValue.arrayUnion(testRoutine),
+                        lastSyncTimestamp: new Date().toISOString(),
+                        lastSyncDevice: navigator.userAgent,
+                        deviceId: getDeviceId()
+                    });
+                    log('✅ 既存ユーザードキュメントを更新');
+                } else {
+                    // ドキュメントが存在しない場合はset
+                    await userDocRef.set({
+                        routines: [testRoutine],
+                        lastSyncTimestamp: new Date().toISOString(),
+                        lastSyncDevice: navigator.userAgent,
+                        deviceId: getDeviceId(),
+                        email: currentUser.email,
+                        createdAt: new Date().toISOString()
+                    });
+                    log('✅ 新規ユーザードキュメントを作成');
+                }
+
+                log('✅ データ保存テスト成功: ' + JSON.stringify(testRoutine));
+                showResult('saveTestStatus', `✅ データ保存テスト成功<br><strong>ID:</strong> ${testRoutine.id}<br><strong>タイトル:</strong> ${testRoutine.title}`, 'success');
+                
+            } catch (error) {
+                log(`❌ データ保存テストエラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                showResult('saveTestStatus', `❌ データ保存テストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // データ更新テスト
+        async function testDataUpdate() {
+            log('=== データ更新テスト開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('saveTestStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                const updateData = {
+                    lastUpdate: new Date().toISOString(),
+                    updateTest: true,
+                    deviceInfo: navigator.userAgent
+                };
+
+                await db.collection('users').doc(currentUser.uid).update(updateData);
+
+                log('✅ データ更新テスト成功:', updateData);
+                showResult('saveTestStatus', '✅ データ更新テスト成功', 'success');
+                
+            } catch (error) {
+                log(`❌ データ更新テストエラー: ${error.message}`, 'error');
+                showResult('saveTestStatus', `❌ データ更新テストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // データ削除テスト
+        async function testDataDelete() {
+            log('=== データ削除テスト開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('saveTestStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                // テストデータを削除
+                await db.collection('users').doc(currentUser.uid).collection('test').doc('security-test').delete();
+
+                log('✅ データ削除テスト成功');
+                showResult('saveTestStatus', '✅ データ削除テスト成功', 'success');
+                
+            } catch (error) {
+                log(`❌ データ削除テストエラー: ${error.message}`, 'error');
+                showResult('saveTestStatus', `❌ データ削除テストエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 6. データ読み込み・表示
+        async function loadAndDisplayData() {
+            log('=== データ読み込み・表示開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('dataViewerStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    log('✅ データ読み込み成功: ' + JSON.stringify(userData));
+                    
+                    const dataViewerDiv = document.getElementById('dataViewerStatus');
+                    if (dataViewerDiv) {
+                        dataViewerDiv.innerHTML = `
+                            <strong>ユーザーデータ:</strong><br>
+                            <strong>ルーティン数:</strong> ${userData.routines?.length || 0}<br>
+                            <strong>完了データ数:</strong> ${userData.completions?.length || 0}<br>
+                            <strong>最終更新:</strong> ${userData.lastSyncTimestamp || '不明'}<br>
+                            <strong>更新デバイス:</strong> ${userData.lastSyncDevice || '不明'}<br>
+                            <strong>デバイスID:</strong> ${userData.deviceId || '不明'}<br>
+                            <strong>データ詳細:</strong><br>
+                            <pre>${JSON.stringify(userData, null, 2)}</pre>
+                        `;
+                    }
+                    
+                    showResult('dataViewerStatus', '✅ データ読み込み・表示成功', 'success');
+                } else {
+                    log('⚠️ ユーザーデータが存在しません');
+                    showResult('dataViewerStatus', '⚠️ ユーザーデータが存在しません', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ データ読み込みエラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                showResult('dataViewerStatus', `❌ データ読み込みエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // データ更新
+        function refreshData() {
+            loadAndDisplayData();
+        }
+
+        // データエクスポート
+        async function exportData() {
+            log('=== データエクスポート開始 ===');
+            
+            if (!currentUser || !db) {
+                log('❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const blob = new Blob([JSON.stringify(userData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `firestore-data-${currentUser.uid}-${new Date().toISOString().slice(0, 19)}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    log('✅ データエクスポート成功');
+                }
+                
+            } catch (error) {
+                log(`❌ データエクスポートエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 7. リアルタイム監視
+        function startRealtimeMonitoring() {
+            log('=== リアルタイム監視開始 ===');
+            
+            if (!currentUser || !db) {
+                showResult('realtimeStatus', '❌ 認証またはFirestore初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                // 既存のリスナーをクリア
+                if (realtimeListener) {
+                    realtimeListener();
+                }
+
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                
+                realtimeListener = userDocRef.onSnapshot((doc) => {
+                    log('リアルタイムデータ更新を受信: ' + (doc.exists ? 'データあり' : 'データなし'));
+                    
+                    if (doc.exists) {
+                        const data = doc.data();
+                        const realtimeStatusDiv = document.getElementById('realtimeStatus');
+                        if (realtimeStatusDiv) {
+                            realtimeStatusDiv.innerHTML = `
+                                <strong>リアルタイム更新:</strong><br>
+                                <strong>タイムスタンプ:</strong> ${new Date().toLocaleTimeString()}<br>
+                                <strong>ルーティン数:</strong> ${data.routines?.length || 0}<br>
+                                <strong>完了データ数:</strong> ${data.completions?.length || 0}<br>
+                                <strong>最終更新:</strong> ${data.lastSyncTimestamp || '不明'}<br>
+                                <strong>更新デバイス:</strong> ${data.lastSyncDevice || '不明'}
+                            `;
+                        }
+                    }
+                    
+                    showResult('realtimeStatus', '✅ リアルタイム監視開始', 'success');
+                }, (error) => {
+                    log(`❌ リアルタイム監視エラー: ${error.message}`, 'error');
+                    log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                    showResult('realtimeStatus', `❌ リアルタイム監視エラー: ${error.message}`, 'error');
+                });
+                
+            } catch (error) {
+                log(`❌ リアルタイム監視設定エラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+                showResult('realtimeStatus', `❌ リアルタイム監視設定エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // リアルタイム監視停止
+        function stopRealtimeMonitoring() {
+            if (realtimeListener) {
+                realtimeListener();
+                realtimeListener = null;
+                log('リアルタイム監視を停止しました');
+                showResult('realtimeStatus', 'リアルタイム監視を停止しました', 'info');
+            }
+        }
+
+        // 8. エラー診断
+        async function runErrorDiagnosis() {
+            log('=== エラー診断開始 ===');
+            
+            const diagnosisResults = [];
+            
+            // Firebase初期化診断
+            if (typeof firebase === 'undefined') {
+                diagnosisResults.push('❌ Firebase SDKが読み込まれていません');
+            } else {
+                diagnosisResults.push('✅ Firebase SDK読み込み確認');
+            }
+            
+            // Firestore接続診断
+            if (!db) {
+                diagnosisResults.push('❌ Firestoreが初期化されていません');
+            } else {
+                diagnosisResults.push('✅ Firestore初期化確認');
+            }
+            
+            // 認証診断
+            if (!currentUser) {
+                diagnosisResults.push('❌ ユーザー認証が必要です');
+            } else {
+                diagnosisResults.push('✅ ユーザー認証確認');
+            }
+            
+            // ネットワーク診断
+            if (!navigator.onLine) {
+                diagnosisResults.push('❌ オフライン状態です');
+            } else {
+                diagnosisResults.push('✅ オンライン状態確認');
+            }
+            
+            const diagnosisDiv = document.getElementById('errorDiagnosis');
+            if (diagnosisDiv) {
+                diagnosisDiv.innerHTML = `<strong>診断結果:</strong><br>${diagnosisResults.join('<br>')}`;
+            }
+            
+            log('エラー診断完了');
+        }
+
+        // ネットワーク状態確認
+        function checkNetworkStatus() {
+            const networkInfo = {
+                onLine: navigator.onLine,
+                connection: navigator.connection || '不明',
+                effectiveType: navigator.connection?.effectiveType || '不明'
+            };
+            
+            log('ネットワーク情報: ' + JSON.stringify(networkInfo));
+            
+            const diagnosisDiv = document.getElementById('errorDiagnosis');
+            if (diagnosisDiv) {
+                diagnosisDiv.innerHTML = `
+                    <strong>ネットワーク情報:</strong><br>
+                    <strong>オンライン状態:</strong> ${networkInfo.onLine ? 'オンライン' : 'オフライン'}<br>
+                    <strong>接続タイプ:</strong> ${networkInfo.connection}<br>
+                    <strong>効果的な接続タイプ:</strong> ${networkInfo.effectiveType}
+                `;
+            }
+        }
+
+        // デバイスID取得
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
+        // ログクリア
+        function clearLog() {
+            document.getElementById('debugLog').textContent = '';
+            log('ログをクリアしました');
+        }
+
+        // ログエクスポート
+        function exportLog() {
+            const logContent = document.getElementById('debugLog').textContent;
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `firestore-debug-log-${new Date().toISOString().slice(0, 19)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            log('ログをエクスポートしました');
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                log('Firestore接続・保存デバッグツール初期化完了');
+                checkFirebaseInit();
+            } catch (error) {
+                log(`初期化エラー: ${error.message}`, 'error');
+                log(`エラー詳細: ${JSON.stringify(error)}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -250,6 +250,7 @@
             border: 2px solid #e9ecef;
         }
 
+        /* 統計カード */
         .stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -258,31 +259,41 @@
         }
 
         .stat-card {
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-            padding: 24px;
-            border-radius: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
 
         .stat-number {
-            font-size: 32px;
-            font-weight: 700;
+            font-size: 2em;
+            font-weight: bold;
             color: #667eea;
             margin-bottom: 5px;
         }
 
         .stat-label {
-            color: #6c757d;
-            font-size: 14px;
-            font-weight: 600;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* ルーティンセクション */
+        .routine-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .routine-section h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
         }
 
         .error {
@@ -307,38 +318,6 @@
 
         .hidden {
             display: none;
-        }
-
-        .tabs {
-            display: flex;
-            margin-bottom: 30px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 20px;
-            padding: 6px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        .tab {
-            flex: 1;
-            padding: 14px 20px;
-            text-align: center;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-            color: #6c757d;
-        }
-
-        .tab.active {
-            background: white;
-            color: #667eea;
-            font-weight: 700;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .tab:hover:not(.active) {
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
         }
 
         /* フローティング追加ボタン */
@@ -602,6 +581,28 @@
         .auth-help a:hover {
             text-decoration: underline;
         }
+
+        /* ルーティーン追加ボタン（トップ） */
+        .top-add-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.3em;
+            font-weight: bold;
+            padding: 18px 40px;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.18);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            margin: 0 auto;
+        }
+        .top-add-btn:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            transform: translateY(-2px) scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -662,29 +663,39 @@
                     </div>
                 </div>
 
-                <!-- タブ -->
-                <div class="tabs">
-                    <div class="tab active" onclick="showTab('today')">今日</div>
-                    <div class="tab" onclick="showTab('all')">すべて</div>
+                <!-- ルーティーン追加ボタン -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                  <button id="topAddBtn" class="top-add-btn" onclick="openAddModal()">＋ ルーティン追加</button>
                 </div>
 
                 <!-- 今日のルーティン -->
-                <div id="todayTab" class="tab-content active">
-                    <h3>今日のルーティン</h3>
+                <div class="routine-section">
+                    <h3>📅 今日のルーティン</h3>
                     <div id="todayRoutines" class="routine-list"></div>
                 </div>
 
                 <!-- すべてのルーティン -->
-                <div id="allTab" class="tab-content">
-                    <h3>すべてのルーティン</h3>
+                <div class="routine-section">
+                    <h3>📋 すべてのルーティン</h3>
                     <div id="allRoutines" class="routine-list"></div>
+                </div>
+
+                <!-- 管理者用ユーザー管理ボタン（yasnaries@gmail.comのみ表示） -->
+                <div id="adminPanel" style="display:none; text-align:center; margin-bottom:20px;">
+                  <button class="btn btn-danger" onclick="openUserAdminModal()">ユーザー管理</button>
+                </div>
+
+                <!-- ユーザー管理モーダル -->
+                <div id="userAdminModal" class="modal">
+                  <div class="modal-content" style="max-width:600px;">
+                    <span class="close" onclick="closeUserAdminModal()">&times;</span>
+                    <h3>ユーザー管理</h3>
+                    <div id="userList"></div>
+                  </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- フローティング追加ボタン -->
-    <button id="floatingAddBtn" class="floating-add-btn" onclick="openAddModal()">+</button>
 
     <!-- 追加モーダル -->
     <div id="addModal" class="modal">
@@ -742,7 +753,7 @@
                 <!-- 毎月の日にち選択 -->
                 <div id="monthlyOptions" class="form-group" style="display: none;">
                     <label for="monthlyDay">日にちを選択</label>
-                    <select id="monthlyDay" required>
+                    <select id="monthlyDay">
                         <option value="">選択してください</option>
                         <option value="1">1日</option>
                         <option value="2">2日</option>
@@ -783,7 +794,7 @@
                     <div class="yearly-selector">
                         <div class="form-group">
                             <label for="yearlyMonth">月を選択</label>
-                            <select id="yearlyMonth" required>
+                            <select id="yearlyMonth">
                                 <option value="">選択してください</option>
                                 <option value="1">1月</option>
                                 <option value="2">2月</option>
@@ -801,7 +812,7 @@
                         </div>
                         <div class="form-group">
                             <label for="yearlyDay">日にちを選択</label>
-                            <select id="yearlyDay" required>
+                            <select id="yearlyDay">
                                 <option value="">選択してください</option>
                                 <option value="1">1日</option>
                                 <option value="2">2日</option>
@@ -844,11 +855,11 @@
                     <div class="custom-selector">
                         <div class="form-group">
                             <label for="customNumber">数値</label>
-                            <input type="number" id="customNumber" min="1" max="365" placeholder="例: 3" required>
+                            <input type="number" id="customNumber" min="1" max="365" placeholder="例: 3">
                         </div>
                         <div class="form-group">
                             <label for="customInterval">間隔</label>
-                            <select id="customInterval" required>
+                            <select id="customInterval">
                                 <option value="">選択してください</option>
                                 <option value="days">日</option>
                                 <option value="weeks">週</option>
@@ -858,7 +869,7 @@
                         </div>
                         <div class="form-group">
                             <label for="customStartDate">開始日</label>
-                            <input type="date" id="customStartDate" required>
+                            <input type="date" id="customStartDate">
                         </div>
                     </div>
                 </div>
@@ -987,11 +998,86 @@
         let completions = [];
         let sessionToken = null;
 
-        // 初期化
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuth();
-            setupEventListeners();
-        });
+        // 初期化処理
+        async function initializeApp() {
+            try {
+                console.log('アプリ初期化開始');
+                
+                // Firebase初期化
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                
+                // ネットワーク監視を設定
+                setupNetworkMonitoring();
+                
+                // キャッシュバスティング（バージョン管理）
+                const appVersion = '1.0.1'; // 同期問題修正版
+                console.log('アプリバージョン:', appVersion);
+                
+                // フローティング追加ボタンの初期表示状態を設定
+                const floatingAddBtn = document.getElementById('floatingAddBtn');
+                if (floatingAddBtn) {
+                    floatingAddBtn.style.display = 'none'; // 初期状態では非表示
+                }
+                
+                // 認証状態の監視
+                auth.onAuthStateChanged(async function(user) {
+                    console.log('認証状態変更:', user ? 'ログイン中' : '未ログイン');
+                    if (user) {
+                        console.log('ユーザー情報:', {
+                            uid: user.uid,
+                            email: user.email,
+                            emailVerified: user.emailVerified
+                        });
+                        currentUser = user;
+                        
+                        // 既存のリアルタイムリスナーをクリア
+                        if (window.currentRealtimeListener) {
+                            window.currentRealtimeListener();
+                            window.currentRealtimeListener = null;
+                        }
+                        
+                        showSyncStatus('syncing');
+                        
+                        try {
+                            // データ読み込みを実行
+                            await loadUserData();
+                            showMainView();
+                            showSyncStatus('synced');
+                            console.log('✅ 認証後のデータ読み込み完了');
+                        } catch (error) {
+                            console.error('❌ 認証後のデータ読み込みエラー:', error);
+                            showSyncStatus('error');
+                            showMessage('データの読み込みに失敗しました', 'error');
+                        }
+                    } else {
+                        console.log('ユーザー未認証');
+                        currentUser = null;
+                        
+                        // リアルタイムリスナーをクリア
+                        if (window.currentRealtimeListener) {
+                            window.currentRealtimeListener();
+                            window.currentRealtimeListener = null;
+                        }
+                        
+                        // ローカルデータをクリア
+                        routines = [];
+                        completions = [];
+                        updateDisplay();
+                        
+                        showSyncStatus('error');
+                        showAuthView();
+                    }
+                });
+                
+                console.log('✅ アプリ初期化完了');
+                
+            } catch (error) {
+                console.error('アプリ初期化エラー:', error);
+                showMessage('アプリの初期化に失敗しました', 'error');
+            }
+        }
 
         // ユーザーデータの読み込み
         async function loadUserData() {
@@ -1000,32 +1086,105 @@
             try {
                 console.log('ユーザーデータ読み込み開始:', currentUser.uid);
                 
-                // リアルタイムリスナーを設定
-                const userDocRef = db.collection('users').doc(currentUser.uid);
+                // 初回読み込みを実行
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
                 
-                // リアルタイムリスナーでデータの変更を監視
-                userDocRef.onSnapshot((doc) => {
-                    if (doc.exists) {
-                        const userData = doc.data();
-                        console.log('リアルタイムデータ更新:', userData);
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    console.log('初回データ読み込み:', userData);
+                    
+                    const newRoutines = userData.routines || [];
+                    const newCompletions = userData.completions || [];
+                    
+                    // FieldValue.serverTimestamp()を除去してクリーンなデータを作成
+                    const cleanRoutines = newRoutines.map(routine => {
+                        const cleanRoutine = { ...routine };
                         
-                        routines = userData.routines || [];
-                        completions = userData.completions || [];
+                        // createdAtフィールドを確実にISO文字列に変換
+                        if (cleanRoutine.createdAt) {
+                            if (typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt.toDate) {
+                                // Firestore Timestampの場合
+                                cleanRoutine.createdAt = cleanRoutine.createdAt.toDate().toISOString();
+                            } else if (typeof cleanRoutine.createdAt === 'string') {
+                                // 既に文字列の場合
+                                cleanRoutine.createdAt = cleanRoutine.createdAt;
+                            } else {
+                                // その他の場合
+                                cleanRoutine.createdAt = new Date().toISOString();
+                            }
+                        } else {
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
                         
-                        updateDisplay();
-                        showMessage('データが同期されました', 'success');
-                    } else {
-                        console.log('ユーザーデータが存在しないため初期化します');
-                        initializeUserData();
-                    }
-                }, (error) => {
-                    console.error('リアルタイムリスナーエラー:', error);
-                    // エラーが発生した場合は通常の読み込みを試行
-                    loadUserDataFallback();
-                });
+                        // FieldValue.serverTimestamp()が含まれている場合は除去
+                        if (cleanRoutine.createdAt && typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt._methodName === 'serverTimestamp') {
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
+                        
+                        return cleanRoutine;
+                    });
+                    
+                    const cleanCompletions = newCompletions.map(completion => {
+                        const cleanCompletion = { ...completion };
+                        
+                        // completedAtフィールドを確実にISO文字列に変換
+                        if (cleanCompletion.completedAt) {
+                            if (typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt.toDate) {
+                                // Firestore Timestampの場合
+                                cleanCompletion.completedAt = cleanCompletion.completedAt.toDate().toISOString();
+                            } else if (typeof cleanCompletion.completedAt === 'string') {
+                                // 既に文字列の場合
+                                cleanCompletion.completedAt = cleanCompletion.completedAt;
+                            } else {
+                                // その他の場合
+                                cleanCompletion.completedAt = new Date().toISOString();
+                            }
+                        } else {
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                        
+                        // FieldValue.serverTimestamp()が含まれている場合は除去
+                        if (cleanCompletion.completedAt && typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt._methodName === 'serverTimestamp') {
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                        
+                        return cleanCompletion;
+                    });
+                    
+                    routines = cleanRoutines;
+                    completions = cleanCompletions;
+                    
+                    updateDisplay();
+                    showSyncStatus('synced');
+                    console.log('初回データ読み込み完了:', {
+                        routinesCount: routines.length,
+                        completionsCount: completions.length
+                    });
+                    
+                    // 初回読み込み完了後にリアルタイムリスナーを設定
+                    setTimeout(() => {
+                        if (currentUser) {
+                            console.log('初回読み込み完了後、リアルタイムリスナーを設定');
+                            setupRealtimeListener();
+                        }
+                    }, 500);
+                    
+                } else {
+                    console.log('ユーザーデータが存在しないため初期化します');
+                    await initializeUserData();
+                    
+                    // 初期化完了後にリアルタイムリスナーを設定
+                    setTimeout(() => {
+                        if (currentUser) {
+                            console.log('初期化完了後、リアルタイムリスナーを設定');
+                            setupRealtimeListener();
+                        }
+                    }, 500);
+                }
                 
             } catch (error) {
                 console.error('データ読み込みエラー:', error);
+                showSyncStatus('error');
                 showMessage('データの読み込みに失敗しました', 'error');
                 // フォールバック読み込み
                 loadUserDataFallback();
@@ -1038,18 +1197,125 @@
             
             try {
                 console.log('フォールバック読み込み開始');
+                
                 const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                
                 if (userDoc.exists) {
                     const userData = userDoc.data();
-                    routines = userData.routines || [];
-                    completions = userData.completions || [];
+                    const newRoutines = userData.routines || [];
+                    const newCompletions = userData.completions || [];
+                    
+                    // FieldValue.serverTimestamp()を除去してクリーンなデータを作成
+                    const cleanRoutines = newRoutines.map(routine => {
+                        const cleanRoutine = { ...routine };
+                        
+                        // createdAtフィールドを確実にISO文字列に変換
+                        if (cleanRoutine.createdAt) {
+                            if (typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt.toDate) {
+                                // Firestore Timestampの場合
+                                cleanRoutine.createdAt = cleanRoutine.createdAt.toDate().toISOString();
+                            } else if (typeof cleanRoutine.createdAt === 'string') {
+                                // 既に文字列の場合
+                                cleanRoutine.createdAt = cleanRoutine.createdAt;
+                            } else {
+                                // その他の場合
+                                cleanRoutine.createdAt = new Date().toISOString();
+                            }
+                        } else {
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
+                        
+                        // FieldValue.serverTimestamp()が含まれている場合は除去
+                        if (cleanRoutine.createdAt && typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt._methodName === 'serverTimestamp') {
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
+                        
+                        return cleanRoutine;
+                    });
+                    
+                    const cleanCompletions = newCompletions.map(completion => {
+                        const cleanCompletion = { ...completion };
+                        
+                        // completedAtフィールドを確実にISO文字列に変換
+                        if (cleanCompletion.completedAt) {
+                            if (typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt.toDate) {
+                                // Firestore Timestampの場合
+                                cleanCompletion.completedAt = cleanCompletion.completedAt.toDate().toISOString();
+                            } else if (typeof cleanCompletion.completedAt === 'string') {
+                                // 既に文字列の場合
+                                cleanCompletion.completedAt = cleanCompletion.completedAt;
+                            } else {
+                                // その他の場合
+                                cleanCompletion.completedAt = new Date().toISOString();
+                            }
+                        } else {
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                        
+                        // FieldValue.serverTimestamp()が含まれている場合は除去
+                        if (cleanCompletion.completedAt && typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt._methodName === 'serverTimestamp') {
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                        
+                        return cleanCompletion;
+                    });
+                    
+                    routines = cleanRoutines;
+                    completions = cleanCompletions;
+                    
+                    updateDisplay();
+                    showMessage('データを読み込みました', 'success');
+                    console.log('フォールバック読み込み成功:', {
+                        routinesCount: routines.length,
+                        completionsCount: completions.length
+                    });
                 } else {
-                    await initializeUserData();
+                    console.log('ユーザーデータが存在しないため初期化します');
+                    initializeUserData();
                 }
-                updateDisplay();
             } catch (error) {
                 console.error('フォールバック読み込みエラー:', error);
                 showMessage('データの読み込みに失敗しました', 'error');
+            }
+        }
+
+        // ネットワーク状態監視
+        function setupNetworkMonitoring() {
+            window.addEventListener('online', () => {
+                console.log('ネットワーク接続復旧');
+                showMessage('ネットワーク接続が復旧しました', 'success');
+                showSyncStatus('syncing');
+                
+                // 接続復旧時にデータを再同期
+                if (currentUser) {
+                    setTimeout(async () => {
+                        try {
+                            console.log('接続復旧時のデータ同期開始');
+                            await loadUserData();
+                            showSyncStatus('synced');
+                            showMessage('データの同期が完了しました', 'success');
+                        } catch (error) {
+                            console.error('接続復旧時の同期エラー:', error);
+                            showSyncStatus('error');
+                            showMessage('同期に失敗しました', 'error');
+                        }
+                    }, 2000); // 2秒待ってから同期
+                }
+            });
+            
+            window.addEventListener('offline', () => {
+                console.log('ネットワーク接続切断');
+                showMessage('オフライン状態です', 'warning');
+                showSyncStatus('error');
+            });
+            
+            // 初期状態の確認
+            if (!navigator.onLine) {
+                console.log('初期状態: オフライン');
+                showSyncStatus('error');
+            } else {
+                console.log('初期状態: オンライン');
+                showSyncStatus('synced');
             }
         }
 
@@ -1209,32 +1475,288 @@
 
         // データの保存
         async function saveData() {
-            if (!currentUser) return;
+            if (!currentUser) {
+                console.error('❌ ユーザーが認証されていません');
+                return;
+            }
             
             try {
-                console.log('データ保存開始:', {
+                console.log('=== データ保存開始 ===');
+                console.log('保存データ:', {
                     routinesCount: routines.length,
-                    completionsCount: completions.length
+                    completionsCount: completions.length,
+                    userId: currentUser.uid,
+                    timestamp: new Date().toISOString()
                 });
                 
-                await db.collection('users').doc(currentUser.uid).update({
-                    routines: routines,
-                    completions: completions,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                // オフライン状態の確認
+                if (!navigator.onLine) {
+                    console.warn('⚠️ オフライン状態のため、保存を延期します');
+                    showMessage('オフライン状態です。接続復旧後に保存されます', 'warning');
+                    return;
+                }
+                
+                // 配列内のFieldValue.serverTimestamp()を完全に除去してクリーンなデータを作成
+                const cleanRoutines = routines.map(routine => {
+                    const cleanRoutine = { ...routine };
+                    
+                    // createdAtフィールドを確実にISO文字列に変換
+                    if (cleanRoutine.createdAt) {
+                        if (typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt.toDate) {
+                            // Firestore Timestampの場合
+                            cleanRoutine.createdAt = cleanRoutine.createdAt.toDate().toISOString();
+                        } else if (typeof cleanRoutine.createdAt === 'string') {
+                            // 既に文字列の場合
+                            cleanRoutine.createdAt = cleanRoutine.createdAt;
+                        } else {
+                            // その他の場合
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
+                    } else {
+                        cleanRoutine.createdAt = new Date().toISOString();
+                    }
+                    
+                    // FieldValue.serverTimestamp()が含まれている場合は除去
+                    if (cleanRoutine.createdAt && typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt._methodName === 'serverTimestamp') {
+                        cleanRoutine.createdAt = new Date().toISOString();
+                    }
+                    
+                    return cleanRoutine;
                 });
+                
+                const cleanCompletions = completions.map(completion => {
+                    const cleanCompletion = { ...completion };
+                    
+                    // completedAtフィールドを確実にISO文字列に変換
+                    if (cleanCompletion.completedAt) {
+                        if (typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt.toDate) {
+                            // Firestore Timestampの場合
+                            cleanCompletion.completedAt = cleanCompletion.completedAt.toDate().toISOString();
+                        } else if (typeof cleanCompletion.completedAt === 'string') {
+                            // 既に文字列の場合
+                            cleanCompletion.completedAt = cleanCompletion.completedAt;
+                        } else {
+                            // その他の場合
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                    } else {
+                        cleanCompletion.completedAt = new Date().toISOString();
+                    }
+                    
+                    // FieldValue.serverTimestamp()が含まれている場合は除去
+                    if (cleanCompletion.completedAt && typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt._methodName === 'serverTimestamp') {
+                        cleanCompletion.completedAt = new Date().toISOString();
+                    }
+                    
+                    return cleanCompletion;
+                });
+                
+                console.log('クリーンアップ後のデータ:', {
+                    routinesCount: cleanRoutines.length,
+                    completionsCount: cleanCompletions.length,
+                    sampleRoutine: cleanRoutines[0],
+                    sampleCompletion: cleanCompletions[0]
+                });
+                
+                console.log('Firestoreにデータを保存中...');
+                
+                // 同期状態を表示
+                showSyncStatus('syncing');
+                
+                // デバイス情報を含めて保存
+                const saveData = {
+                    routines: cleanRoutines,
+                    completions: cleanCompletions,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastSyncDevice: navigator.userAgent,
+                    lastSyncTimestamp: new Date().toISOString(),
+                    deviceId: getDeviceId(),
+                    syncVersion: '1.0.2' // 同期バージョン管理
+                };
+                
+                await db.collection('users').doc(currentUser.uid).set(saveData, { merge: true });
                 
                 console.log('✅ データ保存成功');
+                showSyncStatus('synced');
                 showMessage('データが保存されました', 'success');
                 
+                // 保存成功後、少し待ってからリアルタイムリスナーを再設定
+                setTimeout(() => {
+                    if (currentUser) {
+                        console.log('リアルタイムリスナーを再設定');
+                        setupRealtimeListener();
+                    }
+                }, 1000);
+                
             } catch (error) {
-                console.error('データ保存エラー:', error);
+                console.error('❌ データ保存エラー:', error);
+                showSyncStatus('error');
                 showMessage('データの保存に失敗しました', 'error');
                 
-                // 保存に失敗した場合は再試行
-                setTimeout(() => {
-                    console.log('データ保存再試行中...');
-                    saveData();
-                }, 2000);
+                // 保存に失敗した場合は再試行（最大3回）
+                if (!window.saveRetryCount) {
+                    window.saveRetryCount = 0;
+                }
+                
+                if (window.saveRetryCount < 3) {
+                    window.saveRetryCount++;
+                    console.log(`🔄 データ保存再試行中... (${window.saveRetryCount}/3)`);
+                    
+                    setTimeout(() => {
+                        saveData();
+                    }, 2000 * window.saveRetryCount); // 指数バックオフ
+                } else {
+                    console.error('❌ データ保存の再試行回数上限に達しました');
+                    window.saveRetryCount = 0;
+                    showMessage('データの保存に失敗しました。後でもう一度お試しください', 'error');
+                }
+            }
+        }
+
+        // デバイスIDを生成（同期の競合解決用）
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
+        // リアルタイムリスナーの設定
+        function setupRealtimeListener() {
+            if (!currentUser || !db) return;
+            
+            try {
+                console.log('リアルタイムリスナー設定開始');
+                
+                // 既存のリスナーをクリア
+                if (window.currentRealtimeListener) {
+                    window.currentRealtimeListener();
+                }
+                
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                
+                // 初回読み込みフラグ
+                let isInitialLoad = true;
+                
+                window.currentRealtimeListener = userDocRef.onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        console.log('リアルタイムデータ更新を受信:', {
+                            routinesCount: userData.routines?.length || 0,
+                            completionsCount: userData.completions?.length || 0,
+                            lastSyncDevice: userData.lastSyncDevice,
+                            lastSyncTimestamp: userData.lastSyncTimestamp,
+                            deviceId: userData.deviceId,
+                            isInitialLoad: isInitialLoad
+                        });
+                        
+                        // 初回読み込み時はスキップ（loadUserDataで既に処理済み）
+                        if (isInitialLoad) {
+                            console.log('初回読み込みのためリアルタイム更新をスキップ');
+                            isInitialLoad = false;
+                            return;
+                        }
+                        
+                        // 自分が保存したデータの場合はスキップ
+                        if (userData.deviceId === getDeviceId()) {
+                            console.log('自分のデバイスからの更新のためスキップ');
+                            return;
+                        }
+                        
+                        // データの整合性チェック
+                        const newRoutines = userData.routines || [];
+                        const newCompletions = userData.completions || [];
+                        
+                        // FieldValue.serverTimestamp()を除去してクリーンなデータを作成
+                        const cleanRoutines = newRoutines.map(routine => {
+                            const cleanRoutine = { ...routine };
+                            
+                            // createdAtフィールドを確実にISO文字列に変換
+                            if (cleanRoutine.createdAt) {
+                                if (typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt.toDate) {
+                                    // Firestore Timestampの場合
+                                    cleanRoutine.createdAt = cleanRoutine.createdAt.toDate().toISOString();
+                                } else if (typeof cleanRoutine.createdAt === 'string') {
+                                    // 既に文字列の場合
+                                    cleanRoutine.createdAt = cleanRoutine.createdAt;
+                                } else {
+                                    // その他の場合
+                                    cleanRoutine.createdAt = new Date().toISOString();
+                                }
+                            } else {
+                                cleanRoutine.createdAt = new Date().toISOString();
+                            }
+                            
+                            // FieldValue.serverTimestamp()が含まれている場合は除去
+                            if (cleanRoutine.createdAt && typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt._methodName === 'serverTimestamp') {
+                                cleanRoutine.createdAt = new Date().toISOString();
+                            }
+                            
+                            return cleanRoutine;
+                        });
+                        
+                        const cleanCompletions = newCompletions.map(completion => {
+                            const cleanCompletion = { ...completion };
+                            
+                            // completedAtフィールドを確実にISO文字列に変換
+                            if (cleanCompletion.completedAt) {
+                                if (typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt.toDate) {
+                                    // Firestore Timestampの場合
+                                    cleanCompletion.completedAt = cleanCompletion.completedAt.toDate().toISOString();
+                                } else if (typeof cleanCompletion.completedAt === 'string') {
+                                    // 既に文字列の場合
+                                    cleanCompletion.completedAt = cleanCompletion.completedAt;
+                                } else {
+                                    // その他の場合
+                                    cleanCompletion.completedAt = new Date().toISOString();
+                                }
+                            } else {
+                                cleanCompletion.completedAt = new Date().toISOString();
+                            }
+                            
+                            // FieldValue.serverTimestamp()が含まれている場合は除去
+                            if (cleanCompletion.completedAt && typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt._methodName === 'serverTimestamp') {
+                                cleanCompletion.completedAt = new Date().toISOString();
+                            }
+                            
+                            return cleanCompletion;
+                        });
+                        
+                        // データが実際に変更された場合のみ更新
+                        const routinesChanged = JSON.stringify(routines) !== JSON.stringify(cleanRoutines);
+                        const completionsChanged = JSON.stringify(completions) !== JSON.stringify(cleanCompletions);
+                        
+                        if (routinesChanged || completionsChanged) {
+                            routines = cleanRoutines;
+                            completions = cleanCompletions;
+                            
+                            updateDisplay();
+                            showSyncStatus('synced');
+                            showMessage('データが同期されました', 'success');
+                            console.log('データ同期完了:', {
+                                routinesCount: routines.length,
+                                completionsCount: completions.length,
+                                timestamp: new Date().toISOString()
+                            });
+                        }
+                    } else {
+                        console.log('ユーザーデータが存在しないため初期化します');
+                        initializeUserData();
+                    }
+                }, (error) => {
+                    console.error('リアルタイムリスナーエラー:', error);
+                    showSyncStatus('error');
+                    // エラーが発生した場合は通常の読み込みを試行
+                    loadUserDataFallback();
+                });
+                
+                console.log('✅ リアルタイムリスナー設定完了');
+                
+            } catch (error) {
+                console.error('リアルタイムリスナー設定エラー:', error);
+                showSyncStatus('error');
             }
         }
 
@@ -1347,46 +1869,73 @@
         async function handleAddRoutine(event) {
             event.preventDefault();
             
+            console.log('=== ルーティン追加処理開始 ===');
+            
             const title = SecurityUtils.validateInput(document.getElementById('routineTitle').value, 50);
             const description = SecurityUtils.validateInput(document.getElementById('routineDescription').value, 200);
             const frequency = document.getElementById('routineFrequency').value;
 
+            console.log('入力値確認:', {
+                title: title,
+                description: description,
+                frequency: frequency,
+                titleLength: title ? title.length : 0,
+                descriptionLength: description ? description.length : 0
+            });
+
             if (!title) {
+                console.error('❌ タイトルが入力されていません');
                 showMessage('タイトルを入力してください', 'error');
                 return;
             }
 
+            console.log('✅ タイトル検証通過');
+
             // 頻度別の詳細設定を取得
             let frequencyDetails = {};
             
-            if (frequency === 'weekly') {
+            if (frequency === 'daily') {
+                console.log('毎日ルーティンの処理');
+                frequencyDetails = {};
+            } else if (frequency === 'weekly') {
+                console.log('毎週ルーティンの処理');
                 const selectedDays = Array.from(document.querySelectorAll('.day-checkbox input[type="checkbox"]:checked'))
                     .map(cb => parseInt(cb.value));
                 if (selectedDays.length === 0) {
+                    console.error('❌ 曜日が選択されていません');
                     showMessage('曜日を選択してください', 'error');
                     return;
                 }
                 frequencyDetails = { selectedDays: selectedDays };
+                console.log('選択された曜日:', selectedDays);
             } else if (frequency === 'monthly') {
+                console.log('毎月ルーティンの処理');
                 const monthlyDay = document.getElementById('monthlyDay').value;
                 if (!monthlyDay) {
+                    console.error('❌ 日にちが選択されていません');
                     showMessage('日にちを選択してください', 'error');
                     return;
                 }
                 frequencyDetails = { selectedDay: parseInt(monthlyDay) };
+                console.log('選択された日にち:', monthlyDay);
             } else if (frequency === 'yearly') {
+                console.log('毎年ルーティンの処理');
                 const yearlyMonth = document.getElementById('yearlyMonth').value;
                 const yearlyDay = document.getElementById('yearlyDay').value;
                 if (!yearlyMonth || !yearlyDay) {
+                    console.error('❌ 月または日にちが選択されていません');
                     showMessage('月と日にちを選択してください', 'error');
                     return;
                 }
                 frequencyDetails = { selectedMonth: parseInt(yearlyMonth), selectedDay: parseInt(yearlyDay) };
+                console.log('選択された月日:', { month: yearlyMonth, day: yearlyDay });
             } else if (frequency === 'custom') {
+                console.log('カスタムルーティンの処理');
                 const customInterval = document.getElementById('customInterval').value;
                 const customNumber = document.getElementById('customNumber').value;
                 const customStartDate = document.getElementById('customStartDate').value;
                 if (!customInterval || !customNumber || !customStartDate) {
+                    console.error('❌ カスタム設定が不完全です');
                     showMessage('すべてのオプションを入力してください', 'error');
                     return;
                 }
@@ -1395,7 +1944,10 @@
                     number: parseInt(customNumber),
                     startDate: customStartDate
                 };
+                console.log('カスタム設定:', frequencyDetails);
             }
+
+            console.log('✅ 頻度詳細設定完了:', frequencyDetails);
 
             const newRoutine = {
                 id: Date.now().toString(),
@@ -1403,19 +1955,39 @@
                 description: description,
                 frequency: frequency,
                 frequencyDetails: frequencyDetails,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                createdAt: new Date().toISOString(), // FieldValue.serverTimestamp()の代わりにISO文字列を使用
                 userId: currentUser.uid
             };
 
-            showSyncStatus('syncing');
-            routines.push(newRoutine);
-            await saveData();
-            updateDisplay();
-            
-            // モーダルを閉じる
-            closeAddModal();
-            showMessage('ルーティンを追加しました', 'success');
-            showSyncStatus('synced');
+            console.log('✅ 新しいルーティンオブジェクト作成:', newRoutine);
+
+            try {
+                showSyncStatus('syncing');
+                console.log('ルーティン配列に追加前の件数:', routines.length);
+                
+                routines.push(newRoutine);
+                console.log('ルーティン配列に追加後の件数:', routines.length);
+                
+                console.log('データ保存開始');
+                await saveData();
+                console.log('✅ データ保存完了');
+                
+                console.log('表示更新開始');
+                updateDisplay();
+                console.log('✅ 表示更新完了');
+                
+                // モーダルを閉じる
+                closeAddModal();
+                showMessage('ルーティンを追加しました', 'success');
+                showSyncStatus('synced');
+                
+                console.log('=== ルーティン追加処理完了 ===');
+                
+            } catch (error) {
+                console.error('❌ ルーティン追加処理でエラーが発生:', error);
+                showMessage('ルーティンの追加に失敗しました', 'error');
+                showSyncStatus('error');
+            }
         }
 
         // ルーティン完了切り替え
@@ -1433,7 +2005,7 @@
                 completions.push({
                     id: completionKey,
                     routineId: routineId,
-                    completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    completedAt: new Date().toISOString(), // FieldValue.serverTimestamp()の代わりにISO文字列を使用
                     userId: currentUser.uid
                 });
             }
@@ -1458,7 +2030,17 @@
 
         // 表示更新
         function updateDisplay() {
-            if (!currentUser) return;
+            if (!currentUser) {
+                console.error('❌ ユーザーが認証されていないため表示更新をスキップ');
+                return;
+            }
+
+            console.log('=== 表示更新開始 ===');
+            console.log('現在のデータ:', {
+                routinesCount: routines.length,
+                completionsCount: completions.length,
+                userId: currentUser.uid
+            });
 
             // ユーザー情報
             document.getElementById('userEmail').textContent = SecurityUtils.escapeHtml(currentUser.email);
@@ -1473,60 +2055,103 @@
             });
             document.getElementById('completedToday').textContent = todayCompletions.length;
 
+            console.log('統計情報更新完了:', {
+                totalRoutines: routines.length,
+                completedToday: todayCompletions.length
+            });
+
             // ルーティン表示
+            console.log('ルーティン表示開始');
             displayRoutines();
+            console.log('✅ ルーティン表示完了');
             
             // 同期状態を表示
             showSyncStatus('synced');
+            console.log('=== 表示更新完了 ===');
         }
 
         // ルーティン表示
         function displayRoutines() {
+            console.log('=== ルーティン表示開始 ===');
+            
             const today = new Date().toDateString();
             const currentDayOfWeek = new Date().getDay();
             const currentDayOfMonth = new Date().getDate();
             const currentMonth = new Date().getMonth() + 1;
             const currentDate = new Date();
             
+            console.log('現在の日付情報:', {
+                today: today,
+                currentDayOfWeek: currentDayOfWeek,
+                currentDayOfMonth: currentDayOfMonth,
+                currentMonth: currentMonth
+            });
+            
             // 今日のルーティン
             const todayRoutines = routines.filter(routine => {
-                if (routine.frequency === 'daily') return true;
+                console.log(`ルーティン「${routine.title}」の頻度チェック:`, {
+                    frequency: routine.frequency,
+                    frequencyDetails: routine.frequencyDetails
+                });
+                
+                if (routine.frequency === 'daily') {
+                    console.log(`✅ 毎日ルーティン「${routine.title}」を今日のリストに追加`);
+                    return true;
+                }
                 
                 if (routine.frequency === 'weekly') {
                     if (routine.frequencyDetails && routine.frequencyDetails.selectedDays) {
-                        return routine.frequencyDetails.selectedDays.includes(currentDayOfWeek);
+                        const isToday = routine.frequencyDetails.selectedDays.includes(currentDayOfWeek);
+                        console.log(`毎週ルーティン「${routine.title}」: ${isToday ? '今日実行' : '今日は実行しない'}`);
+                        return isToday;
                     }
+                    console.log(`❌ 毎週ルーティン「${routine.title}」の詳細設定が不正`);
                     return false;
                 }
                 
                 if (routine.frequency === 'monthly') {
                     if (routine.frequencyDetails && routine.frequencyDetails.selectedDay) {
-                        return routine.frequencyDetails.selectedDay === currentDayOfMonth;
+                        const isToday = routine.frequencyDetails.selectedDay === currentDayOfMonth;
+                        console.log(`毎月ルーティン「${routine.title}」: ${isToday ? '今日実行' : '今日は実行しない'}`);
+                        return isToday;
                     }
+                    console.log(`❌ 毎月ルーティン「${routine.title}」の詳細設定が不正`);
                     return false;
                 }
 
                 if (routine.frequency === 'yearly') {
                     if (routine.frequencyDetails && routine.frequencyDetails.selectedMonth && routine.frequencyDetails.selectedDay) {
-                        return routine.frequencyDetails.selectedMonth === currentMonth && 
-                               routine.frequencyDetails.selectedDay === currentDayOfMonth;
+                        const isToday = routine.frequencyDetails.selectedMonth === currentMonth && 
+                                       routine.frequencyDetails.selectedDay === currentDayOfMonth;
+                        console.log(`毎年ルーティン「${routine.title}」: ${isToday ? '今日実行' : '今日は実行しない'}`);
+                        return isToday;
                     }
+                    console.log(`❌ 毎年ルーティン「${routine.title}」の詳細設定が不正`);
                     return false;
                 }
 
                 if (routine.frequency === 'custom') {
                     if (routine.frequencyDetails && routine.frequencyDetails.startDate && 
                         routine.frequencyDetails.interval && routine.frequencyDetails.number) {
-                        return isCustomRoutineDue(routine.frequencyDetails, currentDate);
+                        const isDue = isCustomRoutineDue(routine.frequencyDetails, currentDate);
+                        console.log(`カスタムルーティン「${routine.title}」: ${isDue ? '今日実行' : '今日は実行しない'}`);
+                        return isDue;
                     }
+                    console.log(`❌ カスタムルーティン「${routine.title}」の詳細設定が不正`);
                     return false;
                 }
                 
+                console.log(`❌ 不明な頻度のルーティン「${routine.title}」: ${routine.frequency}`);
                 return false;
             });
 
+            console.log('今日のルーティン数:', todayRoutines.length);
+            console.log('今日のルーティン:', todayRoutines.map(r => r.title));
+
             document.getElementById('todayRoutines').innerHTML = createRoutineHTML(todayRoutines, today);
             document.getElementById('allRoutines').innerHTML = createRoutineHTML(routines, today);
+            
+            console.log('=== ルーティン表示完了 ===');
         }
 
         // カスタム頻度のルーティンが今日実行すべきかチェック
@@ -1653,8 +2278,9 @@
         // モーダル制御
         function openAddModal() {
             document.getElementById('addModal').style.display = 'block';
-            document.getElementById('floatingAddBtn').style.display = 'none';
-            document.getElementById('routineTitle').focus();
+            document.getElementById('addRoutineForm').reset();
+            // 頻度オプションの初期化を必ず行う
+            toggleFrequencyOptions();
         }
 
         function closeAddModal() {
@@ -1705,14 +2331,73 @@
             }
         }
 
-        // 画面切り替え
+        // メインビュー表示
         function showMainView() {
             document.getElementById('authView').classList.remove('active');
             document.getElementById('mainView').classList.add('active');
-            document.getElementById('floatingAddBtn').style.display = 'block';
-            updateDisplay();
+            
+            // 管理者パネル表示
+            const adminPanel = document.getElementById('adminPanel');
+            if (currentUser && currentUser.email === 'yasnaries@gmail.com') {
+                adminPanel.style.display = 'block';
+            } else {
+                adminPanel.style.display = 'none';
+            }
+            
+            // 同期ボタンを追加
+            addSyncButton();
+            
+            // リセットボタンを追加（開発用）
+            addResetButton();
         }
 
+        // 同期ボタンの追加
+        function addSyncButton() {
+            const mainView = document.getElementById('mainView');
+            if (mainView && !document.getElementById('manualSyncBtn')) {
+                const syncBtn = document.createElement('button');
+                syncBtn.id = 'manualSyncBtn';
+                syncBtn.textContent = '🔄 手動同期';
+                syncBtn.className = 'btn btn-secondary';
+                syncBtn.style.marginTop = '10px';
+                syncBtn.style.marginRight = '10px';
+                syncBtn.onclick = async () => {
+                    if (!currentUser) {
+                        showMessage('ログインが必要です', 'error');
+                        return;
+                    }
+                    
+                    syncBtn.disabled = true;
+                    syncBtn.textContent = '🔄 同期中...';
+                    
+                    try {
+                        console.log('手動同期開始');
+                        showSyncStatus('syncing');
+                        
+                        // データを保存
+                        await saveData();
+                        
+                        // データを再読み込み
+                        await loadUserData();
+                        
+                        showSyncStatus('synced');
+                        showMessage('手動同期が完了しました', 'success');
+                        console.log('手動同期完了');
+                        
+                    } catch (error) {
+                        console.error('手動同期エラー:', error);
+                        showSyncStatus('error');
+                        showMessage('手動同期に失敗しました', 'error');
+                    } finally {
+                        syncBtn.disabled = false;
+                        syncBtn.textContent = '🔄 手動同期';
+                    }
+                };
+                mainView.appendChild(syncBtn);
+            }
+        }
+
+        // 認証ビュー表示
         function showAuthView() {
             document.getElementById('mainView').classList.remove('active');
             document.getElementById('authView').classList.add('active');
@@ -1740,8 +2425,138 @@
             }, 3000);
         }
 
-        // 初期表示
-        updateDisplay();
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 強制的にrequired属性を削除
+            removeRequiredAttributes();
+            
+            initializeApp();
+            setupEventListeners();
+        });
+
+        // required属性を強制的に削除
+        function removeRequiredAttributes() {
+            const elementsToRemoveRequired = [
+                'monthlyDay',
+                'yearlyMonth', 
+                'yearlyDay',
+                'customNumber',
+                'customInterval',
+                'customStartDate'
+            ];
+            
+            elementsToRemoveRequired.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.removeAttribute('required');
+                    console.log(`✅ ${id}のrequired属性を削除しました`);
+                }
+            });
+        }
+
+        // データリセット機能（FieldValue.serverTimestamp()問題の解決用）
+        async function resetUserData() {
+            if (!currentUser) return;
+            
+            try {
+                console.log('=== データリセット開始 ===');
+                
+                // ローカルデータをクリア
+                routines = [];
+                completions = [];
+                
+                // Firestoreのデータを初期化
+                await db.collection('users').doc(currentUser.uid).set({
+                    email: currentUser.email,
+                    routines: [],
+                    completions: [],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastSyncDevice: navigator.userAgent,
+                    lastSyncTimestamp: new Date().toISOString()
+                });
+                
+                console.log('✅ データリセット完了');
+                showMessage('データをリセットしました', 'success');
+                
+                // 表示を更新
+                updateDisplay();
+                
+            } catch (error) {
+                console.error('❌ データリセットエラー:', error);
+                showMessage('データのリセットに失敗しました', 'error');
+            }
+        }
+
+        // データリセットボタンの追加（開発用）
+        function addResetButton() {
+            const mainView = document.getElementById('mainView');
+            if (mainView && !document.getElementById('resetDataBtn')) {
+                const resetBtn = document.createElement('button');
+                resetBtn.id = 'resetDataBtn';
+                resetBtn.textContent = '🔄 データリセット';
+                resetBtn.className = 'btn btn-danger';
+                resetBtn.style.marginTop = '10px';
+                resetBtn.onclick = () => {
+                    if (confirm('すべてのデータをリセットしますか？この操作は取り消せません。')) {
+                        resetUserData();
+                    }
+                };
+                mainView.appendChild(resetBtn);
+            }
+        }
+
+        // フォームリセット時にも必ず呼ぶ
+        document.getElementById('addRoutineForm').addEventListener('reset', function() {
+            setTimeout(toggleFrequencyOptions, 0);
+        });
+
+        // ユーザー管理モーダルの表示
+        function openUserAdminModal() {
+            document.getElementById('userAdminModal').style.display = 'block';
+            loadUserList();
+        }
+
+        // ユーザー管理モーダルの閉じる
+        function closeUserAdminModal() {
+            document.getElementById('userAdminModal').style.display = 'none';
+        }
+
+        // ユーザーリストの読み込み
+        function loadUserList() {
+            db.collection('users').get().then(querySnapshot => {
+                const userList = document.getElementById('userList');
+                userList.innerHTML = '';
+                const ul = document.createElement('ul');
+                ul.style.listStyle = 'none';
+                ul.style.padding = '0';
+                querySnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    const li = document.createElement('li');
+                    li.style.display = 'flex';
+                    li.style.justifyContent = 'space-between';
+                    li.style.alignItems = 'center';
+                    li.style.padding = '8px 0';
+                    li.style.borderBottom = '1px solid #eee';
+                    li.innerHTML = `<span>${userData.email}</span>`;
+                    if (userData.email !== 'yasnaries@gmail.com') {
+                        const delBtn = document.createElement('button');
+                        delBtn.textContent = '削除';
+                        delBtn.className = 'btn btn-danger';
+                        delBtn.onclick = function() {
+                            if (confirm(`${userData.email} を本当に削除しますか？`)) {
+                                db.collection('users').doc(doc.id).delete().then(() => {
+                                    li.remove();
+                                });
+                            }
+                        };
+                        li.appendChild(delBtn);
+                    }
+                    ul.appendChild(li);
+                });
+                userList.appendChild(ul);
+            });
+        }
     </script>
 </body>
 </html> 
