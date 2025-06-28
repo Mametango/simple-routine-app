@@ -493,6 +493,115 @@
         .custom-selector .form-group:last-child {
             grid-column: 1 / -1;
         }
+
+        /* 認証画面のスタイル */
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .auth-container h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .auth-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .auth-form {
+            text-align: left;
+        }
+
+        .auth-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .auth-form label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .auth-form input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .auth-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .auth-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .auth-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .auth-help {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .auth-help a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-help a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -505,19 +614,31 @@
         <div class="content">
             <!-- 認証画面 -->
             <div id="authView" class="view active">
-                <h2>ログイン / 新規登録</h2>
-                <form id="authForm">
-                    <div class="form-group">
-                        <label for="email">メールアドレス</label>
-                        <input type="email" id="email" required>
+                <div class="auth-container">
+                    <h1>📋 Simple Routine App</h1>
+                    <p class="auth-subtitle">シンプルなルーティン管理アプリ</p>
+                    
+                    <form id="authForm" class="auth-form">
+                        <div class="form-group">
+                            <label for="email">メールアドレス</label>
+                            <input type="email" id="email" required placeholder="example@email.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">パスワード</label>
+                            <input type="password" id="password" required placeholder="6文字以上、英数字を含む">
+                        </div>
+                        
+                        <button type="submit" class="auth-button">ログイン / 新規登録</button>
+                    </form>
+                    
+                    <div id="authMessage" class="auth-message"></div>
+                    
+                    <div class="auth-help">
+                        <p>初回利用の方は新規登録として処理されます</p>
+                        <p>認証エラーが発生する場合は <a href="debug-firebase.html" target="_blank">デバッグツール</a> をご利用ください</p>
                     </div>
-                    <div class="form-group">
-                        <label for="password">パスワード</label>
-                        <input type="password" id="password" required minlength="6">
-                    </div>
-                    <button type="submit" class="btn">ログイン / 登録</button>
-                </form>
-                <div id="authMessage"></div>
+                </div>
             </div>
 
             <!-- メイン画面 -->
@@ -759,11 +880,33 @@
 
         // Firebase初期化
         try {
+            console.log('Firebase初期化開始...');
+            console.log('設定値確認:', {
+                apiKey: firebaseConfig.apiKey ? '設定済み' : '未設定',
+                authDomain: firebaseConfig.authDomain,
+                projectId: firebaseConfig.projectId,
+                storageBucket: firebaseConfig.storageBucket,
+                messagingSenderId: firebaseConfig.messagingSenderId,
+                appId: firebaseConfig.appId,
+                measurementId: firebaseConfig.measurementId
+            });
+            
             firebase.initializeApp(firebaseConfig);
             console.log('✅ Firebase初期化成功');
             console.log('プロジェクトID:', firebaseConfig.projectId);
+            
+            // 初期化後の確認
+            console.log('Firebase Apps:', firebase.apps.length);
+            console.log('Firebase Auth:', firebase.auth ? '利用可能' : '利用不可');
+            console.log('Firebase Firestore:', firebase.firestore ? '利用可能' : '利用不可');
+            
         } catch (error) {
             console.error('❌ Firebase初期化エラー:', error);
+            console.error('エラー詳細:', {
+                message: error.message,
+                code: error.code,
+                stack: error.stack
+            });
         }
         
         const auth = firebase.auth();
@@ -856,12 +999,26 @@
 
         // 認証状態チェック
         function checkAuth() {
+            console.log('認証状態チェック開始...');
+            console.log('Firebase設定確認:', {
+                authDomain: firebaseConfig.authDomain,
+                projectId: firebaseConfig.projectId,
+                apiKey: firebaseConfig.apiKey ? '設定済み' : '未設定'
+            });
+            
             auth.onAuthStateChanged(async function(user) {
+                console.log('認証状態変更:', user ? 'ログイン中' : '未ログイン');
                 if (user) {
+                    console.log('ユーザー情報:', {
+                        uid: user.uid,
+                        email: user.email,
+                        emailVerified: user.emailVerified
+                    });
                     currentUser = user;
                     await loadUserData();
                     showMainView();
                 } else {
+                    console.log('ユーザー未認証');
                     currentUser = null;
                     routines = [];
                     completions = [];
@@ -905,6 +1062,12 @@
 
             try {
                 console.log('ログイン試行中...');
+                console.log('Firebase Auth設定確認:', {
+                    authDomain: firebaseConfig.authDomain,
+                    projectId: firebaseConfig.projectId,
+                    apiKey: firebaseConfig.apiKey ? '設定済み' : '未設定'
+                });
+                
                 // 既存ユーザーの確認
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 currentUser = userCredential.user;
@@ -913,11 +1076,23 @@
                 await loadUserData();
                 showMainView();
             } catch (error) {
-                console.error('❌ ログインエラー:', error.code, error.message);
+                console.error('❌ ログインエラー詳細:', {
+                    code: error.code,
+                    message: error.message,
+                    email: email,
+                    authDomain: firebaseConfig.authDomain,
+                    projectId: firebaseConfig.projectId
+                });
+                
                 if (error.code === 'auth/user-not-found') {
                     // 新規登録
                     try {
                         console.log('新規登録試行中...');
+                        console.log('新規登録設定確認:', {
+                            authDomain: firebaseConfig.authDomain,
+                            projectId: firebaseConfig.projectId
+                        });
+                        
                         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                         currentUser = userCredential.user;
                         console.log('✅ 新規登録成功:', currentUser.email);
@@ -925,9 +1100,22 @@
                         await initializeUserData();
                         showMainView();
                     } catch (signUpError) {
-                        console.error('❌ 新規登録エラー:', signUpError.code, signUpError.message);
-                        showMessage('アカウント作成に失敗しました: ' + signUpError.message, 'error');
+                        console.error('❌ 新規登録エラー詳細:', {
+                            code: signUpError.code,
+                            message: signUpError.message,
+                            email: email,
+                            authDomain: firebaseConfig.authDomain,
+                            projectId: firebaseConfig.projectId
+                        });
+                        
+                        if (signUpError.code === 'auth/configuration-not-found') {
+                            showMessage('Firebase設定エラー: Authentication設定を確認してください。詳細はデバッグツールをご利用ください。', 'error');
+                        } else {
+                            showMessage('アカウント作成に失敗しました: ' + signUpError.message, 'error');
+                        }
                     }
+                } else if (error.code === 'auth/configuration-not-found') {
+                    showMessage('Firebase設定エラー: Authentication設定を確認してください。詳細はデバッグツールをご利用ください。', 'error');
                 } else {
                     showMessage('ログインに失敗しました: ' + error.message, 'error');
                 }
