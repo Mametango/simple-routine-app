@@ -629,13 +629,14 @@
                             <input type="password" id="password" required placeholder="6文字以上、英数字を含む">
                         </div>
                         
-                        <button type="submit" class="auth-button">ログイン / 新規登録</button>
+                        <button type="submit" class="auth-button">新規登録 / ログイン</button>
                     </form>
                     
                     <div id="authMessage" class="auth-message"></div>
                     
                     <div class="auth-help">
                         <p>初回利用の方は新規登録として処理されます</p>
+                        <p>既存のアカウントがある場合は自動的にログインされます</p>
                         <p>認証エラーが発生する場合は <a href="debug-firebase.html" target="_blank">デバッグツール</a> をご利用ください</p>
                     </div>
                 </div>
@@ -1061,22 +1062,28 @@
             }
 
             try {
-                console.log('ログイン試行中...');
                 console.log('Firebase Auth設定確認:', {
                     authDomain: firebaseConfig.authDomain,
                     projectId: firebaseConfig.projectId,
                     apiKey: firebaseConfig.apiKey ? '設定済み' : '未設定'
                 });
                 
-                // 既存ユーザーの確認
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                // まず新規登録を試行
+                console.log('新規登録試行中...');
+                console.log('新規登録設定確認:', {
+                    authDomain: firebaseConfig.authDomain,
+                    projectId: firebaseConfig.projectId
+                });
+                
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 currentUser = userCredential.user;
-                console.log('✅ ログイン成功:', currentUser.email);
-                showMessage('ログインしました', 'success');
-                await loadUserData();
+                console.log('✅ 新規登録成功:', currentUser.email);
+                showMessage('アカウントを作成しました', 'success');
+                await initializeUserData();
                 showMainView();
+                
             } catch (error) {
-                console.error('❌ ログインエラー詳細:', {
+                console.error('❌ 新規登録エラー詳細:', {
                     code: error.code,
                     message: error.message,
                     email: email,
@@ -1084,40 +1091,39 @@
                     projectId: firebaseConfig.projectId
                 });
                 
-                if (error.code === 'auth/user-not-found') {
-                    // 新規登録
+                if (error.code === 'auth/email-already-in-use') {
+                    // 既存ユーザーの場合はログインを試行
                     try {
-                        console.log('新規登録試行中...');
-                        console.log('新規登録設定確認:', {
-                            authDomain: firebaseConfig.authDomain,
-                            projectId: firebaseConfig.projectId
-                        });
-                        
-                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                        console.log('既存ユーザーを検出、ログイン試行中...');
+                        const userCredential = await auth.signInWithEmailAndPassword(email, password);
                         currentUser = userCredential.user;
-                        console.log('✅ 新規登録成功:', currentUser.email);
-                        showMessage('アカウントを作成しました', 'success');
-                        await initializeUserData();
+                        console.log('✅ ログイン成功:', currentUser.email);
+                        showMessage('ログインしました', 'success');
+                        await loadUserData();
                         showMainView();
-                    } catch (signUpError) {
-                        console.error('❌ 新規登録エラー詳細:', {
-                            code: signUpError.code,
-                            message: signUpError.message,
-                            email: email,
-                            authDomain: firebaseConfig.authDomain,
-                            projectId: firebaseConfig.projectId
+                    } catch (loginError) {
+                        console.error('❌ ログインエラー詳細:', {
+                            code: loginError.code,
+                            message: loginError.message,
+                            email: email
                         });
                         
-                        if (signUpError.code === 'auth/configuration-not-found') {
-                            showMessage('Firebase設定エラー: Authentication設定を確認してください。詳細はデバッグツールをご利用ください。', 'error');
+                        if (loginError.code === 'auth/wrong-password') {
+                            showMessage('パスワードが間違っています', 'error');
+                        } else if (loginError.code === 'auth/invalid-credential') {
+                            showMessage('メールアドレスまたはパスワードが正しくありません', 'error');
                         } else {
-                            showMessage('アカウント作成に失敗しました: ' + signUpError.message, 'error');
+                            showMessage('ログインに失敗しました: ' + loginError.message, 'error');
                         }
                     }
                 } else if (error.code === 'auth/configuration-not-found') {
                     showMessage('Firebase設定エラー: Authentication設定を確認してください。詳細はデバッグツールをご利用ください。', 'error');
+                } else if (error.code === 'auth/weak-password') {
+                    showMessage('パスワードが弱すぎます。6文字以上で英数字を含む必要があります', 'error');
+                } else if (error.code === 'auth/invalid-email') {
+                    showMessage('無効なメールアドレスです', 'error');
                 } else {
-                    showMessage('ログインに失敗しました: ' + error.message, 'error');
+                    showMessage('アカウント作成に失敗しました: ' + error.message, 'error');
                 }
             }
         }
