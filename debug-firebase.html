@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase設定デバッグ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Firebase設定デバッグツール</h1>
+        
+        <div class="status info">
+            <strong>プロジェクトID:</strong> simple-routine-app-33cfc<br>
+            <strong>認証ドメイン:</strong> simple-routine-app-33cfc.firebaseapp.com
+        </div>
+
+        <div id="firebaseStatus" class="status warning">
+            Firebase初期化中...
+        </div>
+
+        <div class="test-section">
+            <h3>1. Firebase初期化テスト</h3>
+            <div id="initResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Authentication設定テスト</h3>
+            <div id="authResult"></div>
+            <button onclick="testAuth()">認証テスト実行</button>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Firestore接続テスト</h3>
+            <div id="firestoreResult"></div>
+            <button onclick="testFirestore()">Firestoreテスト実行</button>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 手動認証テスト</h3>
+            <input type="email" id="testEmail" placeholder="テスト用メールアドレス" value="test@example.com">
+            <input type="password" id="testPassword" placeholder="テスト用パスワード" value="test123">
+            <button onclick="manualAuthTest()">手動認証テスト</button>
+            <div id="manualAuthResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 設定確認チェックリスト</h3>
+            <div id="checklistResult"></div>
+            <button onclick="runChecklist()">チェックリスト実行</button>
+        </div>
+
+        <div class="test-section">
+            <h3>6. デバッグログ</h3>
+            <div id="debugLog" class="log"></div>
+            <button onclick="clearLog()">ログクリア</button>
+        </div>
+
+        <div class="test-section">
+            <h3>7. 解決手順</h3>
+            <div class="status info">
+                <strong>auth/configuration-not-found エラーの解決手順:</strong><br><br>
+                1. <a href="https://console.firebase.google.com/project/simple-routine-app-33cfc" target="_blank">Firebase Console</a> にアクセス<br>
+                2. 左メニュー → Authentication<br>
+                3. 「始める」をクリック<br>
+                4. Sign-in method → メール/パスワード → 有効にする<br>
+                5. 保存をクリック<br>
+                6. このページを再読み込み
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmkRs7f2a6ejf-qXJZ2F-jMWGnAGdvY0Q",
+            authDomain: "simple-routine-app-33cfc.firebaseapp.com",
+            projectId: "simple-routine-app-33cfc",
+            storageBucket: "simple-routine-app-33cfc.firebasestorage.app",
+            messagingSenderId: "124814607687",
+            appId: "1:124814607687:web:d1b703506cad3ecbaa7862",
+            measurementId: "G-57M4VBMXZM"
+        };
+
+        let auth, db;
+
+        // ログ出力関数
+        function log(message) {
+            const logDiv = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('debugLog').textContent = '';
+        }
+
+        // 結果表示関数
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Firebase初期化テスト
+        async function testFirebaseInit() {
+            try {
+                log('Firebase初期化開始...');
+                firebase.initializeApp(firebaseConfig);
+                log('✅ Firebase初期化成功');
+                
+                auth = firebase.auth();
+                db = firebase.firestore();
+                
+                document.getElementById('firebaseStatus').className = 'status success';
+                document.getElementById('firebaseStatus').innerHTML = '✅ Firebase初期化成功';
+                
+                showResult('initResult', '✅ Firebase初期化成功', 'success');
+                return true;
+            } catch (error) {
+                log(`❌ Firebase初期化エラー: ${error.message}`);
+                showResult('initResult', `❌ Firebase初期化エラー: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Authentication設定テスト
+        async function testAuth() {
+            if (!auth) {
+                showResult('authResult', '❌ Firebase初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                log('Authentication設定テスト開始...');
+                
+                // 認証状態の監視
+                auth.onAuthStateChanged(function(user) {
+                    log(`認証状態変更: ${user ? 'ログイン中' : '未ログイン'}`);
+                });
+
+                // 設定確認
+                const config = await auth.app.options;
+                log(`認証ドメイン: ${config.authDomain}`);
+                
+                showResult('authResult', '✅ Authentication設定正常', 'success');
+            } catch (error) {
+                log(`❌ Authentication設定エラー: ${error.message}`);
+                showResult('authResult', `❌ Authentication設定エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // Firestore接続テスト
+        async function testFirestore() {
+            if (!db) {
+                showResult('firestoreResult', '❌ Firebase初期化が必要です', 'error');
+                return;
+            }
+
+            try {
+                log('Firestore接続テスト開始...');
+                
+                // 簡単な読み取りテスト
+                const testDoc = await db.collection('test').doc('connection').get();
+                log('✅ Firestore接続成功');
+                
+                showResult('firestoreResult', '✅ Firestore接続正常', 'success');
+            } catch (error) {
+                log(`❌ Firestore接続エラー: ${error.message}`);
+                showResult('firestoreResult', `❌ Firestore接続エラー: ${error.message}`, 'error');
+            }
+        }
+
+        // 手動認証テスト
+        async function manualAuthTest() {
+            if (!auth) {
+                showResult('manualAuthResult', '❌ Firebase初期化が必要です', 'error');
+                return;
+            }
+
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+
+            if (!email || !password) {
+                showResult('manualAuthResult', '❌ メールアドレスとパスワードを入力してください', 'error');
+                return;
+            }
+
+            try {
+                log(`手動認証テスト開始: ${email}`);
+                
+                // ログイン試行
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                log('✅ ログイン成功');
+                showResult('manualAuthResult', '✅ ログイン成功', 'success');
+                
+                // ログアウト
+                await auth.signOut();
+                log('ログアウト完了');
+                
+            } catch (error) {
+                log(`❌ 認証エラー: ${error.code} - ${error.message}`);
+                
+                if (error.code === 'auth/user-not-found') {
+                    // 新規登録試行
+                    try {
+                        log('新規登録試行中...');
+                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                        log('✅ 新規登録成功');
+                        showResult('manualAuthResult', '✅ 新規登録成功', 'success');
+                        
+                        // ログアウト
+                        await auth.signOut();
+                        log('ログアウト完了');
+                    } catch (signUpError) {
+                        log(`❌ 新規登録エラー: ${signUpError.code} - ${signUpError.message}`);
+                        showResult('manualAuthResult', `❌ 新規登録エラー: ${signUpError.message}`, 'error');
+                    }
+                } else {
+                    showResult('manualAuthResult', `❌ 認証エラー: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // 設定確認チェックリスト
+        async function runChecklist() {
+            log('設定確認チェックリスト開始...');
+            let checklist = [];
+
+            // 1. Firebase初期化確認
+            if (firebase.apps.length > 0) {
+                checklist.push('✅ Firebase初期化済み');
+            } else {
+                checklist.push('❌ Firebase初期化未完了');
+            }
+
+            // 2. 設定値確認
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+                checklist.push('✅ API Key設定済み');
+            } else {
+                checklist.push('❌ API Key未設定');
+            }
+
+            if (firebaseConfig.authDomain) {
+                checklist.push('✅ Auth Domain設定済み');
+            } else {
+                checklist.push('❌ Auth Domain未設定');
+            }
+
+            if (firebaseConfig.projectId) {
+                checklist.push('✅ Project ID設定済み');
+            } else {
+                checklist.push('❌ Project ID未設定');
+            }
+
+            // 3. Authentication設定確認
+            try {
+                if (auth) {
+                    const config = await auth.app.options;
+                    checklist.push('✅ Authentication設定確認済み');
+                } else {
+                    checklist.push('❌ Authentication設定未確認');
+                }
+            } catch (error) {
+                checklist.push(`❌ Authentication設定エラー: ${error.message}`);
+            }
+
+            // 4. Firestore設定確認
+            try {
+                if (db) {
+                    checklist.push('✅ Firestore設定確認済み');
+                } else {
+                    checklist.push('❌ Firestore設定未確認');
+                }
+            } catch (error) {
+                checklist.push(`❌ Firestore設定エラー: ${error.message}`);
+            }
+
+            const checklistHtml = checklist.map(item => `<div>${item}</div>`).join('');
+            showResult('checklistResult', checklistHtml, 'info');
+        }
+
+        // ページ読み込み時の初期化
+        window.addEventListener('load', async function() {
+            log('デバッグページ読み込み完了');
+            await testFirebaseInit();
+        });
+    </script>
+</body>
+</html> 
