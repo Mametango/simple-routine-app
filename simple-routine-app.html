@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>シンプルルーティン管理</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -16,31 +22,50 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            margin: 0;
         }
 
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
             overflow: hidden;
+            min-height: calc(100vh - 40px);
         }
 
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 40px 30px;
             text-align: center;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
         }
 
         .header h1 {
-            font-size: 28px;
+            font-size: 32px;
             margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
         }
 
         .content {
-            padding: 30px;
+            padding: 40px 30px;
         }
 
         .view {
@@ -64,35 +89,59 @@
 
         input, textarea, select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 16px 20px;
             border: 2px solid #e1e5e9;
-            border-radius: 12px;
+            border-radius: 16px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
         }
 
         input:focus, textarea:focus, select:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: white;
         }
 
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
+            padding: 16px 28px;
+            border-radius: 16px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
         }
 
         .btn-secondary {
@@ -109,102 +158,84 @@
 
         .routine-list {
             margin-top: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 10px;
         }
 
+        /* ルーティンアイテム */
         .routine-item {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 0;
-            border: 2px solid #e9ecef;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-
-        .routine-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
         }
 
         .routine-item:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-            border-color: #667eea;
-        }
-
-        .routine-item:hover::before {
-            transform: scaleX(1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
         }
 
         .routine-item.completed {
-            opacity: 0.8;
-            background: linear-gradient(135deg, #f8fff8 0%, #f0f8f0 100%);
-            border-color: #28a745;
+            border-left: 4px solid #28a745;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.1);
         }
 
-        .routine-item.completed::before {
-            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
-            transform: scaleX(1);
+        .routine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
 
-        .routine-item.completed .routine-title {
-            text-decoration: line-through;
-            color: #6c757d;
+        .edit-btn {
+            background: #667eea;
+            border: none;
+            font-size: 0.9em;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            color: white;
+            font-weight: 500;
+            min-width: 50px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
         }
 
         .routine-title {
             font-size: 20px;
             font-weight: 700;
-            margin-bottom: 12px;
-            color: #2c3e50;
-            line-height: 1.3;
+            margin-bottom: 10px;
+            color: #333;
+            position: relative;
+            z-index: 1;
         }
 
         .routine-description {
             color: #6c757d;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             line-height: 1.5;
-            font-size: 14px;
+            position: relative;
+            z-index: 1;
         }
 
         .routine-meta {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .routine-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .routine-actions .btn {
-            flex: 1;
-            min-width: 80px;
-            padding: 8px 12px;
-            font-size: 13px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .routine-actions .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #6c757d;
+            position: relative;
+            z-index: 1;
         }
 
         .frequency-badge {
@@ -214,227 +245,136 @@
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            align-self: flex-start;
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }
 
-        .routine-item.completed .frequency-badge {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-        }
-
-        /* カードのアニメーション */
-        @keyframes cardSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .routine-item {
-            animation: cardSlideIn 0.6s ease-out;
-        }
-
-        .routine-item:nth-child(1) { animation-delay: 0.1s; }
-        .routine-item:nth-child(2) { animation-delay: 0.2s; }
-        .routine-item:nth-child(3) { animation-delay: 0.3s; }
-        .routine-item:nth-child(4) { animation-delay: 0.4s; }
-        .routine-item:nth-child(5) { animation-delay: 0.5s; }
-
-        /* レスポンシブデザイン */
-        @media (max-width: 768px) {
-            .routine-list {
-                grid-template-columns: 1fr;
-                gap: 15px;
-                padding: 5px;
-            }
-            
-            .routine-item {
-                padding: 20px;
-                border-radius: 16px;
-            }
-            
-            .routine-title {
-                font-size: 18px;
-            }
-            
-            .routine-actions {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .routine-actions .btn {
-                width: 100%;
-                padding: 10px;
-                font-size: 14px;
-            }
-            
-            .container {
-                margin: 10px;
-                border-radius: 16px;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .routine-item {
-                padding: 16px;
-            }
-            
-            .routine-title {
-                font-size: 16px;
-            }
-            
-            .routine-description {
-                font-size: 13px;
-            }
-            
-            .frequency-badge {
-                font-size: 11px;
-                padding: 4px 8px;
-            }
-        }
-
         .user-info {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 30px;
             text-align: center;
+            border: 2px solid #e9ecef;
         }
 
+        /* 統計カード */
         .stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
         }
 
         .stat-card {
-            background: #f8f9fa;
-            padding: 20px;
+            background: white;
+            padding: 20px 40px;
             border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             text-align: center;
         }
 
         .stat-number {
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 2em;
+            font-weight: bold;
             color: #667eea;
+            margin-bottom: 5px;
         }
 
         .stat-label {
-            color: #6c757d;
-            font-size: 14px;
-            margin-top: 5px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* ルーティンセクション */
+        .routine-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .routine-section h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
         }
 
         .error {
-            background: #f8d7da;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
             color: #721c24;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.1);
         }
 
         .success {
-            background: #d4edda;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.1);
         }
 
         .hidden {
             display: none;
         }
 
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 4px;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 10px;
-            text-align: center;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .tab.active {
-            background: white;
-            color: #667eea;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .tab:hover:not(.active) {
-            background: rgba(102, 126, 234, 0.1);
-        }
-
+        /* フローティング追加ボタン */
         .floating-add-btn {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            bottom: 50%;
+            right: 50%;
+            transform: translate(50%, 50%);
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            border: none;
+            font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            transition: all 0.3s;
-            z-index: 1000;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 9999;
+            display: none;
         }
 
         .floating-add-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+            transform: translate(50%, 50%) scale(1.15);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
         }
 
+        /* モーダル */
         .modal {
+            display: none;
             position: fixed;
             z-index: 2000;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.hidden {
-            display: none;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
         }
 
         .modal-content {
             background: white;
-            padding: 30px;
-            border-radius: 20px;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 24px;
             width: 90%;
             max-width: 500px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            animation: modalSlideIn 0.3s ease-out;
+            position: relative;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            animation: modalSlideIn 0.3s ease;
         }
 
         @keyframes modalSlideIn {
@@ -448,51 +388,226 @@
             }
         }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f8f9fa;
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            color: #333;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #6c757d;
+        .close {
+            position: absolute;
+            right: 25px;
+            top: 25px;
+            font-size: 32px;
+            font-weight: bold;
             cursor: pointer;
-            padding: 5px;
-            border-radius: 50%;
-            transition: background-color 0.2s;
-        }
-
-        .close-btn:hover {
-            background-color: #f8f9fa;
-        }
-
-        .modal-actions {
+            color: #aaa;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
             display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
         }
 
-        .modal-actions .btn {
-            width: auto;
-            margin: 0;
-        }
-
-        .routine-section h3 {
-            margin-bottom: 15px;
+        .close:hover {
             color: #333;
-            font-size: 20px;
+            background: #f8f9fa;
+        }
+
+        /* タブコンテンツのデフォルト表示 */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 曜日選択スタイル */
+        .day-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .day-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .day-checkbox:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .day-checkbox input[type="checkbox"] {
+            margin-right: 6px;
+            width: auto;
+            padding: 0;
+        }
+
+        .day-checkbox input[type="checkbox"]:checked + span {
+            color: #667eea;
+        }
+
+        .day-checkbox.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* 毎年選択スタイル */
+        .yearly-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* カスタム頻度スタイル */
+        .custom-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .custom-selector .form-group:last-child {
+            grid-column: 1 / -1;
+        }
+
+        /* 認証画面のスタイル */
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .auth-container h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .auth-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .auth-form {
+            text-align: left;
+        }
+
+        .auth-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .auth-form label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .auth-form input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .auth-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .auth-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .auth-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .auth-help {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .auth-help a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-help a:hover {
+            text-decoration: underline;
+        }
+
+        /* ルーティーン追加ボタン（トップ） */
+        .top-add-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.3em;
+            font-weight: bold;
+            padding: 18px 40px;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.18);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            margin: 0 auto;
+        }
+        .top-add-btn:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            transform: translateY(-2px) scale(1.05);
         }
     </style>
 </head>
@@ -506,19 +621,32 @@
         <div class="content">
             <!-- 認証画面 -->
             <div id="authView" class="view active">
-                <h2>ログイン / 新規登録</h2>
-                <form id="authForm">
-                    <div class="form-group">
-                        <label for="email">メールアドレス</label>
-                        <input type="email" id="email" required>
+                <div class="auth-container">
+                    <h1>📋 Simple Routine App</h1>
+                    <p class="auth-subtitle">シンプルなルーティン管理アプリ</p>
+                    
+                    <form id="authForm" class="auth-form">
+                        <div class="form-group">
+                            <label for="email">メールアドレス</label>
+                            <input type="email" id="email" required placeholder="example@email.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">パスワード</label>
+                            <input type="password" id="password" required placeholder="6文字以上、英数字を含む">
+                        </div>
+                        
+                        <button type="submit" class="auth-button">新規登録 / ログイン</button>
+                    </form>
+                    
+                    <div id="authMessage" class="auth-message"></div>
+                    
+                    <div class="auth-help">
+                        <p>初回利用の方は新規登録として処理されます</p>
+                        <p>既存のアカウントがある場合は自動的にログインされます</p>
+                        <p>認証エラーが発生する場合は <a href="debug-firebase.html" target="_blank">デバッグツール</a> をご利用ください</p>
                     </div>
-                    <div class="form-group">
-                        <label for="password">パスワード</label>
-                        <input type="password" id="password" required minlength="6">
-                    </div>
-                    <button type="submit" class="btn">ログイン / 登録</button>
-                </form>
-                <div id="authMessage"></div>
+                </div>
             </div>
 
             <!-- メイン画面 -->
@@ -532,143 +660,875 @@
                 <!-- 統計情報 -->
                 <div class="stats">
                     <div class="stat-card">
-                        <div class="stat-number" id="totalRoutines">0</div>
-                        <div class="stat-label">総ルーティン数</div>
-                    </div>
-                    <div class="stat-card">
                         <div class="stat-number" id="completedToday">0</div>
                         <div class="stat-label">今日完了</div>
                     </div>
                 </div>
 
-                <!-- メッセージ表示エリア -->
-                <div id="mainMessage"></div>
+                <!-- ルーティーン追加ボタン -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                  <button id="topAddBtn" class="top-add-btn" onclick="openAddModal()">＋ ルーティン追加</button>
+                </div>
 
-                <!-- ルーティン一覧 -->
+                <!-- 今日のルーティン -->
                 <div class="routine-section">
-                    <h3>📋 ルーティン一覧</h3>
-                    <div id="routineList" class="routine-list"></div>
+                    <h3>📅 今日のルーティン</h3>
+                    <div id="todayRoutines" class="routine-list"></div>
                 </div>
 
-                <!-- フローティング追加ボタン -->
-                <div class="floating-add-btn" onclick="showAddModal()">
-                    <span>+</span>
+                <!-- すべてのルーティン -->
+                <div class="routine-section">
+                    <h3>📋 すべてのルーティン</h3>
+                    <div id="allRoutines" class="routine-list"></div>
                 </div>
 
-                <!-- 追加モーダル -->
-                <div id="addModal" class="modal hidden">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>新しいルーティンを追加</h3>
-                            <button class="close-btn" onclick="hideAddModal()">&times;</button>
-                        </div>
-                        <form id="addRoutineForm">
-                            <div class="form-group">
-                                <label for="routineTitle">タイトル</label>
-                                <input type="text" id="routineTitle" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="routineDescription">説明（任意）</label>
-                                <textarea id="routineDescription" rows="3"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="routineFrequency">頻度</label>
-                                <select id="routineFrequency" required>
-                                    <option value="daily">毎日</option>
-                                    <option value="weekly">毎週</option>
-                                    <option value="monthly">毎月</option>
-                                </select>
-                            </div>
-                            <div class="modal-actions">
-                                <button type="button" class="btn btn-secondary" onclick="hideAddModal()">キャンセル</button>
-                                <button type="submit" class="btn btn-success">追加</button>
-                            </div>
-                        </form>
-                    </div>
+                <!-- 管理者用ユーザー管理ボタン（yasnaries@gmail.comのみ表示） -->
+                <div id="adminPanel" style="display:none; text-align:center; margin-bottom:20px;">
+                  <button class="btn btn-danger" onclick="openUserAdminModal()">ユーザー管理</button>
                 </div>
 
-                <!-- 編集モーダル -->
-                <div id="editModal" class="modal hidden">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>ルーティンを編集</h3>
-                            <button class="close-btn" onclick="hideEditModal()">&times;</button>
-                        </div>
-                        <form id="editRoutineForm">
-                            <input type="hidden" id="editRoutineId">
-                            <div class="form-group">
-                                <label for="editRoutineTitle">タイトル</label>
-                                <input type="text" id="editRoutineTitle" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="editRoutineDescription">説明（任意）</label>
-                                <textarea id="editRoutineDescription" rows="3"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="editRoutineFrequency">頻度</label>
-                                <select id="editRoutineFrequency" required>
-                                    <option value="daily">毎日</option>
-                                    <option value="weekly">毎週</option>
-                                    <option value="monthly">毎月</option>
-                                </select>
-                            </div>
-                            <div class="modal-actions">
-                                <button type="button" class="btn btn-secondary" onclick="hideEditModal()">キャンセル</button>
-                                <button type="submit" class="btn btn-success">更新</button>
-                            </div>
-                        </form>
-                    </div>
+                <!-- ユーザー管理モーダル -->
+                <div id="userAdminModal" class="modal">
+                  <div class="modal-content" style="max-width:600px;">
+                    <span class="close" onclick="closeUserAdminModal()">&times;</span>
+                    <h3>ユーザー管理</h3>
+                    <div id="userList"></div>
+                  </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 追加モーダル -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddModal()">&times;</span>
+            <h3>新しいルーティンを追加</h3>
+            <form id="addRoutineForm">
+                <div class="form-group">
+                    <label for="routineTitle">タイトル</label>
+                    <input type="text" id="routineTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="routineDescription">説明（任意）</label>
+                    <textarea id="routineDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="routineFrequency">頻度</label>
+                    <select id="routineFrequency" required onchange="toggleFrequencyOptions()">
+                        <option value="daily">毎日</option>
+                        <option value="weekly">毎週</option>
+                        <option value="monthly">毎月</option>
+                        <option value="yearly">毎年</option>
+                        <option value="custom">カスタム</option>
+                    </select>
+                </div>
+                
+                <!-- 毎週の曜日選択 -->
+                <div id="weeklyOptions" class="form-group" style="display: none;">
+                    <label>曜日を選択</label>
+                    <div class="day-selector">
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="0"> 日
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="1"> 月
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="2"> 火
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="3"> 水
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="4"> 木
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="5"> 金
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="6"> 土
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 毎月の日にち選択 -->
+                <div id="monthlyOptions" class="form-group" style="display: none;">
+                    <label for="monthlyDay">日にちを選択</label>
+                    <select id="monthlyDay">
+                        <option value="">選択してください</option>
+                        <option value="1">1日</option>
+                        <option value="2">2日</option>
+                        <option value="3">3日</option>
+                        <option value="4">4日</option>
+                        <option value="5">5日</option>
+                        <option value="6">6日</option>
+                        <option value="7">7日</option>
+                        <option value="8">8日</option>
+                        <option value="9">9日</option>
+                        <option value="10">10日</option>
+                        <option value="11">11日</option>
+                        <option value="12">12日</option>
+                        <option value="13">13日</option>
+                        <option value="14">14日</option>
+                        <option value="15">15日</option>
+                        <option value="16">16日</option>
+                        <option value="17">17日</option>
+                        <option value="18">18日</option>
+                        <option value="19">19日</option>
+                        <option value="20">20日</option>
+                        <option value="21">21日</option>
+                        <option value="22">22日</option>
+                        <option value="23">23日</option>
+                        <option value="24">24日</option>
+                        <option value="25">25日</option>
+                        <option value="26">26日</option>
+                        <option value="27">27日</option>
+                        <option value="28">28日</option>
+                        <option value="29">29日</option>
+                        <option value="30">30日</option>
+                        <option value="31">31日</option>
+                    </select>
+                </div>
+
+                <!-- 毎年の月日選択 -->
+                <div id="yearlyOptions" class="form-group" style="display: none;">
+                    <div class="yearly-selector">
+                        <div class="form-group">
+                            <label for="yearlyMonth">月を選択</label>
+                            <select id="yearlyMonth">
+                                <option value="">選択してください</option>
+                                <option value="1">1月</option>
+                                <option value="2">2月</option>
+                                <option value="3">3月</option>
+                                <option value="4">4月</option>
+                                <option value="5">5月</option>
+                                <option value="6">6月</option>
+                                <option value="7">7月</option>
+                                <option value="8">8月</option>
+                                <option value="9">9月</option>
+                                <option value="10">10月</option>
+                                <option value="11">11月</option>
+                                <option value="12">12月</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="yearlyDay">日にちを選択</label>
+                            <select id="yearlyDay">
+                                <option value="">選択してください</option>
+                                <option value="1">1日</option>
+                                <option value="2">2日</option>
+                                <option value="3">3日</option>
+                                <option value="4">4日</option>
+                                <option value="5">5日</option>
+                                <option value="6">6日</option>
+                                <option value="7">7日</option>
+                                <option value="8">8日</option>
+                                <option value="9">9日</option>
+                                <option value="10">10日</option>
+                                <option value="11">11日</option>
+                                <option value="12">12日</option>
+                                <option value="13">13日</option>
+                                <option value="14">14日</option>
+                                <option value="15">15日</option>
+                                <option value="16">16日</option>
+                                <option value="17">17日</option>
+                                <option value="18">18日</option>
+                                <option value="19">19日</option>
+                                <option value="20">20日</option>
+                                <option value="21">21日</option>
+                                <option value="22">22日</option>
+                                <option value="23">23日</option>
+                                <option value="24">24日</option>
+                                <option value="25">25日</option>
+                                <option value="26">26日</option>
+                                <option value="27">27日</option>
+                                <option value="28">28日</option>
+                                <option value="29">29日</option>
+                                <option value="30">30日</option>
+                                <option value="31">31日</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- カスタム頻度設定 -->
+                <div id="customOptions" class="form-group" style="display: none;">
+                    <div class="custom-selector">
+                        <div class="form-group">
+                            <label for="customNumber">数値</label>
+                            <input type="number" id="customNumber" min="1" max="365" placeholder="例: 3">
+                        </div>
+                        <div class="form-group">
+                            <label for="customInterval">間隔</label>
+                            <select id="customInterval">
+                                <option value="">選択してください</option>
+                                <option value="days">日</option>
+                                <option value="weeks">週</option>
+                                <option value="months">月</option>
+                                <option value="years">年</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="customStartDate">開始日</label>
+                            <input type="date" id="customStartDate">
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">追加</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 編集モーダル -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h3>ルーティンを編集</h3>
+            <form id="editRoutineForm">
+                <input type="hidden" id="editRoutineId">
+                <div class="form-group">
+                    <label for="editRoutineTitle">タイトル</label>
+                    <input type="text" id="editRoutineTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="editRoutineDescription">説明（任意）</label>
+                    <textarea id="editRoutineDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editRoutineFrequency">頻度</label>
+                    <select id="editRoutineFrequency" required onchange="toggleEditFrequencyOptions()">
+                        <option value="daily">毎日</option>
+                        <option value="weekly">毎週</option>
+                        <option value="monthly">毎月</option>
+                        <option value="yearly">毎年</option>
+                        <option value="custom">カスタム</option>
+                    </select>
+                </div>
+                
+                <!-- 毎週の曜日選択（編集用） -->
+                <div id="editWeeklyOptions" class="form-group" style="display: none;">
+                    <label>曜日を選択</label>
+                    <div class="day-selector">
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="0"> 日
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="1"> 月
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="2"> 火
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="3"> 水
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="4"> 木
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="5"> 金
+                        </label>
+                        <label class="day-checkbox">
+                            <input type="checkbox" value="6"> 土
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 毎月の日にち選択（編集用） -->
+                <div id="editMonthlyOptions" class="form-group" style="display: none;">
+                    <label for="editMonthlyDay">日にちを選択</label>
+                    <select id="editMonthlyDay">
+                        <option value="">選択してください</option>
+                        <option value="1">1日</option>
+                        <option value="2">2日</option>
+                        <option value="3">3日</option>
+                        <option value="4">4日</option>
+                        <option value="5">5日</option>
+                        <option value="6">6日</option>
+                        <option value="7">7日</option>
+                        <option value="8">8日</option>
+                        <option value="9">9日</option>
+                        <option value="10">10日</option>
+                        <option value="11">11日</option>
+                        <option value="12">12日</option>
+                        <option value="13">13日</option>
+                        <option value="14">14日</option>
+                        <option value="15">15日</option>
+                        <option value="16">16日</option>
+                        <option value="17">17日</option>
+                        <option value="18">18日</option>
+                        <option value="19">19日</option>
+                        <option value="20">20日</option>
+                        <option value="21">21日</option>
+                        <option value="22">22日</option>
+                        <option value="23">23日</option>
+                        <option value="24">24日</option>
+                        <option value="25">25日</option>
+                        <option value="26">26日</option>
+                        <option value="27">27日</option>
+                        <option value="28">28日</option>
+                        <option value="29">29日</option>
+                        <option value="30">30日</option>
+                        <option value="31">31日</option>
+                    </select>
+                </div>
+
+                <!-- 毎年の月日選択（編集用） -->
+                <div id="editYearlyOptions" class="form-group" style="display: none;">
+                    <div class="yearly-selector">
+                        <div class="form-group">
+                            <label for="editYearlyMonth">月を選択</label>
+                            <select id="editYearlyMonth">
+                                <option value="">選択してください</option>
+                                <option value="1">1月</option>
+                                <option value="2">2月</option>
+                                <option value="3">3月</option>
+                                <option value="4">4月</option>
+                                <option value="5">5月</option>
+                                <option value="6">6月</option>
+                                <option value="7">7月</option>
+                                <option value="8">8月</option>
+                                <option value="9">9月</option>
+                                <option value="10">10月</option>
+                                <option value="11">11月</option>
+                                <option value="12">12月</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editYearlyDay">日にちを選択</label>
+                            <select id="editYearlyDay">
+                                <option value="">選択してください</option>
+                                <option value="1">1日</option>
+                                <option value="2">2日</option>
+                                <option value="3">3日</option>
+                                <option value="4">4日</option>
+                                <option value="5">5日</option>
+                                <option value="6">6日</option>
+                                <option value="7">7日</option>
+                                <option value="8">8日</option>
+                                <option value="9">9日</option>
+                                <option value="10">10日</option>
+                                <option value="11">11日</option>
+                                <option value="12">12日</option>
+                                <option value="13">13日</option>
+                                <option value="14">14日</option>
+                                <option value="15">15日</option>
+                                <option value="16">16日</option>
+                                <option value="17">17日</option>
+                                <option value="18">18日</option>
+                                <option value="19">19日</option>
+                                <option value="20">20日</option>
+                                <option value="21">21日</option>
+                                <option value="22">22日</option>
+                                <option value="23">23日</option>
+                                <option value="24">24日</option>
+                                <option value="25">25日</option>
+                                <option value="26">26日</option>
+                                <option value="27">27日</option>
+                                <option value="28">28日</option>
+                                <option value="29">29日</option>
+                                <option value="30">30日</option>
+                                <option value="31">31日</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- カスタム頻度設定（編集用） -->
+                <div id="editCustomOptions" class="form-group" style="display: none;">
+                    <div class="custom-selector">
+                        <div class="form-group">
+                            <label for="editCustomNumber">数値</label>
+                            <input type="number" id="editCustomNumber" min="1" max="365" placeholder="例: 3">
+                        </div>
+                        <div class="form-group">
+                            <label for="editCustomInterval">間隔</label>
+                            <select id="editCustomInterval">
+                                <option value="">選択してください</option>
+                                <option value="days">日</option>
+                                <option value="weeks">週</option>
+                                <option value="months">月</option>
+                                <option value="years">年</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editCustomStartDate">開始日</label>
+                            <input type="date" id="editCustomStartDate">
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">更新</button>
+            </form>
+        </div>
+    </div>
+
     <script>
+        // Firebase設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmkRs7f2a6ejf-qXJZ2F-jMWGnAGdvY0Q",
+            authDomain: "simple-routine-app-33cfc.firebaseapp.com",
+            projectId: "simple-routine-app-33cfc",
+            storageBucket: "simple-routine-app-33cfc.firebasestorage.app",
+            messagingSenderId: "124814607687",
+            appId: "1:124814607687:web:d1b703506cad3ecbaa7862",
+            measurementId: "G-57M4VBMXZM"
+        };
+
+        // Firebase初期化
+        try {
+            console.log('Firebase初期化開始...');
+            console.log('設定値確認:', {
+                apiKey: firebaseConfig.apiKey ? '設定済み' : '未設定',
+                authDomain: firebaseConfig.authDomain,
+                projectId: firebaseConfig.projectId,
+                storageBucket: firebaseConfig.storageBucket,
+                messagingSenderId: firebaseConfig.messagingSenderId,
+                appId: firebaseConfig.appId,
+                measurementId: firebaseConfig.measurementId
+            });
+            
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase初期化成功');
+            console.log('プロジェクトID:', firebaseConfig.projectId);
+            
+            // 初期化後の確認
+            console.log('Firebase Apps:', firebase.apps.length);
+            console.log('Firebase Auth:', firebase.auth ? '利用可能' : '利用不可');
+            console.log('Firebase Firestore:', firebase.firestore ? '利用可能' : '利用不可');
+            
+        } catch (error) {
+            console.error('❌ Firebase初期化エラー:', error);
+            console.error('エラー詳細:', {
+                message: error.message,
+                code: error.code,
+                stack: error.stack
+            });
+        }
+        
+        let auth = firebase.auth();
+        let db = firebase.firestore();
+
+        // Firebase接続テスト
+        auth.onAuthStateChanged(function(user) {
+            console.log('Firebase認証状態:', user ? 'ログイン中' : '未ログイン');
+        });
+
+        // セキュリティ対策用のユーティリティ関数
+        const SecurityUtils = {
+            // 簡単なハッシュ関数（実際のアプリではbcrypt等を使用）
+            hashPassword: function(password) {
+                let hash = 0;
+                if (password.length === 0) return hash.toString();
+                for (let i = 0; i < password.length; i++) {
+                    const char = password.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // 32bit整数に変換
+                }
+                return hash.toString();
+            },
+
+            // XSS対策：HTMLエスケープ
+            escapeHtml: function(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            },
+
+            // 入力検証
+            validateEmail: function(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            },
+
+            validatePassword: function(password) {
+                // 最低6文字、英数字を含む
+                return password.length >= 6 && /[a-zA-Z]/.test(password) && /[0-9]/.test(password);
+            },
+
+            validateInput: function(input, maxLength = 100) {
+                // 特殊文字の除去と長さ制限
+                return input.replace(/[<>]/g, '').substring(0, maxLength);
+            },
+
+            // セッション管理
+            generateSessionToken: function() {
+                return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            },
+
+            // データの暗号化（簡単な実装）
+            encryptData: function(data) {
+                try {
+                    return btoa(JSON.stringify(data));
+                } catch (e) {
+                    console.error('暗号化エラー:', e);
+                    return null;
+                }
+            },
+
+            // データの復号化
+            decryptData: function(encryptedData) {
+                try {
+                    return JSON.parse(atob(encryptedData));
+                } catch (e) {
+                    console.error('復号化エラー:', e);
+                    return null;
+                }
+            }
+        };
+
         // グローバル変数
         let currentUser = null;
         let routines = [];
         let completions = [];
+        let sessionToken = null;
 
-        // 初期化
-        document.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            checkAuth();
-            setupEventListeners();
-        });
-
-        // データの読み込み
-        function loadData() {
+        // 初期化処理
+        async function initializeApp() {
             try {
-                const savedUser = localStorage.getItem('currentUser');
-                const savedRoutines = localStorage.getItem('routines');
-                const savedCompletions = localStorage.getItem('completions');
-
-                if (savedUser) currentUser = JSON.parse(savedUser);
-                if (savedRoutines) routines = JSON.parse(savedRoutines);
-                if (savedCompletions) completions = JSON.parse(savedCompletions);
+                console.log('アプリ初期化開始');
+                
+                // ネットワーク監視を設定
+                setupNetworkMonitoring();
+                
+                // キャッシュバスティング（バージョン管理）
+                const appVersion = '1.0.1'; // 同期問題修正版
+                console.log('アプリバージョン:', appVersion);
+                
+                // フローティング追加ボタンの初期表示状態を設定
+                const floatingAddBtn = document.getElementById('floatingAddBtn');
+                if (floatingAddBtn) {
+                    floatingAddBtn.style.display = 'none'; // 初期状態では非表示
+                }
+                
+                // 認証状態の監視
+                auth.onAuthStateChanged(async function(user) {
+                    console.log('認証状態変更:', user ? 'ログイン中' : '未ログイン');
+                    if (user) {
+                        console.log('ユーザー情報:', {
+                            uid: user.uid,
+                            email: user.email,
+                            emailVerified: user.emailVerified
+                        });
+                        currentUser = user;
+                        
+                        // 既存のリアルタイムリスナーをクリア
+                        if (window.currentRealtimeListener) {
+                            window.currentRealtimeListener();
+                            window.currentRealtimeListener = null;
+                        }
+                        
+                        showSyncStatus('syncing');
+                        
+                        try {
+                            // データ読み込みを実行
+                            await loadUserData();
+                            showMainView();
+                            showSyncStatus('synced');
+                            console.log('✅ 認証後のデータ読み込み完了');
+                        } catch (error) {
+                            console.error('❌ 認証後のデータ読み込みエラー:', error);
+                            showSyncStatus('error');
+                            showMessage('データの読み込みに失敗しました', 'error');
+                        }
+                    } else {
+                        console.log('ユーザー未認証');
+                        currentUser = null;
+                        
+                        // リアルタイムリスナーをクリア
+                        if (window.currentRealtimeListener) {
+                            window.currentRealtimeListener();
+                            window.currentRealtimeListener = null;
+                        }
+                        
+                        // ローカルデータをクリア
+                        routines = [];
+                        completions = [];
+                        updateDisplay();
+                        
+                        showSyncStatus('error');
+                        showAuthView();
+                    }
+                });
+                
+                console.log('✅ アプリ初期化完了');
+                
             } catch (error) {
-                console.error('データ読み込みエラー:', error);
+                console.error('アプリ初期化エラー:', error);
+                showMessage('アプリの初期化に失敗しました', 'error');
             }
         }
 
-        // データの保存
-        function saveData() {
+        // ユーザーデータの読み込み
+        async function loadUserData() {
+            if (!currentUser) return;
+            
             try {
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                localStorage.setItem('routines', JSON.stringify(routines));
-                localStorage.setItem('completions', JSON.stringify(completions));
+                console.log('ユーザーデータ読み込み開始:', currentUser.uid);
+                
+                // 初回読み込みを実行
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    console.log('初回データ読み込み:', userData);
+                    
+                    const newRoutines = userData.routines || [];
+                    const newCompletions = userData.completions || [];
+                    
+                    // FieldValue.serverTimestamp()を除去してクリーンなデータを作成
+                    const cleanRoutines = newRoutines.map(routine => {
+                        const cleanRoutine = { ...routine };
+                        
+                        // createdAtフィールドを確実にISO文字列に変換
+                        if (cleanRoutine.createdAt) {
+                            if (typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt.toDate) {
+                                // Firestore Timestampの場合
+                                cleanRoutine.createdAt = cleanRoutine.createdAt.toDate().toISOString();
+                            } else if (typeof cleanRoutine.createdAt === 'string') {
+                                // 既に文字列の場合
+                                cleanRoutine.createdAt = cleanRoutine.createdAt;
+                            } else {
+                                // その他の場合
+                                cleanRoutine.createdAt = new Date().toISOString();
+                            }
+                        } else {
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
+                        
+                        // FieldValue.serverTimestamp()が含まれている場合は除去
+                        if (cleanRoutine.createdAt && typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt._methodName === 'serverTimestamp') {
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
+                        
+                        return cleanRoutine;
+                    });
+                    
+                    const cleanCompletions = newCompletions.map(completion => {
+                        const cleanCompletion = { ...completion };
+                        
+                        // completedAtフィールドを確実にISO文字列に変換
+                        if (cleanCompletion.completedAt) {
+                            if (typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt.toDate) {
+                                // Firestore Timestampの場合
+                                cleanCompletion.completedAt = cleanCompletion.completedAt.toDate().toISOString();
+                            } else if (typeof cleanCompletion.completedAt === 'string') {
+                                // 既に文字列の場合
+                                cleanCompletion.completedAt = cleanCompletion.completedAt;
+                            } else {
+                                // その他の場合
+                                cleanCompletion.completedAt = new Date().toISOString();
+                            }
+                        } else {
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                        
+                        // FieldValue.serverTimestamp()が含まれている場合は除去
+                        if (cleanCompletion.completedAt && typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt._methodName === 'serverTimestamp') {
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                        
+                        return cleanCompletion;
+                    });
+                    
+                    routines = cleanRoutines;
+                    completions = cleanCompletions;
+                    
+                    updateDisplay();
+                    showSyncStatus('synced');
+                    console.log('初回データ読み込み完了:', {
+                        routinesCount: routines.length,
+                        completionsCount: completions.length
+                    });
+                    
+                    // 初回読み込み完了後にリアルタイムリスナーを設定
+                    setTimeout(() => {
+                        if (currentUser) {
+                            console.log('初回読み込み完了後、リアルタイムリスナーを設定');
+                            setupRealtimeListener();
+                        }
+                    }, 500);
+                    
+                } else {
+                    console.log('ユーザーデータが存在しないため初期化します');
+                    await initializeUserData();
+                    
+                    // 初期化完了後にリアルタイムリスナーを設定
+                    setTimeout(() => {
+                        if (currentUser) {
+                            console.log('初期化完了後、リアルタイムリスナーを設定');
+                            setupRealtimeListener();
+                        }
+                    }, 500);
+                }
+                
             } catch (error) {
-                console.error('データ保存エラー:', error);
+                console.error('データ読み込みエラー:', error);
+                showSyncStatus('error');
+                showMessage('データの読み込みに失敗しました', 'error');
+                // フォールバック読み込み
+                loadUserDataFallback();
+            }
+        }
+
+        // フォールバック読み込み（リアルタイムリスナーが失敗した場合）
+        async function loadUserDataFallback() {
+            if (!currentUser) return;
+            
+            try {
+                console.log('フォールバック読み込み開始');
+                
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const newRoutines = userData.routines || [];
+                    const newCompletions = userData.completions || [];
+                    
+                    // FieldValue.serverTimestamp()を除去してクリーンなデータを作成
+                    const cleanRoutines = newRoutines.map(routine => {
+                        const cleanRoutine = { ...routine };
+                        
+                        // createdAtフィールドを確実にISO文字列に変換
+                        if (cleanRoutine.createdAt) {
+                            if (typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt.toDate) {
+                                // Firestore Timestampの場合
+                                cleanRoutine.createdAt = cleanRoutine.createdAt.toDate().toISOString();
+                            } else if (typeof cleanRoutine.createdAt === 'string') {
+                                // 既に文字列の場合
+                                cleanRoutine.createdAt = cleanRoutine.createdAt;
+                            } else {
+                                // その他の場合
+                                cleanRoutine.createdAt = new Date().toISOString();
+                            }
+                        } else {
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
+                        
+                        // FieldValue.serverTimestamp()が含まれている場合は除去
+                        if (cleanRoutine.createdAt && typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt._methodName === 'serverTimestamp') {
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
+                        
+                        return cleanRoutine;
+                    });
+                    
+                    const cleanCompletions = newCompletions.map(completion => {
+                        const cleanCompletion = { ...completion };
+                        
+                        // completedAtフィールドを確実にISO文字列に変換
+                        if (cleanCompletion.completedAt) {
+                            if (typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt.toDate) {
+                                // Firestore Timestampの場合
+                                cleanCompletion.completedAt = cleanCompletion.completedAt.toDate().toISOString();
+                            } else if (typeof cleanCompletion.completedAt === 'string') {
+                                // 既に文字列の場合
+                                cleanCompletion.completedAt = cleanCompletion.completedAt;
+                            } else {
+                                // その他の場合
+                                cleanCompletion.completedAt = new Date().toISOString();
+                            }
+                        } else {
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                        
+                        // FieldValue.serverTimestamp()が含まれている場合は除去
+                        if (cleanCompletion.completedAt && typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt._methodName === 'serverTimestamp') {
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                        
+                        return cleanCompletion;
+                    });
+                    
+                    routines = cleanRoutines;
+                    completions = cleanCompletions;
+                    
+                    updateDisplay();
+                    showMessage('データを読み込みました', 'success');
+                    console.log('フォールバック読み込み成功:', {
+                        routinesCount: routines.length,
+                        completionsCount: completions.length
+                    });
+                } else {
+                    console.log('ユーザーデータが存在しないため初期化します');
+                    initializeUserData();
+                }
+            } catch (error) {
+                console.error('フォールバック読み込みエラー:', error);
+                showMessage('データの読み込みに失敗しました', 'error');
+            }
+        }
+
+        // ネットワーク状態監視
+        function setupNetworkMonitoring() {
+            window.addEventListener('online', () => {
+                console.log('ネットワーク接続復旧');
+                showMessage('ネットワーク接続が復旧しました', 'success');
+                showSyncStatus('syncing');
+                
+                // 接続復旧時にデータを再同期
+                if (currentUser) {
+                    setTimeout(async () => {
+                        try {
+                            console.log('接続復旧時のデータ同期開始');
+                            await loadUserData();
+                            showSyncStatus('synced');
+                            showMessage('データの同期が完了しました', 'success');
+                        } catch (error) {
+                            console.error('接続復旧時の同期エラー:', error);
+                            showSyncStatus('error');
+                            showMessage('同期に失敗しました', 'error');
+                        }
+                    }, 2000); // 2秒待ってから同期
+                }
+            });
+            
+            window.addEventListener('offline', () => {
+                console.log('ネットワーク接続切断');
+                showMessage('オフライン状態です', 'warning');
+                showSyncStatus('error');
+            });
+            
+            // 初期状態の確認
+            if (!navigator.onLine) {
+                console.log('初期状態: オフライン');
+                showSyncStatus('error');
+            } else {
+                console.log('初期状態: オンライン');
+                showSyncStatus('synced');
             }
         }
 
         // 認証状態チェック
         function checkAuth() {
-            if (currentUser) {
-                showMainView();
-            } else {
-                showAuthView();
-            }
+            console.log('認証状態チェック開始...');
+            console.log('Firebase設定確認:', {
+                authDomain: firebaseConfig.authDomain,
+                projectId: firebaseConfig.projectId,
+                apiKey: firebaseConfig.apiKey ? '設定済み' : '未設定'
+            });
+            
+            auth.onAuthStateChanged(async function(user) {
+                console.log('認証状態変更:', user ? 'ログイン中' : '未ログイン');
+                if (user) {
+                    console.log('ユーザー情報:', {
+                        uid: user.uid,
+                        email: user.email,
+                        emailVerified: user.emailVerified
+                    });
+                    currentUser = user;
+                    showSyncStatus('syncing');
+                    await loadUserData();
+                    showMainView();
+                    showSyncStatus('synced');
+                } else {
+                    console.log('ユーザー未認証');
+                    currentUser = null;
+                    routines = [];
+                    completions = [];
+                    showSyncStatus('error');
+                    showAuthView();
+                }
+            });
         }
 
         // イベントリスナーの設定
@@ -679,84 +1539,644 @@
             // ルーティン追加フォーム
             document.getElementById('addRoutineForm').addEventListener('submit', handleAddRoutine);
             
-            // ルーティン編集フォーム
-            document.getElementById('editRoutineForm').addEventListener('submit', handleEditRoutine);
+            // 曜日選択の設定
+            setupDayCheckboxes();
         }
 
-        // 認証処理
-        function handleAuth(event) {
+        // Firebase認証処理
+        async function handleAuth(event) {
             event.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const messageDiv = document.getElementById('authMessage');
 
-            if (!email || !password) {
-                showMessage('メールアドレスとパスワードを入力してください', 'error');
+            console.log('認証試行:', { email, passwordLength: password.length });
+
+            // 入力検証
+            if (!SecurityUtils.validateEmail(email)) {
+                showMessage('有効なメールアドレスを入力してください', 'error');
                 return;
             }
 
-            // シンプルな認証（実際のアプリでは適切なハッシュ化が必要）
-            const users = JSON.parse(localStorage.getItem('users') || '{}');
-            
-            if (users[email]) {
-                // ログイン
-                if (users[email].password === password) {
-                    currentUser = { email: email };
-                    saveData();
-                    showMainView();
-                    showMessage('ログインしました', 'success');
-                } else {
-                    showMessage('パスワードが正しくありません', 'error');
-                }
-            } else {
-                // 新規登録
-                users[email] = { email: email, password: password };
-                localStorage.setItem('users', JSON.stringify(users));
-                currentUser = { email: email };
-                saveData();
-                showMainView();
+            if (!SecurityUtils.validatePassword(password)) {
+                showMessage('パスワードは6文字以上で英数字を含む必要があります', 'error');
+                return;
+            }
+
+            try {
+                console.log('Firebase Auth設定確認:', {
+                    authDomain: firebaseConfig.authDomain,
+                    projectId: firebaseConfig.projectId,
+                    apiKey: firebaseConfig.apiKey ? '設定済み' : '未設定'
+                });
+                
+                // まず新規登録を試行
+                console.log('新規登録試行中...');
+                console.log('新規登録設定確認:', {
+                    authDomain: firebaseConfig.authDomain,
+                    projectId: firebaseConfig.projectId
+                });
+                
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                console.log('✅ 新規登録成功:', currentUser.email);
                 showMessage('アカウントを作成しました', 'success');
+                await initializeUserData();
+                showMainView();
+                
+            } catch (error) {
+                console.error('❌ 新規登録エラー詳細:', {
+                    code: error.code,
+                    message: error.message,
+                    email: email,
+                    authDomain: firebaseConfig.authDomain,
+                    projectId: firebaseConfig.projectId
+                });
+                
+                if (error.code === 'auth/email-already-in-use') {
+                    // 既存ユーザーの場合はログインを試行
+                    try {
+                        console.log('既存ユーザーを検出、ログイン試行中...');
+                        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                        currentUser = userCredential.user;
+                        console.log('✅ ログイン成功:', currentUser.email);
+                        showMessage('ログインしました', 'success');
+                        await loadUserData();
+                        showMainView();
+                    } catch (loginError) {
+                        console.error('❌ ログインエラー詳細:', {
+                            code: loginError.code,
+                            message: loginError.message,
+                            email: email
+                        });
+                        
+                        if (loginError.code === 'auth/wrong-password') {
+                            showMessage('パスワードが間違っています', 'error');
+                        } else if (loginError.code === 'auth/invalid-credential') {
+                            showMessage('メールアドレスまたはパスワードが正しくありません', 'error');
+                        } else {
+                            showMessage('ログインに失敗しました: ' + loginError.message, 'error');
+                        }
+                    }
+                } else if (error.code === 'auth/configuration-not-found') {
+                    showMessage('Firebase設定エラー: Authentication設定を確認してください。詳細はデバッグツールをご利用ください。', 'error');
+                } else if (error.code === 'auth/weak-password') {
+                    showMessage('パスワードが弱すぎます。6文字以上で英数字を含む必要があります', 'error');
+                } else if (error.code === 'auth/invalid-email') {
+                    showMessage('無効なメールアドレスです', 'error');
+                } else {
+                    showMessage('アカウント作成に失敗しました: ' + error.message, 'error');
+                }
             }
         }
 
+        // ユーザーデータの初期化
+        async function initializeUserData() {
+            if (!currentUser) return;
+            
+            try {
+                await db.collection('users').doc(currentUser.uid).set({
+                    email: currentUser.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    routines: [],
+                    completions: []
+                });
+                
+                routines = [];
+                completions = [];
+                updateDisplay();
+            } catch (error) {
+                console.error('ユーザーデータ初期化エラー:', error);
+                showMessage('データの初期化に失敗しました', 'error');
+            }
+        }
+
+        // データの保存
+        async function saveData() {
+            if (!currentUser) {
+                console.error('❌ ユーザーが認証されていません');
+                return;
+            }
+            
+            try {
+                console.log('=== データ保存開始 ===');
+                console.log('保存データ:', {
+                    routinesCount: routines.length,
+                    completionsCount: completions.length,
+                    userId: currentUser.uid,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // オフライン状態の確認
+                if (!navigator.onLine) {
+                    console.warn('⚠️ オフライン状態のため、保存を延期します');
+                    showMessage('オフライン状態です。接続復旧後に保存されます', 'warning');
+                    return;
+                }
+                
+                // 配列内のFieldValue.serverTimestamp()を完全に除去してクリーンなデータを作成
+                const cleanRoutines = routines.map(routine => {
+                    const cleanRoutine = { ...routine };
+                    
+                    // createdAtフィールドを確実にISO文字列に変換
+                    if (cleanRoutine.createdAt) {
+                        if (typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt.toDate) {
+                            // Firestore Timestampの場合
+                            cleanRoutine.createdAt = cleanRoutine.createdAt.toDate().toISOString();
+                        } else if (typeof cleanRoutine.createdAt === 'string') {
+                            // 既に文字列の場合
+                            cleanRoutine.createdAt = cleanRoutine.createdAt;
+                        } else {
+                            // その他の場合
+                            cleanRoutine.createdAt = new Date().toISOString();
+                        }
+                    } else {
+                        cleanRoutine.createdAt = new Date().toISOString();
+                    }
+                    
+                    // FieldValue.serverTimestamp()が含まれている場合は除去
+                    if (cleanRoutine.createdAt && typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt._methodName === 'serverTimestamp') {
+                        cleanRoutine.createdAt = new Date().toISOString();
+                    }
+                    
+                    return cleanRoutine;
+                });
+                
+                const cleanCompletions = completions.map(completion => {
+                    const cleanCompletion = { ...completion };
+                    
+                    // completedAtフィールドを確実にISO文字列に変換
+                    if (cleanCompletion.completedAt) {
+                        if (typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt.toDate) {
+                            // Firestore Timestampの場合
+                            cleanCompletion.completedAt = cleanCompletion.completedAt.toDate().toISOString();
+                        } else if (typeof cleanCompletion.completedAt === 'string') {
+                            // 既に文字列の場合
+                            cleanCompletion.completedAt = cleanCompletion.completedAt;
+                        } else {
+                            // その他の場合
+                            cleanCompletion.completedAt = new Date().toISOString();
+                        }
+                    } else {
+                        cleanCompletion.completedAt = new Date().toISOString();
+                    }
+                    
+                    // FieldValue.serverTimestamp()が含まれている場合は除去
+                    if (cleanCompletion.completedAt && typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt._methodName === 'serverTimestamp') {
+                        cleanCompletion.completedAt = new Date().toISOString();
+                    }
+                    
+                    return cleanCompletion;
+                });
+                
+                console.log('クリーンアップ後のデータ:', {
+                    routinesCount: cleanRoutines.length,
+                    completionsCount: cleanCompletions.length,
+                    sampleRoutine: cleanRoutines[0],
+                    sampleCompletion: cleanCompletions[0]
+                });
+                
+                console.log('Firestoreにデータを保存中...');
+                
+                // 同期状態を表示
+                showSyncStatus('syncing');
+                
+                // デバイス情報を含めて保存
+                const saveData = {
+                    routines: cleanRoutines,
+                    completions: cleanCompletions,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastSyncDevice: navigator.userAgent,
+                    lastSyncTimestamp: new Date().toISOString(),
+                    deviceId: getDeviceId(),
+                    syncVersion: '1.0.2' // 同期バージョン管理
+                };
+                
+                await db.collection('users').doc(currentUser.uid).set(saveData, { merge: true });
+                
+                console.log('✅ データ保存成功');
+                showSyncStatus('synced');
+                showMessage('データが保存されました', 'success');
+                
+                // 保存成功後、少し待ってからリアルタイムリスナーを再設定
+                setTimeout(() => {
+                    if (currentUser) {
+                        console.log('リアルタイムリスナーを再設定');
+                        setupRealtimeListener();
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('❌ データ保存エラー:', error);
+                showSyncStatus('error');
+                showMessage('データの保存に失敗しました', 'error');
+                
+                // 保存に失敗した場合は再試行（最大3回）
+                if (!window.saveRetryCount) {
+                    window.saveRetryCount = 0;
+                }
+                
+                if (window.saveRetryCount < 3) {
+                    window.saveRetryCount++;
+                    console.log(`🔄 データ保存再試行中... (${window.saveRetryCount}/3)`);
+                    
+                    setTimeout(() => {
+                        saveData();
+                    }, 2000 * window.saveRetryCount); // 指数バックオフ
+                } else {
+                    console.error('❌ データ保存の再試行回数上限に達しました');
+                    window.saveRetryCount = 0;
+                    showMessage('データの保存に失敗しました。後でもう一度お試しください', 'error');
+                }
+            }
+        }
+
+        // デバイスIDを生成（同期の競合解決用）
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('deviceId');
+            if (!deviceId) {
+                deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('deviceId', deviceId);
+            }
+            return deviceId;
+        }
+
+        // リアルタイムリスナーの設定
+        function setupRealtimeListener() {
+            if (!currentUser || !db) return;
+            
+            try {
+                console.log('リアルタイムリスナー設定開始');
+                
+                // 既存のリスナーをクリア
+                if (window.currentRealtimeListener) {
+                    window.currentRealtimeListener();
+                }
+                
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                
+                // 初回読み込みフラグ
+                let isInitialLoad = true;
+                
+                window.currentRealtimeListener = userDocRef.onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        console.log('リアルタイムデータ更新を受信:', {
+                            routinesCount: userData.routines?.length || 0,
+                            completionsCount: userData.completions?.length || 0,
+                            lastSyncDevice: userData.lastSyncDevice,
+                            lastSyncTimestamp: userData.lastSyncTimestamp,
+                            deviceId: userData.deviceId,
+                            isInitialLoad: isInitialLoad
+                        });
+                        
+                        // 初回読み込み時はスキップ（loadUserDataで既に処理済み）
+                        if (isInitialLoad) {
+                            console.log('初回読み込みのためリアルタイム更新をスキップ');
+                            isInitialLoad = false;
+                            return;
+                        }
+                        
+                        // 自分が保存したデータの場合はスキップ
+                        if (userData.deviceId === getDeviceId()) {
+                            console.log('自分のデバイスからの更新のためスキップ');
+                            return;
+                        }
+                        
+                        // データの整合性チェック
+                        const newRoutines = userData.routines || [];
+                        const newCompletions = userData.completions || [];
+                        
+                        // FieldValue.serverTimestamp()を除去してクリーンなデータを作成
+                        const cleanRoutines = newRoutines.map(routine => {
+                            const cleanRoutine = { ...routine };
+                            
+                            // createdAtフィールドを確実にISO文字列に変換
+                            if (cleanRoutine.createdAt) {
+                                if (typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt.toDate) {
+                                    // Firestore Timestampの場合
+                                    cleanRoutine.createdAt = cleanRoutine.createdAt.toDate().toISOString();
+                                } else if (typeof cleanRoutine.createdAt === 'string') {
+                                    // 既に文字列の場合
+                                    cleanRoutine.createdAt = cleanRoutine.createdAt;
+                                } else {
+                                    // その他の場合
+                                    cleanRoutine.createdAt = new Date().toISOString();
+                                }
+                            } else {
+                                cleanRoutine.createdAt = new Date().toISOString();
+                            }
+                            
+                            // FieldValue.serverTimestamp()が含まれている場合は除去
+                            if (cleanRoutine.createdAt && typeof cleanRoutine.createdAt === 'object' && cleanRoutine.createdAt._methodName === 'serverTimestamp') {
+                                cleanRoutine.createdAt = new Date().toISOString();
+                            }
+                            
+                            return cleanRoutine;
+                        });
+                        
+                        const cleanCompletions = newCompletions.map(completion => {
+                            const cleanCompletion = { ...completion };
+                            
+                            // completedAtフィールドを確実にISO文字列に変換
+                            if (cleanCompletion.completedAt) {
+                                if (typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt.toDate) {
+                                    // Firestore Timestampの場合
+                                    cleanCompletion.completedAt = cleanCompletion.completedAt.toDate().toISOString();
+                                } else if (typeof cleanCompletion.completedAt === 'string') {
+                                    // 既に文字列の場合
+                                    cleanCompletion.completedAt = cleanCompletion.completedAt;
+                                } else {
+                                    // その他の場合
+                                    cleanCompletion.completedAt = new Date().toISOString();
+                                }
+                            } else {
+                                cleanCompletion.completedAt = new Date().toISOString();
+                            }
+                            
+                            // FieldValue.serverTimestamp()が含まれている場合は除去
+                            if (cleanCompletion.completedAt && typeof cleanCompletion.completedAt === 'object' && cleanCompletion.completedAt._methodName === 'serverTimestamp') {
+                                cleanCompletion.completedAt = new Date().toISOString();
+                            }
+                            
+                            return cleanCompletion;
+                        });
+                        
+                        // データが実際に変更された場合のみ更新
+                        const routinesChanged = JSON.stringify(routines) !== JSON.stringify(cleanRoutines);
+                        const completionsChanged = JSON.stringify(completions) !== JSON.stringify(cleanCompletions);
+                        
+                        if (routinesChanged || completionsChanged) {
+                            routines = cleanRoutines;
+                            completions = cleanCompletions;
+                            
+                            updateDisplay();
+                            showSyncStatus('synced');
+                            showMessage('データが同期されました', 'success');
+                            console.log('データ同期完了:', {
+                                routinesCount: routines.length,
+                                completionsCount: completions.length,
+                                timestamp: new Date().toISOString()
+                            });
+                        }
+                    } else {
+                        console.log('ユーザーデータが存在しないため初期化します');
+                        initializeUserData();
+                    }
+                }, (error) => {
+                    console.error('リアルタイムリスナーエラー:', error);
+                    showSyncStatus('error');
+                    // エラーが発生した場合は通常の読み込みを試行
+                    loadUserDataFallback();
+                });
+                
+                console.log('✅ リアルタイムリスナー設定完了');
+                
+            } catch (error) {
+                console.error('リアルタイムリスナー設定エラー:', error);
+                showSyncStatus('error');
+            }
+        }
+
+        // 同期状態の表示
+        function showSyncStatus(status = 'synced') {
+            const syncIndicator = document.getElementById('syncIndicator');
+            if (!syncIndicator) {
+                // 同期状態表示要素を作成
+                const indicator = document.createElement('div');
+                indicator.id = 'syncIndicator';
+                indicator.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    padding: 8px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    z-index: 1000;
+                    transition: all 0.3s ease;
+                `;
+                document.body.appendChild(indicator);
+            }
+            
+            const indicator = document.getElementById('syncIndicator');
+            
+            switch (status) {
+                case 'syncing':
+                    indicator.textContent = '🔄 同期中...';
+                    indicator.style.backgroundColor = '#ffc107';
+                    indicator.style.color = '#000';
+                    break;
+                case 'synced':
+                    indicator.textContent = '✅ 同期済み';
+                    indicator.style.backgroundColor = '#28a745';
+                    indicator.style.color = '#fff';
+                    break;
+                case 'error':
+                    indicator.textContent = '❌ 同期エラー';
+                    indicator.style.backgroundColor = '#dc3545';
+                    indicator.style.color = '#fff';
+                    break;
+                default:
+                    indicator.style.display = 'none';
+            }
+        }
+
+        // 頻度選択の切り替え
+        function toggleFrequencyOptions() {
+            const frequency = document.getElementById('routineFrequency').value;
+            const weeklyOptions = document.getElementById('weeklyOptions');
+            const monthlyOptions = document.getElementById('monthlyOptions');
+            const yearlyOptions = document.getElementById('yearlyOptions');
+            const customOptions = document.getElementById('customOptions');
+            const monthlyDaySelect = document.getElementById('monthlyDay');
+            const yearlyMonthSelect = document.getElementById('yearlyMonth');
+            const yearlyDaySelect = document.getElementById('yearlyDay');
+            const customIntervalSelect = document.getElementById('customInterval');
+            const customNumberInput = document.getElementById('customNumber');
+            const customStartDateInput = document.getElementById('customStartDate');
+            
+            // すべてのオプションを非表示
+            weeklyOptions.style.display = 'none';
+            monthlyOptions.style.display = 'none';
+            yearlyOptions.style.display = 'none';
+            customOptions.style.display = 'none';
+            
+            // 必須属性をリセット
+            monthlyDaySelect.required = false;
+            yearlyMonthSelect.required = false;
+            yearlyDaySelect.required = false;
+            customIntervalSelect.required = false;
+            customNumberInput.required = false;
+            customStartDateInput.required = false;
+            
+            // 選択された頻度に応じてオプションを表示
+            if (frequency === 'weekly') {
+                weeklyOptions.style.display = 'block';
+            } else if (frequency === 'monthly') {
+                monthlyOptions.style.display = 'block';
+                monthlyDaySelect.required = true;
+            } else if (frequency === 'yearly') {
+                yearlyOptions.style.display = 'block';
+                yearlyMonthSelect.required = true;
+                yearlyDaySelect.required = true;
+            } else if (frequency === 'custom') {
+                customOptions.style.display = 'block';
+                customIntervalSelect.required = true;
+                customNumberInput.required = true;
+                customStartDateInput.required = true;
+            }
+        }
+
+        // 曜日選択の処理
+        function setupDayCheckboxes() {
+            const checkboxes = document.querySelectorAll('.day-checkbox input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const label = this.parentElement;
+                    if (this.checked) {
+                        label.classList.add('selected');
+                    } else {
+                        label.classList.remove('selected');
+                    }
+                });
+            });
+        }
+
         // ルーティン追加
-        function handleAddRoutine(event) {
+        async function handleAddRoutine(event) {
             event.preventDefault();
             
-            const title = document.getElementById('routineTitle').value;
-            const description = document.getElementById('routineDescription').value;
+            console.log('=== ルーティン追加処理開始 ===');
+            
+            const title = SecurityUtils.validateInput(document.getElementById('routineTitle').value, 50);
+            const description = SecurityUtils.validateInput(document.getElementById('routineDescription').value, 200);
             const frequency = document.getElementById('routineFrequency').value;
 
+            console.log('入力値確認:', {
+                title: title,
+                description: description,
+                frequency: frequency,
+                titleLength: title ? title.length : 0,
+                descriptionLength: description ? description.length : 0
+            });
+
             if (!title) {
+                console.error('❌ タイトルが入力されていません');
                 showMessage('タイトルを入力してください', 'error');
                 return;
             }
+
+            console.log('✅ タイトル検証通過');
+
+            // 頻度別の詳細設定を取得
+            let frequencyDetails = {};
+            
+            if (frequency === 'daily') {
+                console.log('毎日ルーティンの処理');
+                frequencyDetails = {};
+            } else if (frequency === 'weekly') {
+                console.log('毎週ルーティンの処理');
+                const selectedDays = Array.from(document.querySelectorAll('.day-checkbox input[type="checkbox"]:checked'))
+                    .map(cb => parseInt(cb.value));
+                if (selectedDays.length === 0) {
+                    console.error('❌ 曜日が選択されていません');
+                    showMessage('曜日を選択してください', 'error');
+                    return;
+                }
+                frequencyDetails = { selectedDays: selectedDays };
+                console.log('選択された曜日:', selectedDays);
+            } else if (frequency === 'monthly') {
+                console.log('毎月ルーティンの処理');
+                const monthlyDay = document.getElementById('monthlyDay').value;
+                if (!monthlyDay) {
+                    console.error('❌ 日にちが選択されていません');
+                    showMessage('日にちを選択してください', 'error');
+                    return;
+                }
+                frequencyDetails = { selectedDay: parseInt(monthlyDay) };
+                console.log('選択された日にち:', monthlyDay);
+            } else if (frequency === 'yearly') {
+                console.log('毎年ルーティンの処理');
+                const yearlyMonth = document.getElementById('yearlyMonth').value;
+                const yearlyDay = document.getElementById('yearlyDay').value;
+                if (!yearlyMonth || !yearlyDay) {
+                    console.error('❌ 月または日にちが選択されていません');
+                    showMessage('月と日にちを選択してください', 'error');
+                    return;
+                }
+                frequencyDetails = { selectedMonth: parseInt(yearlyMonth), selectedDay: parseInt(yearlyDay) };
+                console.log('選択された月日:', { month: yearlyMonth, day: yearlyDay });
+            } else if (frequency === 'custom') {
+                console.log('カスタムルーティンの処理');
+                const customInterval = document.getElementById('customInterval').value;
+                const customNumber = document.getElementById('customNumber').value;
+                const customStartDate = document.getElementById('customStartDate').value;
+                if (!customInterval || !customNumber || !customStartDate) {
+                    console.error('❌ カスタム設定が不完全です');
+                    showMessage('すべてのオプションを入力してください', 'error');
+                    return;
+                }
+                frequencyDetails = {
+                    interval: customInterval,
+                    number: parseInt(customNumber),
+                    startDate: customStartDate
+                };
+                console.log('カスタム設定:', frequencyDetails);
+            }
+
+            console.log('✅ 頻度詳細設定完了:', frequencyDetails);
 
             const newRoutine = {
                 id: Date.now().toString(),
                 title: title,
                 description: description,
                 frequency: frequency,
-                createdAt: new Date().toISOString(),
-                userId: currentUser.email
+                frequencyDetails: frequencyDetails,
+                createdAt: new Date().toISOString(), // FieldValue.serverTimestamp()の代わりにISO文字列を使用
+                userId: currentUser.uid
             };
 
-            routines.push(newRoutine);
-            saveData();
-            updateDisplay();
-            
-            // モーダルを閉じる
-            hideAddModal();
-            showMessage('ルーティンを追加しました', 'success');
+            console.log('✅ 新しいルーティンオブジェクト作成:', newRoutine);
+
+            try {
+                showSyncStatus('syncing');
+                console.log('ルーティン配列に追加前の件数:', routines.length);
+                
+                routines.push(newRoutine);
+                console.log('ルーティン配列に追加後の件数:', routines.length);
+                
+                console.log('データ保存開始');
+                await saveData();
+                console.log('✅ データ保存完了');
+                
+                console.log('表示更新開始');
+                updateDisplay();
+                console.log('✅ 表示更新完了');
+                
+                // モーダルを閉じる
+                closeAddModal();
+                showMessage('ルーティンを追加しました', 'success');
+                showSyncStatus('synced');
+                
+                console.log('=== ルーティン追加処理完了 ===');
+                
+            } catch (error) {
+                console.error('❌ ルーティン追加処理でエラーが発生:', error);
+                showMessage('ルーティンの追加に失敗しました', 'error');
+                showSyncStatus('error');
+            }
         }
 
         // ルーティン完了切り替え
-        function toggleRoutine(routineId) {
+        async function toggleRoutine(routineId) {
             const today = new Date().toDateString();
             const completionKey = `${routineId}_${today}`;
             
             const existingIndex = completions.findIndex(c => c.id === completionKey);
+            
+            showSyncStatus('syncing');
             
             if (existingIndex >= 0) {
                 completions.splice(existingIndex, 1);
@@ -764,202 +2184,706 @@
                 completions.push({
                     id: completionKey,
                     routineId: routineId,
-                    completedAt: new Date().toISOString(),
-                    userId: currentUser.email
+                    completedAt: new Date().toISOString(), // FieldValue.serverTimestamp()の代わりにISO文字列を使用
+                    userId: currentUser.uid
                 });
             }
             
-            saveData();
+            await saveData();
             updateDisplay();
+            showSyncStatus('synced');
         }
 
         // ルーティン削除
-        function deleteRoutine(routineId) {
+        async function deleteRoutine(routineId) {
             if (confirm('このルーティンを削除しますか？')) {
+                showSyncStatus('syncing');
                 routines = routines.filter(r => r.id !== routineId);
                 completions = completions.filter(c => c.routineId !== routineId);
-                saveData();
+                await saveData();
                 updateDisplay();
                 showMessage('ルーティンを削除しました', 'success');
+                showSyncStatus('synced');
             }
         }
 
         // 表示更新
         function updateDisplay() {
-            if (!currentUser) return;
+            if (!currentUser) {
+                console.error('❌ ユーザーが認証されていないため表示更新をスキップ');
+                return;
+            }
+
+            console.log('=== 表示更新開始 ===');
+            console.log('現在のデータ:', {
+                routinesCount: routines.length,
+                completionsCount: completions.length,
+                userId: currentUser.uid
+            });
 
             // ユーザー情報
-            document.getElementById('userEmail').textContent = currentUser.email;
+            document.getElementById('userEmail').textContent = SecurityUtils.escapeHtml(currentUser.email);
 
             // 統計情報
-            document.getElementById('totalRoutines').textContent = routines.length;
-            
             const today = new Date().toDateString();
             const todayCompletions = completions.filter(c => {
-                const completionDate = new Date(c.completedAt).toDateString();
+                const completionDate = new Date(c.completedAt?.toDate?.() || c.completedAt).toDateString();
                 return completionDate === today;
             });
             document.getElementById('completedToday').textContent = todayCompletions.length;
 
+            console.log('統計情報更新完了:', {
+                completedToday: todayCompletions.length
+            });
+
             // ルーティン表示
+            console.log('ルーティン表示開始');
             displayRoutines();
+            console.log('✅ ルーティン表示完了');
+            
+            // 同期状態を表示
+            showSyncStatus('synced');
+            console.log('=== 表示更新完了 ===');
         }
 
         // ルーティン表示
         function displayRoutines() {
-            const today = new Date().toDateString();
+            console.log('=== ルーティン表示開始 ===');
+            console.log('displayRoutines関数が呼び出されました');
+            console.log('routines配列の長さ:', routines.length);
+            console.log('routines配列の内容:', routines);
             
-            // すべてのルーティンを表示
-            document.getElementById('routineList').innerHTML = createRoutineHTML(routines, today);
+            const today = new Date().toDateString();
+            const currentDayOfWeek = new Date().getDay();
+            const currentDayOfMonth = new Date().getDate();
+            const currentMonth = new Date().getMonth() + 1;
+            const currentDate = new Date();
+            
+            console.log('現在の日付情報:', {
+                today: today,
+                currentDayOfWeek: currentDayOfWeek,
+                currentDayOfMonth: currentDayOfMonth,
+                currentMonth: currentMonth
+            });
+            
+            // 今日のルーティン
+            const todayRoutines = routines.filter(routine => {
+                console.log(`ルーティン「${routine.title}」の頻度チェック:`, {
+                    frequency: routine.frequency,
+                    frequencyDetails: routine.frequencyDetails
+                });
+                
+                if (routine.frequency === 'daily') {
+                    console.log(`✅ 毎日ルーティン「${routine.title}」を今日のリストに追加`);
+                    return true;
+                }
+                
+                if (routine.frequency === 'weekly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedDays) {
+                        const isToday = routine.frequencyDetails.selectedDays.includes(currentDayOfWeek);
+                        console.log(`毎週ルーティン「${routine.title}」: ${isToday ? '今日実行' : '今日は実行しない'}`);
+                        return isToday;
+                    }
+                    console.log(`❌ 毎週ルーティン「${routine.title}」の詳細設定が不正`);
+                    return false;
+                }
+                
+                if (routine.frequency === 'monthly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedDay) {
+                        const isToday = routine.frequencyDetails.selectedDay === currentDayOfMonth;
+                        console.log(`毎月ルーティン「${routine.title}」: ${isToday ? '今日実行' : '今日は実行しない'}`);
+                        return isToday;
+                    }
+                    console.log(`❌ 毎月ルーティン「${routine.title}」の詳細設定が不正`);
+                    return false;
+                }
+
+                if (routine.frequency === 'yearly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedMonth && routine.frequencyDetails.selectedDay) {
+                        const isToday = routine.frequencyDetails.selectedMonth === currentMonth && 
+                                       routine.frequencyDetails.selectedDay === currentDayOfMonth;
+                        console.log(`毎年ルーティン「${routine.title}」: ${isToday ? '今日実行' : '今日は実行しない'}`);
+                        return isToday;
+                    }
+                    console.log(`❌ 毎年ルーティン「${routine.title}」の詳細設定が不正`);
+                    return false;
+                }
+
+                if (routine.frequency === 'custom') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.startDate && 
+                        routine.frequencyDetails.interval && routine.frequencyDetails.number) {
+                        const isDue = isCustomRoutineDue(routine.frequencyDetails, currentDate);
+                        console.log(`カスタムルーティン「${routine.title}」: ${isDue ? '今日実行' : '今日は実行しない'}`);
+                        return isDue;
+                    }
+                    console.log(`❌ カスタムルーティン「${routine.title}」の詳細設定が不正`);
+                    return false;
+                }
+                
+                console.log(`❌ 不明な頻度のルーティン「${routine.title}」: ${routine.frequency}`);
+                return false;
+            });
+
+            console.log('今日のルーティン数:', todayRoutines.length);
+            console.log('今日のルーティン:', todayRoutines.map(r => r.title));
+
+            console.log('createRoutineHTMLを呼び出す前');
+            const todayHTML = createRoutineHTML(todayRoutines, today);
+            const allHTML = createRoutineHTML(routines, today);
+            console.log('createRoutineHTML呼び出し完了');
+            
+            console.log('todayRoutines要素の存在確認:', !!document.getElementById('todayRoutines'));
+            console.log('allRoutines要素の存在確認:', !!document.getElementById('allRoutines'));
+            
+            document.getElementById('todayRoutines').innerHTML = todayHTML;
+            document.getElementById('allRoutines').innerHTML = allHTML;
+            
+            console.log('=== ルーティン表示完了 ===');
+        }
+
+        // カスタム頻度のルーティンが今日実行すべきかチェック
+        function isCustomRoutineDue(frequencyDetails, currentDate) {
+            const startDate = new Date(frequencyDetails.startDate);
+            const interval = frequencyDetails.interval;
+            const number = frequencyDetails.number;
+            
+            // 開始日より前の場合は実行しない
+            if (currentDate < startDate) return false;
+            
+            let diffTime, diffDays;
+            
+            switch (interval) {
+                case 'days':
+                    diffTime = currentDate - startDate;
+                    diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays % number === 0;
+                    
+                case 'weeks':
+                    diffTime = currentDate - startDate;
+                    diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays % (number * 7) === 0;
+                    
+                case 'months':
+                    const yearDiff = currentDate.getFullYear() - startDate.getFullYear();
+                    const monthDiff = currentDate.getMonth() - startDate.getMonth();
+                    const totalMonths = yearDiff * 12 + monthDiff;
+                    return totalMonths % number === 0 && currentDate.getDate() === startDate.getDate();
+                    
+                case 'years':
+                    const yearDiff2 = currentDate.getFullYear() - startDate.getFullYear();
+                    return yearDiff2 % number === 0 && 
+                           currentDate.getMonth() === startDate.getMonth() && 
+                           currentDate.getDate() === startDate.getDate();
+                    
+                default:
+                    return false;
+            }
         }
 
         // ルーティンHTML生成
         function createRoutineHTML(routineList, today) {
-            console.log('createRoutineHTML called with:', routineList.length, 'routines');
-            
             if (routineList.length === 0) {
-                return '<div style="text-align: center; color: #6c757d; padding: 40px; grid-column: 1 / -1;"><p style="font-size: 18px; margin-bottom: 10px;">ルーティンがありません</p><small>右下の「+」ボタンから新しいルーティンを追加してください</small></div>';
+                return '<p style="text-align: center; color: #6c757d; padding: 20px;">ルーティンがありません</p>';
             }
 
-            const html = routineList.map(routine => {
+            return routineList.map(routine => {
                 const isCompleted = completions.some(c => {
-                    const completionDate = new Date(c.completedAt).toDateString();
+                    const completionDate = new Date(c.completedAt?.toDate?.() || c.completedAt).toDateString();
                     return c.routineId === routine.id && completionDate === today;
                 });
 
-                const frequencyText = {
-                    'daily': '毎日',
-                    'weekly': '毎週',
-                    'monthly': '毎月'
-                }[routine.frequency];
+                let frequencyText = '';
+                if (routine.frequency === 'daily') {
+                    frequencyText = '毎日';
+                } else if (routine.frequency === 'weekly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedDays) {
+                        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+                        const selectedDayNames = routine.frequencyDetails.selectedDays.map(day => dayNames[day]);
+                        frequencyText = `毎週 ${selectedDayNames.join('・')}`;
+                    } else {
+                        frequencyText = '毎週';
+                    }
+                } else if (routine.frequency === 'monthly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedDay) {
+                        frequencyText = `毎月${routine.frequencyDetails.selectedDay}日`;
+                    } else {
+                        frequencyText = '毎月';
+                    }
+                } else if (routine.frequency === 'yearly') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.selectedMonth && routine.frequencyDetails.selectedDay) {
+                        frequencyText = `毎年${routine.frequencyDetails.selectedMonth}月${routine.frequencyDetails.selectedDay}日`;
+                    } else {
+                        frequencyText = '毎年';
+                    }
+                } else if (routine.frequency === 'custom') {
+                    if (routine.frequencyDetails && routine.frequencyDetails.interval && routine.frequencyDetails.number) {
+                        const intervalText = {
+                            'days': '日',
+                            'weeks': '週',
+                            'months': '月',
+                            'years': '年'
+                        }[routine.frequencyDetails.interval];
+                        frequencyText = `${routine.frequencyDetails.number}${intervalText}おき`;
+                    } else {
+                        frequencyText = 'カスタム';
+                    }
+                }
 
-                const routineHtml = `
+                // XSS対策：HTMLエスケープ
+                const safeTitle = SecurityUtils.escapeHtml(routine.title);
+                const safeDescription = routine.description ? SecurityUtils.escapeHtml(routine.description) : '';
+
+                return `
                     <div class="routine-item ${isCompleted ? 'completed' : ''}">
-                        <div class="routine-title">${routine.title}</div>
-                        ${routine.description ? `<div class="routine-description">${routine.description}</div>` : ''}
+                        <div class="routine-header">
+                            <div class="routine-title">${safeTitle}</div>
+                            <button onclick="editRoutine('${routine.id}')" class="edit-btn" title="編集">編集</button>
+                        </div>
+                        ${safeDescription ? `<div class="routine-description">${safeDescription}</div>` : ''}
                         <div class="routine-meta">
                             <span class="frequency-badge">${frequencyText}</span>
-                            <div class="routine-actions">
-                                <button onclick="toggleRoutine('${routine.id}')" class="btn ${isCompleted ? 'btn-secondary' : 'btn-success'}" style="width: auto;">
+                            <div>
+                                <button onclick="toggleRoutine('${routine.id}')" class="btn ${isCompleted ? 'btn-secondary' : 'btn-success'}" style="width: auto; margin-right: 10px;">
                                     ${isCompleted ? '完了取り消し' : '完了'}
                                 </button>
-                                <button onclick="openEditModal('${routine.id}')" class="btn" style="width: auto; background: #17a2b8;">編集</button>
                                 <button onclick="deleteRoutine('${routine.id}')" class="btn btn-danger" style="width: auto;">削除</button>
                             </div>
                         </div>
                     </div>
                 `;
-                
-                console.log('Generated HTML for routine:', routine.title, 'includes edit button:', routineHtml.includes('編集'));
-                return routineHtml;
             }).join('');
-            
-            console.log('Final HTML length:', html.length);
-            return html;
         }
 
-        // モーダル表示
-        function showAddModal() {
-            document.getElementById('addModal').classList.remove('hidden');
-            // フォームをリセット
+        // タブ切り替え
+        function showTab(tabName) {
+            // タブボタンの状態更新
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // タブコンテンツの表示切り替え
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // モーダル制御
+        function openAddModal() {
+            document.getElementById('addModal').style.display = 'block';
             document.getElementById('addRoutineForm').reset();
+            // 頻度オプションの初期化を必ず行う
+            toggleFrequencyOptions();
         }
 
-        function hideAddModal() {
-            document.getElementById('addModal').classList.add('hidden');
+        function closeAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+            document.getElementById('floatingAddBtn').style.display = 'block';
+            document.getElementById('addRoutineForm').reset();
+            
+            // 頻度オプションをリセット
+            document.getElementById('weeklyOptions').style.display = 'none';
+            document.getElementById('monthlyOptions').style.display = 'none';
+            document.getElementById('yearlyOptions').style.display = 'none';
+            document.getElementById('customOptions').style.display = 'none';
+            
+            // 必須属性をリセット
+            document.getElementById('monthlyDay').required = false;
+            document.getElementById('yearlyMonth').required = false;
+            document.getElementById('yearlyDay').required = false;
+            document.getElementById('customInterval').required = false;
+            document.getElementById('customNumber').required = false;
+            document.getElementById('customStartDate').required = false;
+            
+            // チェックボックスの選択状態をリセット
+            document.querySelectorAll('.day-checkbox').forEach(label => {
+                label.classList.remove('selected');
+            });
+        }
+
+        // モーダル外クリックで閉じる
+        window.onclick = function(event) {
+            const addModal = document.getElementById('addModal');
+            const editModal = document.getElementById('editModal');
+            if (event.target === addModal) {
+                closeAddModal();
+            }
+            if (event.target === editModal) {
+                closeEditModal();
+            }
         }
 
         // ログアウト
-        function logout() {
-            currentUser = null;
-            saveData();
-            showAuthView();
-            showMessage('ログアウトしました', 'success');
+        async function logout() {
+            try {
+                await auth.signOut();
+                currentUser = null;
+                routines = [];
+                completions = [];
+                showAuthView();
+                showMessage('ログアウトしました', 'success');
+            } catch (error) {
+                console.error('ログアウトエラー:', error);
+                showMessage('ログアウトに失敗しました', 'error');
+            }
         }
 
-        // 画面切り替え
+        // メインビュー表示
         function showMainView() {
             document.getElementById('authView').classList.remove('active');
             document.getElementById('mainView').classList.add('active');
-            updateDisplay();
+            
+            // 管理者パネル表示
+            const adminPanel = document.getElementById('adminPanel');
+            if (currentUser && currentUser.email === 'yasnaries@gmail.com') {
+                adminPanel.style.display = 'block';
+            } else {
+                adminPanel.style.display = 'none';
+            }
+            
+            // 同期ボタンを追加
+            addSyncButton();
+            
+            // リセットボタンを追加（開発用）
+            addResetButton();
         }
 
+        // 同期ボタンの追加
+        function addSyncButton() {
+            const mainView = document.getElementById('mainView');
+            if (mainView && !document.getElementById('manualSyncBtn')) {
+                const syncBtn = document.createElement('button');
+                syncBtn.id = 'manualSyncBtn';
+                syncBtn.textContent = '🔄 手動同期';
+                syncBtn.className = 'btn btn-secondary';
+                syncBtn.style.marginTop = '10px';
+                syncBtn.style.marginRight = '10px';
+                syncBtn.onclick = async () => {
+                    if (!currentUser) {
+                        showMessage('ログインが必要です', 'error');
+                        return;
+                    }
+                    
+                    syncBtn.disabled = true;
+                    syncBtn.textContent = '🔄 同期中...';
+                    
+                    try {
+                        console.log('手動同期開始');
+                        showSyncStatus('syncing');
+                        
+                        // データを保存
+                        await saveData();
+                        
+                        // データを再読み込み
+                        await loadUserData();
+                        
+                        showSyncStatus('synced');
+                        showMessage('手動同期が完了しました', 'success');
+                        console.log('手動同期完了');
+                        
+                    } catch (error) {
+                        console.error('手動同期エラー:', error);
+                        showSyncStatus('error');
+                        showMessage('手動同期に失敗しました', 'error');
+                    } finally {
+                        syncBtn.disabled = false;
+                        syncBtn.textContent = '🔄 手動同期';
+                    }
+                };
+                mainView.appendChild(syncBtn);
+            }
+        }
+
+        // 認証ビュー表示
         function showAuthView() {
             document.getElementById('mainView').classList.remove('active');
             document.getElementById('authView').classList.add('active');
+            document.getElementById('floatingAddBtn').style.display = 'none';
         }
 
         // メッセージ表示
         function showMessage(message, type) {
-            // 認証画面のメッセージ
-            const authMessageDiv = document.getElementById('authMessage');
-            if (authMessageDiv) {
-                authMessageDiv.innerHTML = `<div class="${type}">${message}</div>`;
-                setTimeout(() => {
-                    authMessageDiv.innerHTML = '';
-                }, 3000);
+            let messageDiv = document.getElementById('authMessage');
+            if (!messageDiv) {
+                // メイン画面用のメッセージ要素を作成
+                messageDiv = document.createElement('div');
+                messageDiv.id = 'mainMessage';
+                messageDiv.style.position = 'fixed';
+                messageDiv.style.top = '20px';
+                messageDiv.style.left = '50%';
+                messageDiv.style.transform = 'translateX(-50%)';
+                messageDiv.style.zIndex = '3000';
+                document.body.appendChild(messageDiv);
             }
+            
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 3000);
+        }
 
-            // メイン画面のメッセージ
-            const mainMessageDiv = document.getElementById('mainMessage');
-            if (mainMessageDiv) {
-                mainMessageDiv.innerHTML = `<div class="${type}">${message}</div>`;
-                setTimeout(() => {
-                    mainMessageDiv.innerHTML = '';
-                }, 3000);
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 強制的にrequired属性を削除
+            removeRequiredAttributes();
+            
+            initializeApp();
+            setupEventListeners();
+        });
+
+        // required属性を強制的に削除
+        function removeRequiredAttributes() {
+            const elementsToRemoveRequired = [
+                'monthlyDay',
+                'yearlyMonth', 
+                'yearlyDay',
+                'customNumber',
+                'customInterval',
+                'customStartDate'
+            ];
+            
+            elementsToRemoveRequired.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.removeAttribute('required');
+                    console.log(`✅ ${id}のrequired属性を削除しました`);
+                }
+            });
+        }
+
+        // データリセット機能（FieldValue.serverTimestamp()問題の解決用）
+        async function resetUserData() {
+            if (!currentUser) return;
+            
+            try {
+                console.log('=== データリセット開始 ===');
+                
+                // ローカルデータをクリア
+                routines = [];
+                completions = [];
+                
+                // Firestoreのデータを初期化
+                await db.collection('users').doc(currentUser.uid).set({
+                    email: currentUser.email,
+                    routines: [],
+                    completions: [],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastSyncDevice: navigator.userAgent,
+                    lastSyncTimestamp: new Date().toISOString()
+                });
+                
+                console.log('✅ データリセット完了');
+                showMessage('データをリセットしました', 'success');
+                
+                // 表示を更新
+                updateDisplay();
+                
+            } catch (error) {
+                console.error('❌ データリセットエラー:', error);
+                showMessage('データのリセットに失敗しました', 'error');
             }
         }
 
-        // 編集モーダルを開く
-        function openEditModal(routineId) {
+        // データリセットボタンの追加（開発用）
+        function addResetButton() {
+            const mainView = document.getElementById('mainView');
+            if (mainView && !document.getElementById('resetDataBtn')) {
+                const resetBtn = document.createElement('button');
+                resetBtn.id = 'resetDataBtn';
+                resetBtn.textContent = '🔄 データリセット';
+                resetBtn.className = 'btn btn-danger';
+                resetBtn.style.marginTop = '10px';
+                resetBtn.onclick = () => {
+                    if (confirm('すべてのデータをリセットしますか？この操作は取り消せません。')) {
+                        resetUserData();
+                    }
+                };
+                mainView.appendChild(resetBtn);
+            }
+        }
+
+        // フォームリセット時にも必ず呼ぶ
+        document.getElementById('addRoutineForm').addEventListener('reset', function() {
+            setTimeout(toggleFrequencyOptions, 0);
+        });
+
+        // ユーザー管理モーダルの表示
+        function openUserAdminModal() {
+            document.getElementById('userAdminModal').style.display = 'block';
+            loadUserList();
+        }
+
+        // ユーザー管理モーダルの閉じる
+        function closeUserAdminModal() {
+            document.getElementById('userAdminModal').style.display = 'none';
+        }
+
+        // ユーザーリストの読み込み
+        function loadUserList() {
+            db.collection('users').get().then(querySnapshot => {
+                const userList = document.getElementById('userList');
+                userList.innerHTML = '';
+                const ul = document.createElement('ul');
+                ul.style.listStyle = 'none';
+                ul.style.padding = '0';
+                querySnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    const li = document.createElement('li');
+                    li.style.display = 'flex';
+                    li.style.justifyContent = 'space-between';
+                    li.style.alignItems = 'center';
+                    li.style.padding = '8px 0';
+                    li.style.borderBottom = '1px solid #eee';
+                    li.innerHTML = `<span>${userData.email}</span>`;
+                    if (userData.email !== 'yasnaries@gmail.com') {
+                        const delBtn = document.createElement('button');
+                        delBtn.textContent = '削除';
+                        delBtn.className = 'btn btn-danger';
+                        delBtn.onclick = function() {
+                            if (confirm(`${userData.email} を本当に削除しますか？`)) {
+                                db.collection('users').doc(doc.id).delete().then(() => {
+                                    li.remove();
+                                });
+                            }
+                        };
+                        li.appendChild(delBtn);
+                    }
+                    ul.appendChild(li);
+                });
+                userList.appendChild(ul);
+            });
+        }
+
+        // 編集モーダルの表示
+        function editRoutine(routineId) {
             const routine = routines.find(r => r.id === routineId);
             if (!routine) return;
-
-            document.getElementById('editRoutineId').value = routineId;
+            
+            // フォームに現在の値を設定
+            document.getElementById('editRoutineId').value = routine.id;
             document.getElementById('editRoutineTitle').value = routine.title;
             document.getElementById('editRoutineDescription').value = routine.description || '';
             document.getElementById('editRoutineFrequency').value = routine.frequency;
             
-            document.getElementById('editModal').classList.remove('hidden');
+            // 頻度オプションの表示
+            toggleEditFrequencyOptions();
+            
+            // 既存の値を設定
+            if (routine.frequency === 'weekly' && routine.frequencyDetails?.selectedDays) {
+                routine.frequencyDetails.selectedDays.forEach(day => {
+                    const checkbox = document.querySelector(`#editWeeklyOptions input[value="${day}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            } else if (routine.frequency === 'monthly' && routine.frequencyDetails?.selectedDay) {
+                document.getElementById('editMonthlyDay').value = routine.frequencyDetails.selectedDay;
+            } else if (routine.frequency === 'yearly' && routine.frequencyDetails) {
+                document.getElementById('editYearlyMonth').value = routine.frequencyDetails.selectedMonth || '';
+                document.getElementById('editYearlyDay').value = routine.frequencyDetails.selectedDay || '';
+            } else if (routine.frequency === 'custom' && routine.frequencyDetails) {
+                document.getElementById('editCustomNumber').value = routine.frequencyDetails.number || '';
+                document.getElementById('editCustomInterval').value = routine.frequencyDetails.interval || '';
+                document.getElementById('editCustomStartDate').value = routine.frequencyDetails.startDate || '';
+            }
+            
+            document.getElementById('editModal').style.display = 'block';
         }
 
-        // 編集モーダルを閉じる
-        function hideEditModal() {
-            document.getElementById('editModal').classList.add('hidden');
+        // 編集モーダルの閉じる
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            document.getElementById('editRoutineForm').reset();
+            
+            // 頻度オプションをリセット
+            document.getElementById('editWeeklyOptions').style.display = 'none';
+            document.getElementById('editMonthlyOptions').style.display = 'none';
+            document.getElementById('editYearlyOptions').style.display = 'none';
+            document.getElementById('editCustomOptions').style.display = 'none';
         }
 
-        // ルーティン編集
-        function handleEditRoutine(event) {
-            event.preventDefault();
+        // 編集用頻度オプションの切り替え
+        function toggleEditFrequencyOptions() {
+            const frequency = document.getElementById('editRoutineFrequency').value;
+            
+            // すべてのオプションを非表示
+            document.getElementById('editWeeklyOptions').style.display = 'none';
+            document.getElementById('editMonthlyOptions').style.display = 'none';
+            document.getElementById('editYearlyOptions').style.display = 'none';
+            document.getElementById('editCustomOptions').style.display = 'none';
+            
+            // 選択された頻度のオプションを表示
+            if (frequency === 'weekly') {
+                document.getElementById('editWeeklyOptions').style.display = 'block';
+            } else if (frequency === 'monthly') {
+                document.getElementById('editMonthlyOptions').style.display = 'block';
+            } else if (frequency === 'yearly') {
+                document.getElementById('editYearlyOptions').style.display = 'block';
+            } else if (frequency === 'custom') {
+                document.getElementById('editCustomOptions').style.display = 'block';
+            }
+        }
+
+        // 編集フォームの送信処理
+        document.getElementById('editRoutineForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
             
             const routineId = document.getElementById('editRoutineId').value;
-            const title = document.getElementById('editRoutineTitle').value;
-            const description = document.getElementById('editRoutineDescription').value;
+            const routine = routines.find(r => r.id === routineId);
+            if (!routine) return;
+            
+            const title = document.getElementById('editRoutineTitle').value.trim();
+            const description = document.getElementById('editRoutineDescription').value.trim();
             const frequency = document.getElementById('editRoutineFrequency').value;
-
-            if (!title) {
-                showMessage('タイトルを入力してください', 'error');
-                return;
+            
+            // 頻度詳細の取得
+            let frequencyDetails = null;
+            if (frequency === 'weekly') {
+                const selectedDays = Array.from(document.querySelectorAll('#editWeeklyOptions input:checked'))
+                    .map(cb => parseInt(cb.value));
+                if (selectedDays.length > 0) {
+                    frequencyDetails = { selectedDays };
+                }
+            } else if (frequency === 'monthly') {
+                const selectedDay = document.getElementById('editMonthlyDay').value;
+                if (selectedDay) {
+                    frequencyDetails = { selectedDay: parseInt(selectedDay) };
+                }
+            } else if (frequency === 'yearly') {
+                const selectedMonth = document.getElementById('editYearlyMonth').value;
+                const selectedDay = document.getElementById('editYearlyDay').value;
+                if (selectedMonth && selectedDay) {
+                    frequencyDetails = { 
+                        selectedMonth: parseInt(selectedMonth), 
+                        selectedDay: parseInt(selectedDay) 
+                    };
+                }
+            } else if (frequency === 'custom') {
+                const number = document.getElementById('editCustomNumber').value;
+                const interval = document.getElementById('editCustomInterval').value;
+                const startDate = document.getElementById('editCustomStartDate').value;
+                if (number && interval && startDate) {
+                    frequencyDetails = { 
+                        number: parseInt(number), 
+                        interval, 
+                        startDate 
+                    };
+                }
             }
-
-            const routineIndex = routines.findIndex(r => r.id === routineId);
-            if (routineIndex >= 0) {
-                routines[routineIndex] = {
-                    ...routines[routineIndex],
-                    title: title,
-                    description: description,
-                    frequency: frequency
-                };
-                
-                saveData();
+            
+            // ルーティンを更新
+            routine.title = title;
+            routine.description = description;
+            routine.frequency = frequency;
+            routine.frequencyDetails = frequencyDetails;
+            routine.updatedAt = new Date().toISOString();
+            
+            try {
+                await saveData();
+                closeEditModal();
                 updateDisplay();
-                hideEditModal();
                 showMessage('ルーティンを更新しました', 'success');
+            } catch (error) {
+                console.error('ルーティン更新エラー:', error);
+                showMessage('ルーティンの更新に失敗しました', 'error');
             }
-        }
-
-        // 初期表示
-        updateDisplay();
+        });
     </script>
 </body>
 </html> 
