@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプルルーティン管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .routine-list {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 10px;
+        }
+
+        .routine-item {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 0;
+            border: 2px solid #e9ecef;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .routine-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .routine-item:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .routine-item:hover::before {
+            transform: scaleX(1);
+        }
+
+        .routine-item.completed {
+            opacity: 0.8;
+            background: linear-gradient(135deg, #f8fff8 0%, #f0f8f0 100%);
+            border-color: #28a745;
+        }
+
+        .routine-item.completed::before {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            transform: scaleX(1);
+        }
+
+        .routine-item.completed .routine-title {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .routine-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            line-height: 1.3;
+        }
+
+        .routine-description {
+            color: #6c757d;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .routine-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .routine-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .routine-actions .btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .routine-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .frequency-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            align-self: flex-start;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .routine-item.completed .frequency-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        /* カードのアニメーション */
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .routine-item {
+            animation: cardSlideIn 0.6s ease-out;
+        }
+
+        .routine-item:nth-child(1) { animation-delay: 0.1s; }
+        .routine-item:nth-child(2) { animation-delay: 0.2s; }
+        .routine-item:nth-child(3) { animation-delay: 0.3s; }
+        .routine-item:nth-child(4) { animation-delay: 0.4s; }
+        .routine-item:nth-child(5) { animation-delay: 0.5s; }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .routine-list {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 5px;
+            }
+            
+            .routine-item {
+                padding: 20px;
+                border-radius: 16px;
+            }
+            
+            .routine-title {
+                font-size: 18px;
+            }
+            
+            .routine-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .routine-actions .btn {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            .container {
+                margin: 10px;
+                border-radius: 16px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .routine-item {
+                padding: 16px;
+            }
+            
+            .routine-title {
+                font-size: 16px;
+            }
+            
+            .routine-description {
+                font-size: 13px;
+            }
+            
+            .frequency-badge {
+                font-size: 11px;
+                padding: 4px 8px;
+            }
+        }
+
+        .user-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .floating-add-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .floating-add-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+        }
+
+        .modal {
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .close-btn:hover {
+            background-color: #f8f9fa;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .modal-actions .btn {
+            width: auto;
+            margin: 0;
+        }
+
+        .routine-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 シンプルルーティン管理</h1>
+            <p>毎日の習慣を簡単に管理</p>
+        </div>
+
+        <div class="content">
+            <!-- 認証画面 -->
+            <div id="authView" class="view active">
+                <h2>ログイン / 新規登録</h2>
+                <form id="authForm">
+                    <div class="form-group">
+                        <label for="email">メールアドレス</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">パスワード</label>
+                        <input type="password" id="password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn">ログイン / 登録</button>
+                </form>
+                <div id="authMessage"></div>
+            </div>
+
+            <!-- メイン画面 -->
+            <div id="mainView" class="view">
+                <!-- ユーザー情報 -->
+                <div class="user-info">
+                    <strong id="userEmail"></strong> でログイン中
+                    <button onclick="logout()" class="btn btn-secondary" style="width: auto; margin-top: 10px;">ログアウト</button>
+                </div>
+
+                <!-- 統計情報 -->
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalRoutines">0</div>
+                        <div class="stat-label">総ルーティン数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="completedToday">0</div>
+                        <div class="stat-label">今日完了</div>
+                    </div>
+                </div>
+
+                <!-- メッセージ表示エリア -->
+                <div id="mainMessage"></div>
+
+                <!-- ルーティン一覧 -->
+                <div class="routine-section">
+                    <h3>📋 ルーティン一覧</h3>
+                    <div id="routineList" class="routine-list"></div>
+                </div>
+
+                <!-- フローティング追加ボタン -->
+                <div class="floating-add-btn" onclick="showAddModal()">
+                    <span>+</span>
+                </div>
+
+                <!-- 追加モーダル -->
+                <div id="addModal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>新しいルーティンを追加</h3>
+                            <button class="close-btn" onclick="hideAddModal()">&times;</button>
+                        </div>
+                        <form id="addRoutineForm">
+                            <div class="form-group">
+                                <label for="routineTitle">タイトル</label>
+                                <input type="text" id="routineTitle" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="routineDescription">説明（任意）</label>
+                                <textarea id="routineDescription" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="routineFrequency">頻度</label>
+                                <select id="routineFrequency" required>
+                                    <option value="daily">毎日</option>
+                                    <option value="weekly">毎週</option>
+                                    <option value="monthly">毎月</option>
+                                </select>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="button" class="btn btn-secondary" onclick="hideAddModal()">キャンセル</button>
+                                <button type="submit" class="btn btn-success">追加</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 編集モーダル -->
+                <div id="editModal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>ルーティンを編集</h3>
+                            <button class="close-btn" onclick="hideEditModal()">&times;</button>
+                        </div>
+                        <form id="editRoutineForm">
+                            <input type="hidden" id="editRoutineId">
+                            <div class="form-group">
+                                <label for="editRoutineTitle">タイトル</label>
+                                <input type="text" id="editRoutineTitle" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editRoutineDescription">説明（任意）</label>
+                                <textarea id="editRoutineDescription" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="editRoutineFrequency">頻度</label>
+                                <select id="editRoutineFrequency" required>
+                                    <option value="daily">毎日</option>
+                                    <option value="weekly">毎週</option>
+                                    <option value="monthly">毎月</option>
+                                </select>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="button" class="btn btn-secondary" onclick="hideEditModal()">キャンセル</button>
+                                <button type="submit" class="btn btn-success">更新</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let currentUser = null;
+        let routines = [];
+        let completions = [];
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            checkAuth();
+            setupEventListeners();
+        });
+
+        // データの読み込み
+        function loadData() {
+            try {
+                const savedUser = localStorage.getItem('currentUser');
+                const savedRoutines = localStorage.getItem('routines');
+                const savedCompletions = localStorage.getItem('completions');
+
+                if (savedUser) currentUser = JSON.parse(savedUser);
+                if (savedRoutines) routines = JSON.parse(savedRoutines);
+                if (savedCompletions) completions = JSON.parse(savedCompletions);
+            } catch (error) {
+                console.error('データ読み込みエラー:', error);
+            }
+        }
+
+        // データの保存
+        function saveData() {
+            try {
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                localStorage.setItem('routines', JSON.stringify(routines));
+                localStorage.setItem('completions', JSON.stringify(completions));
+            } catch (error) {
+                console.error('データ保存エラー:', error);
+            }
+        }
+
+        // 認証状態チェック
+        function checkAuth() {
+            if (currentUser) {
+                showMainView();
+            } else {
+                showAuthView();
+            }
+        }
+
+        // イベントリスナーの設定
+        function setupEventListeners() {
+            // 認証フォーム
+            document.getElementById('authForm').addEventListener('submit', handleAuth);
+            
+            // ルーティン追加フォーム
+            document.getElementById('addRoutineForm').addEventListener('submit', handleAddRoutine);
+            
+            // ルーティン編集フォーム
+            document.getElementById('editRoutineForm').addEventListener('submit', handleEditRoutine);
+        }
+
+        // 認証処理
+        function handleAuth(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('authMessage');
+
+            if (!email || !password) {
+                showMessage('メールアドレスとパスワードを入力してください', 'error');
+                return;
+            }
+
+            // シンプルな認証（実際のアプリでは適切なハッシュ化が必要）
+            const users = JSON.parse(localStorage.getItem('users') || '{}');
+            
+            if (users[email]) {
+                // ログイン
+                if (users[email].password === password) {
+                    currentUser = { email: email };
+                    saveData();
+                    showMainView();
+                    showMessage('ログインしました', 'success');
+                } else {
+                    showMessage('パスワードが正しくありません', 'error');
+                }
+            } else {
+                // 新規登録
+                users[email] = { email: email, password: password };
+                localStorage.setItem('users', JSON.stringify(users));
+                currentUser = { email: email };
+                saveData();
+                showMainView();
+                showMessage('アカウントを作成しました', 'success');
+            }
+        }
+
+        // ルーティン追加
+        function handleAddRoutine(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('routineTitle').value;
+            const description = document.getElementById('routineDescription').value;
+            const frequency = document.getElementById('routineFrequency').value;
+
+            if (!title) {
+                showMessage('タイトルを入力してください', 'error');
+                return;
+            }
+
+            const newRoutine = {
+                id: Date.now().toString(),
+                title: title,
+                description: description,
+                frequency: frequency,
+                createdAt: new Date().toISOString(),
+                userId: currentUser.email
+            };
+
+            routines.push(newRoutine);
+            saveData();
+            updateDisplay();
+            
+            // モーダルを閉じる
+            hideAddModal();
+            showMessage('ルーティンを追加しました', 'success');
+        }
+
+        // ルーティン完了切り替え
+        function toggleRoutine(routineId) {
+            const today = new Date().toDateString();
+            const completionKey = `${routineId}_${today}`;
+            
+            const existingIndex = completions.findIndex(c => c.id === completionKey);
+            
+            if (existingIndex >= 0) {
+                completions.splice(existingIndex, 1);
+            } else {
+                completions.push({
+                    id: completionKey,
+                    routineId: routineId,
+                    completedAt: new Date().toISOString(),
+                    userId: currentUser.email
+                });
+            }
+            
+            saveData();
+            updateDisplay();
+        }
+
+        // ルーティン削除
+        function deleteRoutine(routineId) {
+            if (confirm('このルーティンを削除しますか？')) {
+                routines = routines.filter(r => r.id !== routineId);
+                completions = completions.filter(c => c.routineId !== routineId);
+                saveData();
+                updateDisplay();
+                showMessage('ルーティンを削除しました', 'success');
+            }
+        }
+
+        // 表示更新
+        function updateDisplay() {
+            if (!currentUser) return;
+
+            // ユーザー情報
+            document.getElementById('userEmail').textContent = currentUser.email;
+
+            // 統計情報
+            document.getElementById('totalRoutines').textContent = routines.length;
+            
+            const today = new Date().toDateString();
+            const todayCompletions = completions.filter(c => {
+                const completionDate = new Date(c.completedAt).toDateString();
+                return completionDate === today;
+            });
+            document.getElementById('completedToday').textContent = todayCompletions.length;
+
+            // ルーティン表示
+            displayRoutines();
+        }
+
+        // ルーティン表示
+        function displayRoutines() {
+            const today = new Date().toDateString();
+            
+            // すべてのルーティンを表示
+            document.getElementById('routineList').innerHTML = createRoutineHTML(routines, today);
+        }
+
+        // ルーティンHTML生成
+        function createRoutineHTML(routineList, today) {
+            console.log('createRoutineHTML called with:', routineList.length, 'routines');
+            
+            if (routineList.length === 0) {
+                return '<div style="text-align: center; color: #6c757d; padding: 40px; grid-column: 1 / -1;"><p style="font-size: 18px; margin-bottom: 10px;">ルーティンがありません</p><small>右下の「+」ボタンから新しいルーティンを追加してください</small></div>';
+            }
+
+            const html = routineList.map(routine => {
+                const isCompleted = completions.some(c => {
+                    const completionDate = new Date(c.completedAt).toDateString();
+                    return c.routineId === routine.id && completionDate === today;
+                });
+
+                const frequencyText = {
+                    'daily': '毎日',
+                    'weekly': '毎週',
+                    'monthly': '毎月'
+                }[routine.frequency];
+
+                const routineHtml = `
+                    <div class="routine-item ${isCompleted ? 'completed' : ''}">
+                        <div class="routine-title">${routine.title}</div>
+                        ${routine.description ? `<div class="routine-description">${routine.description}</div>` : ''}
+                        <div class="routine-meta">
+                            <span class="frequency-badge">${frequencyText}</span>
+                            <div class="routine-actions">
+                                <button onclick="toggleRoutine('${routine.id}')" class="btn ${isCompleted ? 'btn-secondary' : 'btn-success'}" style="width: auto;">
+                                    ${isCompleted ? '完了取り消し' : '完了'}
+                                </button>
+                                <button onclick="openEditModal('${routine.id}')" class="btn" style="width: auto; background: #17a2b8;">編集</button>
+                                <button onclick="deleteRoutine('${routine.id}')" class="btn btn-danger" style="width: auto;">削除</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                console.log('Generated HTML for routine:', routine.title, 'includes edit button:', routineHtml.includes('編集'));
+                return routineHtml;
+            }).join('');
+            
+            console.log('Final HTML length:', html.length);
+            return html;
+        }
+
+        // モーダル表示
+        function showAddModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+            // フォームをリセット
+            document.getElementById('addRoutineForm').reset();
+        }
+
+        function hideAddModal() {
+            document.getElementById('addModal').classList.add('hidden');
+        }
+
+        // ログアウト
+        function logout() {
+            currentUser = null;
+            saveData();
+            showAuthView();
+            showMessage('ログアウトしました', 'success');
+        }
+
+        // 画面切り替え
+        function showMainView() {
+            document.getElementById('authView').classList.remove('active');
+            document.getElementById('mainView').classList.add('active');
+            updateDisplay();
+        }
+
+        function showAuthView() {
+            document.getElementById('mainView').classList.remove('active');
+            document.getElementById('authView').classList.add('active');
+        }
+
+        // メッセージ表示
+        function showMessage(message, type) {
+            // 認証画面のメッセージ
+            const authMessageDiv = document.getElementById('authMessage');
+            if (authMessageDiv) {
+                authMessageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+                setTimeout(() => {
+                    authMessageDiv.innerHTML = '';
+                }, 3000);
+            }
+
+            // メイン画面のメッセージ
+            const mainMessageDiv = document.getElementById('mainMessage');
+            if (mainMessageDiv) {
+                mainMessageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+                setTimeout(() => {
+                    mainMessageDiv.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        // 編集モーダルを開く
+        function openEditModal(routineId) {
+            const routine = routines.find(r => r.id === routineId);
+            if (!routine) return;
+
+            document.getElementById('editRoutineId').value = routineId;
+            document.getElementById('editRoutineTitle').value = routine.title;
+            document.getElementById('editRoutineDescription').value = routine.description || '';
+            document.getElementById('editRoutineFrequency').value = routine.frequency;
+            
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        // 編集モーダルを閉じる
+        function hideEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        // ルーティン編集
+        function handleEditRoutine(event) {
+            event.preventDefault();
+            
+            const routineId = document.getElementById('editRoutineId').value;
+            const title = document.getElementById('editRoutineTitle').value;
+            const description = document.getElementById('editRoutineDescription').value;
+            const frequency = document.getElementById('editRoutineFrequency').value;
+
+            if (!title) {
+                showMessage('タイトルを入力してください', 'error');
+                return;
+            }
+
+            const routineIndex = routines.findIndex(r => r.id === routineId);
+            if (routineIndex >= 0) {
+                routines[routineIndex] = {
+                    ...routines[routineIndex],
+                    title: title,
+                    description: description,
+                    frequency: frequency
+                };
+                
+                saveData();
+                updateDisplay();
+                hideEditModal();
+                showMessage('ルーティンを更新しました', 'success');
+            }
+        }
+
+        // 初期表示
+        updateDisplay();
+    </script>
+</body>
+</html> 
