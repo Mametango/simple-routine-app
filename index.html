@@ -13,16 +13,36 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="simple-auth.js"></script>
     <script src="simple-storage.js"></script>
-    <script src="script-new.js?v=1.0.13-20250627"></script>
+    <script src="script-new.js?v=1.0.15-20250627"></script>
     <script>
         // 即座にsimpleAuthを初期化
         console.log('=== HTML側でのsimpleAuth初期化開始 ===');
-        if (typeof startSimpleAuth === 'function') {
-            window.simpleAuth = startSimpleAuth();
-            console.log('✅ simpleAuth初期化完了:', window.simpleAuth);
-        } else {
-            console.error('❌ startSimpleAuth関数が見つかりません');
+        
+        // DOMContentLoadedを待ってから初期化
+        function initializeSimpleAuthInHTML() {
+            if (typeof startSimpleAuth === 'function') {
+                window.simpleAuth = startSimpleAuth();
+                console.log('✅ simpleAuth初期化完了:', window.simpleAuth);
+                
+                // 初期化完了後に認証状態をチェック
+                if (window.simpleAuth && window.simpleAuth.getCurrentUser) {
+                    const currentUser = window.simpleAuth.getCurrentUser();
+                    console.log('現在のユーザー:', currentUser);
+                }
+            } else {
+                console.error('❌ startSimpleAuth関数が見つかりません');
+                console.log('利用可能な関数:', Object.keys(window).filter(key => typeof window[key] === 'function'));
+            }
         }
+        
+        // DOMContentLoadedを待つ
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSimpleAuthInHTML);
+        } else {
+            // 既に読み込み完了している場合は即座に実行
+            initializeSimpleAuthInHTML();
+        }
+        
         console.log('=== HTML側でのsimpleAuth初期化終了 ===');
     </script>
     <style>

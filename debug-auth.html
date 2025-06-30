@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>認証システムデバッグ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>認証システムデバッグ</h1>
+    
+    <div class="container">
+        <h2>システム状態</h2>
+        <div id="systemStatus"></div>
+        <button onclick="checkSystemStatus()">状態をチェック</button>
+        <button onclick="clearLog()">ログをクリア</button>
+    </div>
+    
+    <div class="container">
+        <h2>認証テスト</h2>
+        <div>
+            <input type="email" id="testEmail" placeholder="メールアドレス" value="test@example.com">
+            <input type="password" id="testPassword" placeholder="パスワード" value="password123">
+            <button onclick="testSignUp()">新規登録</button>
+            <button onclick="testSignIn()">ログイン</button>
+            <button onclick="testSignOut()">ログアウト</button>
+        </div>
+        <div id="authResult"></div>
+    </div>
+    
+    <div class="container">
+        <h2>ユーザー管理</h2>
+        <button onclick="listUsers()">ユーザー一覧</button>
+        <button onclick="createAdmin()">管理者作成</button>
+        <button onclick="resetData()">データリセット</button>
+        <div id="userList"></div>
+    </div>
+    
+    <div class="container">
+        <h2>ログ</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- スクリプトの読み込み -->
+    <script src="simple-auth.js"></script>
+    <script>
+        // ログ出力関数
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.className = `status ${type}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // ログクリア
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // システム状態チェック
+        function checkSystemStatus() {
+            log('=== システム状態チェック開始 ===', 'info');
+            
+            const statusDiv = document.getElementById('systemStatus');
+            let statusHTML = '';
+            
+            // simpleAuthの存在チェック
+            if (typeof SimpleAuth === 'function') {
+                log('✅ SimpleAuthクラスが利用可能', 'success');
+                statusHTML += '<div class="status success">✅ SimpleAuthクラスが利用可能</div>';
+            } else {
+                log('❌ SimpleAuthクラスが見つかりません', 'error');
+                statusHTML += '<div class="status error">❌ SimpleAuthクラスが見つかりません</div>';
+            }
+            
+            // startSimpleAuth関数のチェック
+            if (typeof startSimpleAuth === 'function') {
+                log('✅ startSimpleAuth関数が利用可能', 'success');
+                statusHTML += '<div class="status success">✅ startSimpleAuth関数が利用可能</div>';
+            } else {
+                log('❌ startSimpleAuth関数が見つかりません', 'error');
+                statusHTML += '<div class="status error">❌ startSimpleAuth関数が見つかりません</div>';
+            }
+            
+            // simpleAuthインスタンスのチェック
+            if (window.simpleAuth) {
+                log('✅ simpleAuthインスタンスが存在', 'success');
+                statusHTML += '<div class="status success">✅ simpleAuthインスタンスが存在</div>';
+                
+                if (window.simpleAuth.isInitialized) {
+                    log('✅ simpleAuthが初期化済み', 'success');
+                    statusHTML += '<div class="status success">✅ simpleAuthが初期化済み</div>';
+                } else {
+                    log('⚠️ simpleAuthが未初期化', 'info');
+                    statusHTML += '<div class="status info">⚠️ simpleAuthが未初期化</div>';
+                }
+            } else {
+                log('❌ simpleAuthインスタンスが存在しません', 'error');
+                statusHTML += '<div class="status error">❌ simpleAuthインスタンスが存在しません</div>';
+            }
+            
+            statusDiv.innerHTML = statusHTML;
+            log('=== システム状態チェック完了 ===', 'info');
+        }
+
+        // 認証テスト
+        async function testSignUp() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            log(`新規登録テスト: ${email}`, 'info');
+            
+            try {
+                if (!window.simpleAuth) {
+                    window.simpleAuth = startSimpleAuth();
+                }
+                
+                const result = await window.simpleAuth.signUp(email, password);
+                log(`登録結果: ${JSON.stringify(result)}`, result.success ? 'success' : 'error');
+                
+                const resultDiv = document.getElementById('authResult');
+                resultDiv.innerHTML = `<div class="status ${result.success ? 'success' : 'error'}">${result.message}</div>`;
+                
+            } catch (error) {
+                log(`登録エラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSignIn() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            log(`ログインテスト: ${email}`, 'info');
+            
+            try {
+                if (!window.simpleAuth) {
+                    window.simpleAuth = startSimpleAuth();
+                }
+                
+                const result = await window.simpleAuth.signIn(email, password);
+                log(`ログイン結果: ${JSON.stringify(result)}`, result.success ? 'success' : 'error');
+                
+                const resultDiv = document.getElementById('authResult');
+                resultDiv.innerHTML = `<div class="status ${result.success ? 'success' : 'error'}">${result.message}</div>`;
+                
+            } catch (error) {
+                log(`ログインエラー: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSignOut() {
+            log('ログアウトテスト', 'info');
+            
+            try {
+                if (window.simpleAuth) {
+                    await window.simpleAuth.signOut();
+                    log('ログアウト成功', 'success');
+                    
+                    const resultDiv = document.getElementById('authResult');
+                    resultDiv.innerHTML = '<div class="status success">ログアウトしました</div>';
+                } else {
+                    log('simpleAuthが利用できません', 'error');
+                }
+            } catch (error) {
+                log(`ログアウトエラー: ${error.message}`, 'error');
+            }
+        }
+
+        // ユーザー管理
+        function listUsers() {
+            log('ユーザー一覧取得', 'info');
+            
+            try {
+                if (!window.simpleAuth) {
+                    window.simpleAuth = startSimpleAuth();
+                }
+                
+                const users = window.simpleAuth.listAllUsers();
+                log(`ユーザー数: ${users.length}`, 'info');
+                
+                const userListDiv = document.getElementById('userList');
+                if (users.length === 0) {
+                    userListDiv.innerHTML = '<div class="status info">登録されているユーザーがありません</div>';
+                } else {
+                    let userHTML = '<div class="status success">登録済みユーザー:</div>';
+                    users.forEach(user => {
+                        userHTML += `<div>- ${user.email} (ID: ${user.uid})</div>`;
+                    });
+                    userListDiv.innerHTML = userHTML;
+                }
+                
+            } catch (error) {
+                log(`ユーザー一覧取得エラー: ${error.message}`, 'error');
+            }
+        }
+
+        function createAdmin() {
+            const email = prompt('管理者のメールアドレスを入力してください:');
+            const password = prompt('管理者のパスワードを入力してください:');
+            
+            if (!email || !password) {
+                log('管理者作成をキャンセルしました', 'info');
+                return;
+            }
+            
+            log(`管理者作成: ${email}`, 'info');
+            
+            try {
+                if (!window.simpleAuth) {
+                    window.simpleAuth = startSimpleAuth();
+                }
+                
+                const result = window.simpleAuth.createAdminUser(email, password);
+                log(`管理者作成結果: ${JSON.stringify(result)}`, result.success ? 'success' : 'error');
+                
+            } catch (error) {
+                log(`管理者作成エラー: ${error.message}`, 'error');
+            }
+        }
+
+        function resetData() {
+            if (confirm('本当にすべてのデータをリセットしますか？')) {
+                log('データリセット実行', 'info');
+                
+                try {
+                    if (!window.simpleAuth) {
+                        window.simpleAuth = startSimpleAuth();
+                    }
+                    
+                    window.simpleAuth.resetData();
+                    log('データリセット完了', 'success');
+                    
+                    // 表示をクリア
+                    document.getElementById('authResult').innerHTML = '';
+                    document.getElementById('userList').innerHTML = '';
+                    
+                } catch (error) {
+                    log(`データリセットエラー: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // ページ読み込み時の初期化
+        window.addEventListener('load', function() {
+            log('デバッグページ読み込み完了', 'info');
+            
+            // simpleAuthを初期化
+            if (typeof startSimpleAuth === 'function') {
+                window.simpleAuth = startSimpleAuth();
+                log('simpleAuth初期化完了', 'success');
+            } else {
+                log('startSimpleAuth関数が見つかりません', 'error');
+            }
+            
+            // システム状態をチェック
+            setTimeout(checkSystemStatus, 100);
+        });
+    </script>
+</body>
+</html> 

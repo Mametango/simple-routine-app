@@ -202,22 +202,24 @@ class SimpleAuth {
             // ユーザーが既に存在するかチェック
             if (this.users[email]) {
                 console.log('シンプル認証: ユーザーは既に存在します');
-                throw new Error('auth/email-already-in-use');
+                return { success: false, message: 'このメールアドレスは既に使用されています' };
             }
 
             // パスワードの長さチェック
             if (password.length < 6) {
                 console.log('シンプル認証: パスワードが短すぎます');
-                throw new Error('auth/weak-password');
+                return { success: false, message: 'パスワードは6文字以上で入力してください' };
             }
 
             // 新しいユーザーを作成
             const userId = this.generateUserId();
             const user = {
                 uid: userId,
+                id: userId, // 互換性のため
                 email: email,
                 displayName: email.split('@')[0],
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                isAdmin: false
             };
 
             // ユーザーを保存
@@ -240,10 +242,10 @@ class SimpleAuth {
             this.notifyAuthStateChange(user);
 
             console.log('シンプル認証: サインアップ成功', user);
-            return { user: user };
+            return { success: true, user: user };
         } catch (error) {
             console.error('シンプル認証: サインアップエラー', error);
-            throw error;
+            return { success: false, message: error.message || '登録に失敗しました' };
         }
     }
 
@@ -260,7 +262,7 @@ class SimpleAuth {
             
             if (!userData) {
                 console.log('シンプル認証: ユーザーが見つかりません');
-                throw new Error('auth/user-not-found');
+                return { success: false, message: 'ユーザーが見つかりません' };
             }
 
             const passwordValid = this.verifyPassword(password, userData.password);
@@ -268,15 +270,17 @@ class SimpleAuth {
             
             if (!passwordValid) {
                 console.log('シンプル認証: パスワードが正しくありません');
-                throw new Error('auth/wrong-password');
+                return { success: false, message: 'パスワードが正しくありません' };
             }
 
             // ユーザー情報を設定（パスワードは除外）
             const user = {
                 uid: userData.uid,
+                id: userData.uid, // 互換性のため
                 email: userData.email,
                 displayName: userData.displayName,
-                createdAt: userData.createdAt
+                createdAt: userData.createdAt,
+                isAdmin: userData.isAdmin || false
             };
 
             this.currentUser = user;
@@ -290,10 +294,10 @@ class SimpleAuth {
             
             console.log('シンプル認証: サインイン成功', user);
 
-            return { user: user };
+            return { success: true, user: user };
         } catch (error) {
             console.error('シンプル認証: サインインエラー', error);
-            throw error;
+            return { success: false, message: error.message || 'ログインに失敗しました' };
         }
     }
 

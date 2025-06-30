@@ -2,7 +2,7 @@
 
 // デバッグ情報
 console.log('=== script-new.js 読み込み開始 ===');
-console.log('バージョン: 1.0.13');
+console.log('バージョン: 1.0.15');
 console.log('読み込み時刻:', new Date().toISOString());
 
 // グローバル変数の定義
@@ -18,6 +18,29 @@ window.currentStorage = currentStorage;
 window.routines = routines;
 window.completions = completions;
 window.isGoogleLoginInProgress = isGoogleLoginInProgress;
+
+// simpleAuth初期化関数
+function initializeSimpleAuth() {
+    console.log('=== simpleAuth初期化開始 ===');
+    
+    // 既に初期化済みの場合はスキップ
+    if (window.simpleAuth && window.simpleAuth.isInitialized) {
+        console.log('simpleAuthは既に初期化済みです');
+        return window.simpleAuth;
+    }
+    
+    // startSimpleAuth関数が利用可能かチェック
+    if (typeof startSimpleAuth === 'function') {
+        console.log('startSimpleAuth関数を呼び出し...');
+        window.simpleAuth = startSimpleAuth();
+        console.log('✅ simpleAuth初期化完了:', window.simpleAuth);
+        return window.simpleAuth;
+    } else {
+        console.error('❌ startSimpleAuth関数が見つかりません');
+        console.log('利用可能な関数:', Object.keys(window).filter(key => typeof window[key] === 'function'));
+        return null;
+    }
+}
 
 // 画面切り替え関数
 function showScreen(screenName) {
@@ -47,20 +70,20 @@ async function handleLogin(email, password) {
     
     try {
         // simpleAuthの初期化を確認
-        if (!window.simpleAuth) {
+        let auth = window.simpleAuth;
+        if (!auth || !auth.isInitialized) {
             console.log('simpleAuthが未初期化、初期化を試行...');
-            if (typeof startSimpleAuth === 'function') {
-                window.simpleAuth = startSimpleAuth();
-                console.log('simpleAuth初期化完了:', window.simpleAuth);
-            } else {
-                console.error('startSimpleAuth関数が見つかりません');
-                return { success: false, message: '認証システムが利用できません' };
+            auth = initializeSimpleAuth();
+            
+            if (!auth) {
+                console.error('simpleAuthの初期化に失敗しました');
+                return { success: false, message: '認証システムの初期化に失敗しました' };
             }
         }
         
-        if (window.simpleAuth && window.simpleAuth.signIn) {
+        if (auth && auth.signIn) {
             console.log('simpleAuth.signInを呼び出し...');
-            const result = await window.simpleAuth.signIn(email, password);
+            const result = await auth.signIn(email, password);
             console.log('signIn結果:', result);
             
             if (result.user) {
@@ -80,8 +103,8 @@ async function handleLogin(email, password) {
             }
         } else {
             console.error('simpleAuth.signInが利用できません');
-            console.log('window.simpleAuth:', window.simpleAuth);
-            console.log('window.simpleAuth.signIn:', window.simpleAuth?.signIn);
+            console.log('auth:', auth);
+            console.log('auth.signIn:', auth?.signIn);
             return { success: false, message: '認証システムが利用できません' };
         }
     } catch (error) {
@@ -96,20 +119,20 @@ async function handleRegister(email, password) {
     
     try {
         // simpleAuthの初期化を確認
-        if (!window.simpleAuth) {
+        let auth = window.simpleAuth;
+        if (!auth || !auth.isInitialized) {
             console.log('simpleAuthが未初期化、初期化を試行...');
-            if (typeof startSimpleAuth === 'function') {
-                window.simpleAuth = startSimpleAuth();
-                console.log('simpleAuth初期化完了:', window.simpleAuth);
-            } else {
-                console.error('startSimpleAuth関数が見つかりません');
-                return { success: false, message: '認証システムが利用できません' };
+            auth = initializeSimpleAuth();
+            
+            if (!auth) {
+                console.error('simpleAuthの初期化に失敗しました');
+                return { success: false, message: '認証システムの初期化に失敗しました' };
             }
         }
         
-        if (window.simpleAuth && window.simpleAuth.signUp) {
+        if (auth && auth.signUp) {
             console.log('simpleAuth.signUpを呼び出し...');
-            const result = await window.simpleAuth.signUp(email, password);
+            const result = await auth.signUp(email, password);
             console.log('signUp結果:', result);
             
             if (result.user) {
@@ -129,8 +152,8 @@ async function handleRegister(email, password) {
             }
         } else {
             console.error('simpleAuth.signUpが利用できません');
-            console.log('window.simpleAuth:', window.simpleAuth);
-            console.log('window.simpleAuth.signUp:', window.simpleAuth?.signUp);
+            console.log('auth:', auth);
+            console.log('auth.signUp:', auth?.signUp);
             return { success: false, message: '認証システムが利用できません' };
         }
     } catch (error) {
@@ -2009,6 +2032,9 @@ window.addRoutine = addRoutine;
 window.logout = logout;
 window.showNotification = showNotification;
 window.showDataDebugInfo = showDataDebugInfo;
+window.handleDebugAuth = handleDebugAuth;
+window.checkAuthSystemStatus = checkAuthSystemStatus;
+window.initializeSimpleAuth = initializeSimpleAuth;
 
 // デバッグ用の関数
 window.debugRoutineAddition = function() {
@@ -2109,16 +2135,27 @@ async function logout() {
 function handleDebugAuth() {
     console.log('デバッグ認証開始');
     
+    // simpleAuthの状態をチェック
+    console.log('=== 認証システム状態チェック ===');
+    console.log('window.simpleAuth存在:', !!window.simpleAuth);
+    console.log('window.simpleAuth.signIn存在:', !!(window.simpleAuth && window.simpleAuth.signIn));
+    console.log('startSimpleAuth関数存在:', typeof startSimpleAuth === 'function');
+    console.log('simpleAuthクラス存在:', typeof SimpleAuth === 'function');
+    
     if (!window.simpleAuth) {
-        alert('認証システムが利用できません');
-        return;
+        console.log('simpleAuthが未初期化、初期化を試行...');
+        const auth = initializeSimpleAuth();
+        if (!auth) {
+            alert('認証システムの初期化に失敗しました。ページを再読み込みしてください。');
+            return;
+        }
     }
     
     // 全ユーザーを表示
     const users = window.simpleAuth.listAllUsers();
     
     if (users.length === 0) {
-        alert('登録されているユーザーがありません');
+        alert('登録されているユーザーがありません。\n\n新規登録を行ってください。');
         return;
     }
     
@@ -2159,6 +2196,29 @@ function handleDebugAuth() {
         alert(`パスワードリセットに失敗しました: ${result.message}`);
         console.error('パスワードリセット失敗:', result.message);
     }
+}
+
+// 認証システムの状態をチェックする関数
+function checkAuthSystemStatus() {
+    console.log('=== 認証システム状態チェック ===');
+    console.log('window.simpleAuth存在:', !!window.simpleAuth);
+    console.log('window.simpleAuth.signIn存在:', !!(window.simpleAuth && window.simpleAuth.signIn));
+    console.log('startSimpleAuth関数存在:', typeof startSimpleAuth === 'function');
+    console.log('simpleAuthクラス存在:', typeof SimpleAuth === 'function');
+    
+    if (window.simpleAuth) {
+        console.log('simpleAuth.isInitialized:', window.simpleAuth.isInitialized);
+        console.log('simpleAuth.getCurrentUser:', typeof window.simpleAuth.getCurrentUser);
+        console.log('simpleAuth.signIn:', typeof window.simpleAuth.signIn);
+        console.log('simpleAuth.signUp:', typeof window.simpleAuth.signUp);
+    }
+    
+    return {
+        simpleAuthExists: !!window.simpleAuth,
+        startSimpleAuthExists: typeof startSimpleAuth === 'function',
+        simpleAuthClassExists: typeof SimpleAuth === 'function',
+        isInitialized: window.simpleAuth ? window.simpleAuth.isInitialized : false
+    };
 }
 
 console.log('=== script-new.js 読み込み完了 ===');
