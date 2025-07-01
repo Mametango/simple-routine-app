@@ -6,22 +6,42 @@ import { useRouter } from 'next/navigation'
 import { Plus, Check, Trash2, Edit, Calendar, Clock, Target, Sun, CalendarDays, List, LogOut, User } from 'lucide-react'
 import './page.css'
 
+interface ChecklistItem {
+  text: string;
+  checked: boolean;
+}
+
 interface Routine {
-  id: string
-  title: string
-  description: string
-  frequency: string
-  time: string
-  completed: boolean
-  createdAt: string
-  userId: string
+  id: string;
+  title: string;
+  description: string;
+  frequency: string;
+  time: string;
+  completed: boolean;
+  createdAt: string;
+  userId: string;
+  checklist?: ChecklistItem[];
+}
+
+interface NewRoutine {
+  title: string;
+  description: string;
+  frequency: string;
+  time: string;
+  checklist: ChecklistItem[];
 }
 
 export default function Home() {
   const { user, token, logout, loading } = useAuth()
   const router = useRouter()
   const [routines, setRoutines] = useState<Routine[]>([])
-  const [newRoutine, setNewRoutine] = useState({ title: '', description: '', frequency: 'daily', time: '' })
+  const [newRoutine, setNewRoutine] = useState<NewRoutine>({
+    title: '',
+    description: '',
+    frequency: 'daily',
+    time: '',
+    checklist: [{ text: '', checked: false }],
+  })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [loadingRoutines, setLoadingRoutines] = useState(true)
@@ -75,7 +95,7 @@ export default function Home() {
       if (response.ok) {
         const routine = await response.json()
         setRoutines([...routines, routine])
-        setNewRoutine({ title: '', description: '', frequency: 'daily', time: '' })
+        setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
         setShowForm(false)
       }
     } catch (error) {
@@ -125,7 +145,8 @@ export default function Home() {
       title: routine.title, 
       description: routine.description, 
       frequency: routine.frequency,
-      time: routine.time 
+      time: routine.time,
+      checklist: routine.checklist || [{ text: '', checked: false }]
     })
   }
 
@@ -145,11 +166,11 @@ export default function Home() {
       if (response.ok) {
         setRoutines(routines.map(routine =>
           routine.id === editingId
-            ? { ...routine, title: newRoutine.title, description: newRoutine.description, frequency: newRoutine.frequency, time: newRoutine.time }
+            ? { ...routine, title: newRoutine.title, description: newRoutine.description, frequency: newRoutine.frequency, time: newRoutine.time, checklist: newRoutine.checklist }
             : routine
         ))
         setEditingId(null)
-        setNewRoutine({ title: '', description: '', frequency: 'daily', time: '' })
+        setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
       }
     } catch (error) {
       console.error('Failed to update routine:', error)
@@ -158,7 +179,7 @@ export default function Home() {
 
   const cancelEdit = () => {
     setEditingId(null)
-    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '' })
+    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
   }
 
   const handleLogout = () => {
@@ -194,6 +215,11 @@ export default function Home() {
   const filteredRoutines = getFilteredRoutines()
   const completedCount = filteredRoutines.filter(routine => routine.completed).length
   const totalCount = filteredRoutines.length
+
+  const addChecklistItem = () => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: [...r.checklist, { text: '', checked: false }] }))
+  const removeChecklistItem = (idx: number) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.filter((_, i) => i !== idx) }))
+  const updateChecklistText = (idx: number, value: string) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.map((item, i) => i === idx ? { ...item, text: value } : item) }))
+  const updateChecklistChecked = (idx: number, checked: boolean) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.map((item, i) => i === idx ? { ...item, checked } : item) }))
 
   if (loading || !user) {
     return (
@@ -308,6 +334,27 @@ export default function Home() {
               onChange={(e) => setNewRoutine({ ...newRoutine, description: e.target.value })}
               className="form-textarea"
             />
+            <div className="form-checklist">
+              <label className="form-label">メニュー（チェックリスト）</label>
+              {newRoutine.checklist.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <input
+                    type="checkbox"
+                    checked={item.checked}
+                    onChange={e => updateChecklistChecked(idx, e.target.checked)}
+                  />
+                  <input
+                    type="text"
+                    value={item.text}
+                    onChange={e => updateChecklistText(idx, e.target.value)}
+                    placeholder="メニュー名（例：ベンチプレス）"
+                    style={{ flex: 1 }}
+                  />
+                  <button type="button" onClick={() => removeChecklistItem(idx)} style={{ marginLeft: 4 }}>削除</button>
+                </div>
+              ))}
+              <button type="button" onClick={addChecklistItem} style={{ marginTop: 4 }}>項目を追加</button>
+            </div>
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">頻度</label>
@@ -361,7 +408,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="routines-list">
-            {filteredRoutines.map(routine => {
+            {filteredRoutines.map((routine: Routine) => {
               const FrequencyIcon = getFrequencyIcon(routine.frequency)
               return (
                 <div key={routine.id} className={`routine-card ${routine.completed ? 'completed' : ''}`}>
@@ -439,6 +486,27 @@ export default function Home() {
               onChange={(e) => setNewRoutine({ ...newRoutine, description: e.target.value })}
               className="form-textarea"
             />
+            <div className="form-checklist">
+              <label className="form-label">メニュー（チェックリスト）</label>
+              {newRoutine.checklist.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <input
+                    type="checkbox"
+                    checked={item.checked}
+                    onChange={e => updateChecklistChecked(idx, e.target.checked)}
+                  />
+                  <input
+                    type="text"
+                    value={item.text}
+                    onChange={e => updateChecklistText(idx, e.target.value)}
+                    placeholder="メニュー名（例：ベンチプレス）"
+                    style={{ flex: 1 }}
+                  />
+                  <button type="button" onClick={() => removeChecklistItem(idx)} style={{ marginLeft: 4 }}>削除</button>
+                </div>
+              ))}
+              <button type="button" onClick={addChecklistItem} style={{ marginTop: 4 }}>項目を追加</button>
+            </div>
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">頻度</label>
