@@ -3,2147 +3,1229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Routine - シンプル版</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <!-- Additional Scripts -->
+    <title>My Routine - 習慣管理アプリ</title>
+    
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="simple-auth.js"></script>
-    <script src="simple-storage.js"></script>
-    <script src="script-new.js?v=1.0.15-20250627"></script>
-    <script>
-        // 即座にsimpleAuthを初期化
-        console.log('=== HTML側でのsimpleAuth初期化開始 ===');
-        
-        // DOMContentLoadedを待ってから初期化
-        function initializeSimpleAuthInHTML() {
-            if (typeof startSimpleAuth === 'function') {
-                window.simpleAuth = startSimpleAuth();
-                console.log('✅ simpleAuth初期化完了:', window.simpleAuth);
-                
-                // 初期化完了後に認証状態をチェック
-                if (window.simpleAuth && window.simpleAuth.getCurrentUser) {
-                    const currentUser = window.simpleAuth.getCurrentUser();
-                    console.log('現在のユーザー:', currentUser);
-                }
-            } else {
-                console.error('❌ startSimpleAuth関数が見つかりません');
-                console.log('利用可能な関数:', Object.keys(window).filter(key => typeof window[key] === 'function'));
-            }
-        }
-        
-        // DOMContentLoadedを待つ
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeSimpleAuthInHTML);
-        } else {
-            // 既に読み込み完了している場合は即座に実行
-            initializeSimpleAuthInHTML();
-        }
-        
-        console.log('=== HTML側でのsimpleAuth初期化終了 ===');
-    </script>
+    
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            background: #f6f8fa; 
-            margin: 0; 
+        * {
+            margin: 0;
             padding: 0;
-            -webkit-text-size-adjust: 100%;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .center { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            padding: 16px;
             box-sizing: border-box;
         }
-        .card { 
-            background: #fff; 
-            padding: 24px 20px; 
-            border-radius: 16px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
-            min-width: 280px; 
-            max-width: 100%;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #8B7355 0%, #A0522D 100%);
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .app {
             width: 100%;
-            box-sizing: border-box;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: rgba(139, 115, 85, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(101, 67, 33, 0.1);
+            border: 1px solid rgba(160, 120, 80, 0.2);
         }
-        h1, h2 { 
-            text-align: center; 
-            margin: 0 0 20px 0;
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(139, 115, 85, 0.8);
+            font-size: 1.2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #8B7355;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(101, 67, 33, 0.3);
+        }
+
+        .title-icon {
+            width: 2rem;
+            height: 2rem;
+            color: #A0522D;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: rgba(139, 115, 85, 0.8);
+            margin: 0;
+            font-weight: 300;
+        }
+
+        .user-section {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(139, 115, 85, 0.8);
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            background: rgba(160, 120, 80, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(160, 120, 80, 0.2);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(160, 120, 80, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border: 1px solid rgba(160, 120, 80, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(101, 67, 33, 0.15);
+        }
+
+        .stat-icon {
+            width: 2rem;
+            height: 2rem;
+            color: #8B7355;
+        }
+
+        .stat-icon.completed {
+            color: #6B8E23;
+        }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #8B7355;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: rgba(139, 115, 85, 0.7);
+            font-weight: 400;
+        }
+
+        .frequency-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(160, 120, 80, 0.1);
+            border: 1px solid rgba(160, 120, 80, 0.2);
+            border-radius: 25px;
+            padding: 0.75rem 1.25rem;
+            color: rgba(139, 115, 85, 0.8);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: rgba(160, 120, 80, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #8B7355 0%, #A0522D 100%);
+            border-color: rgba(139, 115, 85, 0.5);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(139, 115, 85, 0.4);
+        }
+
+        .tab-icon {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .add-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #8B7355 0%, #A0522D 100%);
+            border: none;
+            border-radius: 16px;
+            padding: 1rem 2rem;
+            color: white;
+            font-size: 1rem;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 115, 85, 0.3);
         }
-        h1 { font-size: 24px; }
-        h2 { font-size: 20px; }
-        .form-group { 
-            margin-bottom: 20px; 
+
+        .add-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 115, 85, 0.4);
         }
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
+
+        .button-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .form-container {
+            margin-bottom: 2rem;
+        }
+
+        .form {
+            background: rgba(160, 120, 80, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(160, 120, 80, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
             font-weight: 600;
-            font-size: 14px;
-            color: #333;
+            color: #8B7355;
+            font-size: 0.875rem;
         }
-        input[type=email], input[type=password], input[type=text], input[type=number], textarea {
-            width: 100%; 
-            padding: 12px 16px; 
-            border: 2px solid #e1e5e9; 
-            border-radius: 12px; 
-            font-size: 16px;
-            box-sizing: border-box;
-            transition: border-color 0.2s;
-            background: #fff;
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1px solid rgba(160, 120, 80, 0.3);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #8B7355;
+            transition: all 0.3s ease;
         }
-        input:focus, textarea:focus {
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: rgba(139, 115, 85, 0.5);
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #8B7355;
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
         }
-        button, .btn { 
-            padding: 12px 20px; 
-            border: none; 
-            border-radius: 12px; 
-            background: #667eea; 
-            color: #fff; 
-            font-size: 16px; 
+
+        .form-select option {
+            background: white;
+            color: #8B7355;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .save-button {
+            background: linear-gradient(135deg, #8B7355 0%, #A0522D 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 0.875rem 1.5rem;
+            color: white;
+            font-size: 1rem;
             font-weight: 600;
-            cursor: pointer; 
-            margin-right: 8px; 
-            margin-bottom: 8px;
-            transition: all 0.2s;
-            min-height: 44px;
-            display: inline-flex;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 115, 85, 0.3);
+        }
+
+        .save-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 115, 85, 0.4);
+        }
+
+        .routines-container {
+            margin-top: 2rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(139, 115, 85, 0.6);
+        }
+
+        .empty-icon {
+            width: 4rem;
+            height: 4rem;
+            color: rgba(139, 115, 85, 0.3);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #8B7355;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+            color: rgba(139, 115, 85, 0.7);
+        }
+
+        .routines-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .routine-card {
+            background: rgba(160, 120, 80, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(160, 120, 80, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .routine-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #8B7355, #A0522D);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .routine-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(101, 67, 33, 0.15);
+            border-color: rgba(160, 120, 80, 0.4);
+        }
+
+        .routine-card:hover::before {
+            opacity: 1;
+        }
+
+        .routine-card.completed {
+            background: rgba(107, 142, 35, 0.1);
+            border-color: rgba(107, 142, 35, 0.3);
+        }
+
+        .routine-card.completed:hover {
+            box-shadow: 0 8px 25px rgba(107, 142, 35, 0.15);
+            border-color: rgba(107, 142, 35, 0.5);
+        }
+
+        .routine-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .routine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .routine-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #8B7355;
+            margin: 0;
+            flex: 1;
+        }
+
+        .routine-actions {
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .routine-card:hover .routine-actions {
+            opacity: 1;
+        }
+
+        .action-button {
+            background: rgba(139, 115, 85, 0.2);
+            border: 1px solid rgba(139, 115, 85, 0.3);
+            border-radius: 8px;
+            padding: 0.5rem;
+            color: #8B7355;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
             align-items: center;
             justify-content: center;
         }
-        button:hover, .btn:hover {
-            background: #5a6fd8;
+
+        .action-button:hover {
+            background: rgba(139, 115, 85, 0.3);
             transform: translateY(-1px);
         }
-        button:active, .btn:active {
-            transform: translateY(0);
+
+        .action-button.edit {
+            color: #8B7355;
         }
-        button.secondary, .btn.secondary { 
-            background: #6c757d; 
+
+        .action-button.delete {
+            color: #dc3545;
         }
-        button.secondary:hover, .btn.secondary:hover {
-            background: #5a6268;
+
+        .routine-description {
+            color: rgba(139, 115, 85, 0.7);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
         }
-        .link-btn { 
-            background: none; 
-            color: #667eea; 
-            border: none; 
-            cursor: pointer; 
-            text-decoration: underline; 
-            font-size: 14px; 
-            margin: 0 8px;
-            padding: 8px;
-            border-radius: 8px;
-            transition: background-color 0.2s;
-        }
-        .link-btn:hover {
-            background: rgba(102, 126, 234, 0.1);
-        }
-        .routine-list { 
-            margin: 0; 
-            padding: 0; 
-            list-style: none; 
-        }
-        .routine-item { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 16px 0; 
-            border-bottom: 1px solid #e9ecef; 
-            gap: 12px;
-        }
-        .routine-item:last-child { 
-            border-bottom: none; 
-        }
-        .routine-item.completed h3 { 
-            text-decoration: line-through; 
-            color: #6c757d; 
-        }
-        .routine-item h3 {
-            margin: 0 0 4px 0;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        .routine-item div {
-            flex: 1;
-            min-width: 0;
-        }
-        .routine-item div > div {
-            color: #6c757d;
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-        .frequency { 
-            font-size: 12px; 
-            color: #667eea; 
-            font-weight: 600;
-            background: rgba(102, 126, 234, 0.1);
-            padding: 2px 8px;
-            border-radius: 12px;
-            display: inline-block;
-        }
-        .tabs { 
-            display: flex; 
-            gap: 8px; 
-            margin-bottom: 16px; 
+
+        .routine-meta {
+            display: flex;
+            gap: 1rem;
             flex-wrap: wrap;
         }
-        .tab { 
-            padding: 8px 16px; 
-            border-radius: 20px; 
-            border: 2px solid #667eea; 
-            background: #fff; 
-            color: #667eea; 
-            cursor: pointer; 
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s;
-            min-height: 36px;
+
+        .routine-frequency,
+        .routine-time {
             display: flex;
             align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(160, 120, 80, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(160, 120, 80, 0.2);
+            color: rgba(139, 115, 85, 0.8);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
-        .tab.active { 
-            background: #667eea; 
-            color: #fff; 
+
+        .routine-frequency:hover,
+        .routine-time:hover {
+            background: rgba(160, 120, 80, 0.2);
+            transform: translateY(-1px);
         }
-        .tab:hover {
-            background: rgba(102, 126, 234, 0.1);
+
+        .routine-date {
+            font-size: 0.8rem;
+            color: rgba(139, 115, 85, 0.6);
+            font-weight: 400;
         }
-        .tab.active:hover {
-            background: #5a6fd8;
-        }
-        .mt-2 { margin-top: 16px; }
-        .mb-2 { margin-bottom: 16px; }
-        .hidden { display: none !important; }
-        .sync-status { 
-            position: fixed; 
-            top: 16px; 
-            right: 16px; 
-            padding: 12px 16px; 
-            border-radius: 12px; 
-            font-size: 14px; 
+
+        .complete-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(160, 120, 80, 0.15) 0%, rgba(139, 115, 85, 0.05) 100%);
+            border: 1px solid rgba(160, 120, 80, 0.3);
+            border-radius: 12px;
+            padding: 0.875rem 1.25rem;
+            color: #8B7355;
+            font-size: 0.9rem;
             font-weight: 600;
-            background: #28a745; 
-            color: white; 
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 2px 4px rgba(101, 67, 33, 0.1),
+                inset 0 1px 0 rgba(160, 120, 80, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .complete-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(160, 120, 80, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .complete-button:hover::before {
+            left: 100%;
+        }
+
+        .complete-button:hover {
+            background: linear-gradient(135deg, rgba(160, 120, 80, 0.25) 0%, rgba(139, 115, 85, 0.1) 100%);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 8px 16px rgba(101, 67, 33, 0.15),
+                0 4px 8px rgba(101, 67, 33, 0.1),
+                inset 0 1px 0 rgba(160, 120, 80, 0.2);
+            border-color: rgba(160, 120, 80, 0.4);
+        }
+
+        .complete-button.completed {
+            background: linear-gradient(135deg, rgba(107, 142, 35, 0.25) 0%, rgba(107, 142, 35, 0.1) 100%);
+            border-color: rgba(107, 142, 35, 0.5);
+            color: #6B8E23;
+            box-shadow: 
+                0 2px 4px rgba(107, 142, 35, 0.1),
+                inset 0 1px 0 rgba(107, 142, 35, 0.1);
+        }
+
+        .complete-button.completed:hover {
+            background: linear-gradient(135deg, rgba(107, 142, 35, 0.35) 0%, rgba(107, 142, 35, 0.15) 100%);
+            box-shadow: 
+                0 8px 16px rgba(107, 142, 35, 0.15),
+                0 4px 8px rgba(107, 142, 35, 0.1),
+                inset 0 1px 0 rgba(107, 142, 35, 0.2);
+            border-color: rgba(107, 142, 35, 0.6);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(101, 67, 33, 0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            max-width: 200px;
         }
-        .sync-status.error { background: #dc3545; }
-        .sync-status.syncing { background: #ffc107; color: #000; }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+
+        .modal {
+            background: rgba(160, 120, 80, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(160, 120, 80, 0.2);
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
-        
-        /* モバイル最適化 */
+
+        .modal h3 {
+            color: #8B7355;
+            margin: 0 0 1rem 0;
+            font-size: 1.5rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+
+        .cancel-button {
+            background: rgba(139, 69, 19, 0.2);
+            border: 1px solid rgba(139, 69, 19, 0.3);
+            color: #8B4513;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cancel-button:hover {
+            background: rgba(139, 69, 19, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .form-checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-checklist label {
+            margin-bottom: 0.5rem;
+        }
+
+        .form-checklist input[type="text"] {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid rgba(160, 120, 80, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-checklist button {
+            background: rgba(139, 115, 85, 0.2);
+            border: 1px solid rgba(139, 115, 85, 0.3);
+            color: #8B7355;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .form-checklist button:hover {
+            background: rgba(139, 115, 85, 0.3);
+        }
+
         @media (max-width: 768px) {
-            .center {
-                padding: 12px;
-                min-height: 100vh;
+            .app {
+                padding: 1rem;
+                margin: 1rem;
+                width: calc(100% - 2rem);
             }
-            .card {
-                padding: 20px 16px;
-                border-radius: 12px;
+            
+            .title {
+                font-size: 2rem;
             }
-            h1 { font-size: 22px; }
-            h2 { font-size: 18px; }
-            .routine-item {
-                padding: 12px 0;
+            
+            .user-section {
+                position: static;
+                justify-content: center;
+                margin-top: 1rem;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .frequency-tabs {
+                gap: 0.25rem;
+            }
+            
+            .tab-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .routine-card {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 8px;
+                gap: 1rem;
+                padding: 1.25rem;
             }
-            .routine-item > div:first-child {
-                order: 1;
+            
+            .routine-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
             }
-            .routine-item > div:last-child {
-                order: 2;
-                display: flex;
-                gap: 8px;
-                justify-content: flex-end;
+            
+            .routine-actions {
+                align-self: flex-end;
+                opacity: 1;
             }
-            button, .btn {
-                padding: 10px 16px;
-                font-size: 14px;
-                min-height: 40px;
+            
+            .routine-meta {
+                flex-direction: column;
+                gap: 0.5rem;
             }
-            .tabs {
-                gap: 6px;
+            
+            .complete-button {
+                align-self: stretch;
+                justify-content: center;
+                padding: 1rem;
             }
-            .tab {
-                padding: 6px 12px;
-                font-size: 13px;
-                min-height: 32px;
+            
+            .modal {
+                margin: 1rem;
+                padding: 1.5rem;
             }
-            .sync-status {
-                top: 12px;
-                right: 12px;
-                padding: 8px 12px;
-                font-size: 12px;
-                max-width: 150px;
+            
+            .routines-list {
+                grid-template-columns: 1fr;
+                gap: 1rem;
             }
-        }
-        
-        /* ボタングループ */
-        .button-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-        }
-        
-        /* 削除ボタン */
-        .delete-btn {
-            background: #dc3545 !important;
-            color: white !important;
-            font-size: 12px !important;
-            padding: 6px 10px !important;
-            min-height: auto !important;
-        }
-        .delete-btn:hover {
-            background: #c82333 !important;
-        }
-        
-        /* 完了ボタン */
-        .complete-btn {
-            background: #28a745 !important;
-            color: white !important;
-            font-size: 14px !important;
-            padding: 8px 12px !important;
-            min-height: auto !important;
-        }
-        .complete-btn:hover {
-            background: #218838 !important;
         }
     </style>
 </head>
 <body>
-<div id="authView" class="center">
-    <div class="card">
-        <h1>My Routine</h1>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="loginEmail">メールアドレス</label>
-                <input type="email" id="loginEmail" required>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <i data-lucide="target" class="title-icon"></i>
+                    My Routine
+                </h1>
+                <p class="subtitle">毎日の習慣を管理して、より良い生活を</p>
             </div>
-            <div class="form-group">
-                <label for="loginPassword">パスワード</label>
-                <input type="password" id="loginPassword" required>
+            <div class="user-section">
+                <div class="user-info">
+                    <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                    <span>ユーザー</span>
+                </div>
             </div>
-            <button type="submit">ログイン</button>
-        </form>
-        <div class="mt-2" style="text-align:center;">
-            <button class="link-btn" id="showRegister">新規登録</button>
-            <button class="link-btn" id="demoLogin">デモログイン</button>
-            <button class="link-btn" id="debugAuth" style="color: #dc3545;">デバッグ認証</button>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <i data-lucide="calendar" class="stat-icon"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="totalCount">0</span>
+                    <span class="stat-label">総ルーティン</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i data-lucide="check" class="stat-icon completed"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="completedCount">0</span>
+                    <span class="stat-label">完了済み</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i data-lucide="clock" class="stat-icon"></i>
+                <div class="stat-info">
+                    <span class="stat-number" id="completionRate">0%</span>
+                    <span class="stat-label">達成率</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="frequency-tabs">
+            <button class="tab-button active" data-filter="all">
+                <i data-lucide="list" class="tab-icon"></i>
+                全て
+            </button>
+            <button class="tab-button" data-filter="daily">
+                <i data-lucide="sun" class="tab-icon"></i>
+                毎日
+            </button>
+            <button class="tab-button" data-filter="weekly">
+                <i data-lucide="calendar-days" class="tab-icon"></i>
+                毎週
+            </button>
+            <button class="tab-button" data-filter="monthly">
+                <i data-lucide="calendar" class="tab-icon"></i>
+                毎月
+            </button>
+        </div>
+
+        <div class="actions">
+            <button class="add-button" id="addButton">
+                <i data-lucide="plus" class="button-icon"></i>
+                新しいルーティンを追加
+            </button>
+        </div>
+
+        <div class="form-container" id="formContainer" style="display: none;">
+            <div class="form">
+                <input type="text" placeholder="ルーティンのタイトル" id="routineTitle" class="form-input">
+                <textarea placeholder="説明（オプション）" id="routineDescription" class="form-textarea"></textarea>
+                
+                <div class="form-checklist">
+                    <label class="form-label">メニュー（チェックリスト）</label>
+                    <div id="checklistItems">
+                        <div class="checklist-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <input type="checkbox" class="checklist-checkbox">
+                            <input type="text" placeholder="メニュー名（例：ベンチプレス）" class="checklist-text" style="flex: 1;">
+                            <button type="button" class="remove-checklist-item" style="margin-left: 4px;">削除</button>
+                        </div>
+                    </div>
+                    <button type="button" id="addChecklistItem" style="margin-top: 4px;">項目を追加</button>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">頻度</label>
+                        <select id="routineFrequency" class="form-select">
+                            <option value="daily">毎日</option>
+                            <option value="weekly">毎週</option>
+                            <option value="monthly">毎月</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">時間</label>
+                        <input type="time" id="routineTime" class="form-input">
+                    </div>
+                </div>
+                
+                <div class="form-buttons">
+                    <button class="save-button" id="saveButton">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="routines-container">
+            <div class="routines-list" id="routinesList">
+                <!-- ルーティンがここに動的に追加されます -->
+            </div>
         </div>
     </div>
-</div>
-<div id="registerView" class="center hidden">
-    <div class="card">
-        <h2>新規登録</h2>
-        <form id="registerForm">
-            <div class="form-group">
-                <label for="registerEmail">メールアドレス</label>
-                <input type="email" id="registerEmail" required>
+
+    <!-- 編集モーダル -->
+    <div class="modal-overlay" id="editModal" style="display: none;">
+        <div class="modal">
+            <h3>ルーティンを編集</h3>
+            <input type="text" placeholder="ルーティンのタイトル" id="editTitle" class="form-input">
+            <textarea placeholder="説明（オプション）" id="editDescription" class="form-textarea"></textarea>
+            
+            <div class="form-checklist">
+                <label class="form-label">メニュー（チェックリスト）</label>
+                <div id="editChecklistItems">
+                    <!-- 編集用チェックリスト -->
+                </div>
+                <button type="button" id="addEditChecklistItem">項目を追加</button>
             </div>
-            <div class="form-group">
-                <label for="registerPassword">パスワード</label>
-                <input type="password" id="registerPassword" required>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">頻度</label>
+                    <select id="editFrequency" class="form-select">
+                        <option value="daily">毎日</option>
+                        <option value="weekly">毎週</option>
+                        <option value="monthly">毎月</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">時間</label>
+                    <input type="time" id="editTime" class="form-input">
+                </div>
             </div>
-            <button type="submit">登録</button>
-            <button type="button" class="secondary" id="backToLogin">戻る</button>
-        </form>
-    </div>
-</div>
-<div id="mainView" class="center hidden">
-    <div class="card" style="width:100%;max-width:500px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-            <h2 style="margin-bottom:0;">今日のルーティン</h2>
-            <button id="logoutBtn" class="secondary">ログアウト</button>
+            
+            <div class="modal-buttons">
+                <button class="save-button" id="updateButton">保存</button>
+                <button class="cancel-button" id="cancelEditButton">キャンセル</button>
+            </div>
         </div>
-        <ul id="todayList" class="routine-list mb-2"></ul>
-        <div class="tabs mb-2">
-            <button class="tab active" data-freq="all">全て</button>
-            <button class="tab" data-freq="daily">毎日</button>
-            <button class="tab" data-freq="weekly">毎週</button>
-            <button class="tab" data-freq="monthly">毎月</button>
-        </div>
-        <ul id="allList" class="routine-list mb-2"></ul>
-        <button id="showAddRoutine" class="mt-2">ルーティン追加</button>
     </div>
-</div>
-<div id="addRoutineView" class="center hidden">
-    <div class="card">
-        <h2>ルーティン追加</h2>
-        <form id="addRoutineForm">
-            <div class="form-group">
-                <label for="routineName">ルーティン名</label>
-                <input type="text" id="routineName" required>
-            </div>
-            <div class="form-group">
-                <label for="routineDesc">説明（任意）</label>
-                <textarea id="routineDesc" rows="2"></textarea>
-            </div>
-            <div class="form-group">
-                <label>頻度</label>
-                <div class="tabs">
-                    <button type="button" class="tab active" data-freq="daily">毎日</button>
-                    <button type="button" class="tab" data-freq="weekly">毎週</button>
-                    <button type="button" class="tab" data-freq="monthly">毎月</button>
-                </div>
-            </div>
-            <div class="form-group hidden" id="weeklyDays">
-                <label>曜日</label>
-                <div>
-                    <label><input type="checkbox" value="0">日</label>
-                    <label><input type="checkbox" value="1">月</label>
-                    <label><input type="checkbox" value="2">火</label>
-                    <label><input type="checkbox" value="3">水</label>
-                    <label><input type="checkbox" value="4">木</label>
-                    <label><input type="checkbox" value="5">金</label>
-                    <label><input type="checkbox" value="6">土</label>
-                </div>
-            </div>
-            <div class="form-group hidden" id="monthlyDate">
-                <label>日付</label>
-                <input type="number" id="monthlyDateInput" min="1" max="31">
-            </div>
-            <button type="submit">保存</button>
-            <button type="button" class="secondary" id="cancelAddRoutine">キャンセル</button>
-        </form>
-    </div>
-</div>
-<div id="syncStatus" class="sync-status"></div>
-<script>
-// --- ユーティリティ ---
-function $(id) { 
-    const element = document.getElementById(id);
-    if (!element) {
-        console.error("要素が見つかりません:", id);
-    }
-    return element;
-}
-function show(view) {
-    console.log("画面切り替え:", view);
-    ["authView","registerView","mainView","addRoutineView"].forEach(v=>{
-        const element = $(v);
-        if (element) element.classList.add("hidden");
-    });
-    const targetElement = $(view);
-    if (targetElement) targetElement.classList.remove("hidden");
-}
-function getUserList() {
-    try {
-        const users = JSON.parse(localStorage.getItem("users")||"[]");
-        console.log("ユーザーリスト取得:", users.length, "件");
-        return users;
-    } catch (error) {
-        console.error("ユーザーリスト取得エラー:", error);
-        return [];
-    }
-}
-function saveUserList(users) {
-    try {
-        localStorage.setItem("users",JSON.stringify(users));
-        console.log("ユーザーリスト保存完了:", users.length, "件");
-    } catch (error) {
-        console.error("ユーザーリスト保存エラー:", error);
-    }
-}
-function getCurrentUser() {
-    try {
-        const user = JSON.parse(localStorage.getItem("currentUser")||"null");
-        console.log("現在のユーザー取得:", user);
-        return user;
-    } catch (error) {
-        console.error("現在のユーザー取得エラー:", error);
-        return null;
-    }
-}
-function setCurrentUser(user) {
-    try {
-        localStorage.setItem("currentUser",JSON.stringify(user));
-        console.log("現在のユーザー設定:", user);
-    } catch (error) {
-        console.error("現在のユーザー設定エラー:", error);
-    }
-}
-function clearCurrentUser() {
-    try {
-        localStorage.removeItem("currentUser");
-        console.log("現在のユーザー削除完了");
-    } catch (error) {
-        console.error("現在のユーザー削除エラー:", error);
-    }
-}
-function getRoutines(uid) {
-    try {
-        const routines = JSON.parse(localStorage.getItem("routines_"+uid)||"[]");
-        console.log("ルーティン取得:", uid, routines.length, "件");
-        return routines;
-    } catch (error) {
-        console.error("ルーティン取得エラー:", error);
-        return [];
-    }
-}
-function saveRoutines(uid, routines) {
-    try {
-        localStorage.setItem("routines_"+uid,JSON.stringify(routines));
-        console.log("ルーティン保存完了:", uid, routines.length, "件");
-    } catch (error) {
-        console.error("ルーティン保存エラー:", error);
-    }
-}
-function getCompletions(uid) {
-    try {
-        const completions = JSON.parse(localStorage.getItem("completions_"+uid)||"[]");
-        console.log("完了データ取得:", uid, completions.length, "件");
-        return completions;
-    } catch (error) {
-        console.error("完了データ取得エラー:", error);
-        return [];
-    }
-}
-function saveCompletions(uid, completions) {
-    try {
-        localStorage.setItem("completions_"+uid,JSON.stringify(completions));
-        console.log("完了データ保存完了:", uid, completions.length, "件");
-    } catch (error) {
-        console.error("完了データ保存エラー:", error);
-    }
-}
-// --- 認証 ---
-function tryLogin(email, password) {
-    console.log("ログイン試行:", email);
-    const users = getUserList();
-    console.log("登録済みユーザー数:", users.length);
-    const user = users.find(u=>u.email===email&&u.password===password);
-    console.log("ログイン結果:", user ? "成功" : "失敗");
-    return user || null;
-}
-function tryRegister(email, password) {
-    console.log("登録試行:", email);
-    let users = getUserList();
-    if(users.find(u=>u.email===email)) {
-        console.log("既に登録済み");
-        return false;
-    }
-    const user = {id:Date.now().toString(),email,password};
-    users.push(user); 
-    saveUserList(users); 
-    console.log("登録成功:", user);
-    return user;
-}
-// --- 画面遷移 ---
-$("showRegister").onclick = ()=>{ show("registerView"); };
-$("backToLogin").onclick = ()=>{ show("authView"); };
-$("demoLogin").onclick = ()=>{
-    console.log("デモログイン実行");
-    setCurrentUser({id:"demo",email:"demo@example.com"});
-    showMain();
-};
-$("logoutBtn").onclick = ()=>{ 
-    console.log("ログアウト実行");
-    clearCurrentUser(); 
-    show("authView"); 
-};
-$("showAddRoutine").onclick = ()=>{ 
-    console.log("ルーティン追加画面表示");
-    clearAddRoutineForm();
-    show("addRoutineView"); 
-};
-$("cancelAddRoutine").onclick = ()=>{ 
-    console.log("ルーティン追加キャンセル");
-    clearAddRoutineForm();
-    show("mainView"); 
-};
-// --- ログイン・登録 ---
-$("loginForm").onsubmit = e=>{
-    e.preventDefault();
-    console.log("ログインフォーム送信");
-    const email = $("loginEmail").value, pw = $("loginPassword").value;
-    console.log("入力値:", {email, password: pw ? "入力済み" : "未入力"});
-    
-    if (!email || !pw) {
-        alert("メールアドレスとパスワードを入力してください");
-        return;
-    }
-    
-    // デバッグ: 外部認証システムの状態を確認
-    console.log("=== 認証システム状態チェック ===");
-    console.log("window.simpleAuth存在:", !!window.simpleAuth);
-    console.log("window.simpleAuth.signIn存在:", !!(window.simpleAuth && window.simpleAuth.signIn));
-    console.log("startSimpleAuth関数存在:", typeof startSimpleAuth);
-    console.log("simpleAuthクラス存在:", typeof SimpleAuth);
-    
-    // 外部認証システムを使用
-    if (window.simpleAuth && window.simpleAuth.signIn) {
-        console.log("外部認証システムを使用");
-        window.simpleAuth.signIn(email, pw)
-            .then(result => {
-                console.log("外部認証結果:", result);
-                if (result.user) {
-                    console.log("ログイン成功、メイン画面表示");
-                    setCurrentUser(result.user);
-                    
-                    // ローカルストレージを使用
-                    currentStorage = 'local';
-                    localStorage.setItem('storageType', 'local');
-                    
-                    // 既存ルーティンの移行を実行
-                    if (typeof runMigrationIfNeeded === 'function') {
-                        runMigrationIfNeeded();
-                    }
-                    
-                    showMain();
-                } else {
-                    console.log("ログイン失敗");
-                    alert("ログイン失敗: メールアドレスまたはパスワードが正しくありません");
-                }
-            })
-            .catch(error => {
-                console.error("ログインエラー:", error);
-                alert("ログイン失敗: " + error.message);
-            });
-    } else {
-        console.log("フォールバック: 元の認証システムを使用");
-        // フォールバック: 元の認証システムを使用
-        const user = tryLogin(email, pw);
-        if(user) { 
-            console.log("ログイン成功、メイン画面表示");
-            setCurrentUser(user); 
+
+    <script>
+        // アイコンを初期化
+        lucide.createIcons();
+
+        // データ管理
+        let routines = JSON.parse(localStorage.getItem('routines') || '[]');
+        let currentFilter = 'all';
+        let editingId = null;
+
+        // DOM要素
+        const addButton = document.getElementById('addButton');
+        const formContainer = document.getElementById('formContainer');
+        const saveButton = document.getElementById('saveButton');
+        const routinesList = document.getElementById('routinesList');
+        const editModal = document.getElementById('editModal');
+        const cancelEditButton = document.getElementById('cancelEditButton');
+        const updateButton = document.getElementById('updateButton');
+
+        // 統計更新
+        function updateStats() {
+            const filteredRoutines = getFilteredRoutines();
+            const completedCount = filteredRoutines.filter(r => r.completed).length;
+            const totalCount = filteredRoutines.length;
             
-            // ローカルストレージを使用
-            currentStorage = 'local';
-            localStorage.setItem('storageType', 'local');
-            
-            // 既存ルーティンの移行を実行
-            if (typeof runMigrationIfNeeded === 'function') {
-                runMigrationIfNeeded();
-            }
-            
-            showMain(); 
+            document.getElementById('totalCount').textContent = totalCount;
+            document.getElementById('completedCount').textContent = completedCount;
+            document.getElementById('completionRate').textContent = 
+                totalCount > 0 ? Math.round((completedCount / totalCount) * 100) + '%' : '0%';
         }
-        else {
-            console.log("ログイン失敗");
-            alert("ログイン失敗: メールアドレスまたはパスワードが正しくありません");
+
+        // フィルタリング
+        function getFilteredRoutines() {
+            if (currentFilter === 'all') return routines;
+            return routines.filter(routine => routine.frequency === currentFilter);
         }
-    }
-};
-$("registerForm").onsubmit = e=>{
-    e.preventDefault();
-    console.log("登録フォーム送信");
-    const email = $("registerEmail").value, pw = $("registerPassword").value;
-    console.log("入力値:", {email, password: pw ? "入力済み" : "未入力"});
-    
-    if (!email || !pw) {
-        alert("メールアドレスとパスワードを入力してください");
-        return;
-    }
-    
-    // 外部認証システムを使用
-    if (window.simpleAuth && window.simpleAuth.signUp) {
-        window.simpleAuth.signUp(email, pw)
-            .then(result => {
-                if (result.user) {
-                    console.log("登録成功、メイン画面表示");
-                    setCurrentUser(result.user);
-                    
-                    // ローカルストレージを使用
-                    currentStorage = 'local';
-                    localStorage.setItem('storageType', 'local');
-                    
-                    // 既存ルーティンの移行を実行
-                    if (typeof runMigrationIfNeeded === 'function') {
-                        runMigrationIfNeeded();
-                    }
-                    
-                    showMain();
-                } else {
-                    console.log("登録失敗");
-                    alert("登録失敗: " + (result.message || "既に登録されています"));
-                }
-            })
-            .catch(error => {
-                console.error("登録エラー:", error);
-                alert("登録失敗: " + error.message);
-            });
-    } else {
-        // フォールバック: 元の認証システムを使用
-        const user = tryRegister(email, pw);
-        if(user) { 
-            console.log("登録成功、メイン画面表示");
-            setCurrentUser(user); 
-            
-            // ローカルストレージを使用
-            currentStorage = 'local';
-            localStorage.setItem('storageType', 'local');
-            
-            // 既存ルーティンの移行を実行
-            if (typeof runMigrationIfNeeded === 'function') {
-                runMigrationIfNeeded();
-            }
-            
-            showMain(); 
-        }
-        else {
-            console.log("登録失敗");
-            alert("既に登録されています");
-        }
-    }
-};
-// --- ルーティン追加 ---
-let addFreq = "daily";
 
-// フォームクリア関数
-function clearAddRoutineForm() {
-    console.log("ルーティン追加フォームクリア");
-    try {
-        // 入力フィールドをクリア
-        $("routineName").value = "";
-        $("routineDesc").value = "";
-        $("monthlyDateInput").value = "";
-        
-        // チェックボックスをクリア
-        [...$("weeklyDays").querySelectorAll("input[type=checkbox]")].forEach(cb => {
-            cb.checked = false;
-        });
-        
-        // 頻度をデフォルトに戻す
-        addFreq = "daily";
-        [...document.querySelectorAll("#addRoutineForm .tab")].forEach(b => b.classList.remove("active"));
-        document.querySelector("#addRoutineForm .tab[data-freq='daily']").classList.add("active");
-        
-        // オプション項目を非表示
-        $("weeklyDays").classList.add("hidden");
-        $("monthlyDate").classList.add("hidden");
-        
-        console.log("フォームクリア完了");
-    } catch (error) {
-        console.error("フォームクリアエラー:", error);
-    }
-}
-
-[...document.querySelectorAll("#addRoutineForm .tab")].forEach(btn=>{
-    btn.onclick = function(){
-        [...document.querySelectorAll("#addRoutineForm .tab")].forEach(b=>b.classList.remove("active"));
-        btn.classList.add("active");
-        addFreq = btn.dataset.freq;
-        $("weeklyDays").classList.toggle("hidden",addFreq!=="weekly");
-        $("monthlyDate").classList.toggle("hidden",addFreq!=="monthly");
-    };
-});
-$("addRoutineForm").onsubmit = e=>{
-    e.preventDefault();
-    console.log("ルーティン追加フォーム送信");
-    const user = getCurrentUser();
-    if(!user) {
-        console.error("ユーザー情報がありません");
-        return;
-    }
-    
-    const name = $("routineName").value.trim();
-    if(!name) {
-        alert("ルーティン名必須");
-        return;
-    }
-    
-    const desc = $("routineDesc").value.trim();
-    let weeklyDays = [], monthlyDate = null;
-    
-    if(addFreq==="weekly") {
-        weeklyDays = [...$("weeklyDays").querySelectorAll("input:checked")].map(i=>parseInt(i.value));
-    }
-    if(addFreq==="monthly") {
-        monthlyDate = parseInt($("monthlyDateInput").value)||null;
-    }
-    
-    if(addFreq==="weekly" && weeklyDays.length===0) {
-        alert("曜日を選択してください");
-        return;
-    }
-    if(addFreq==="monthly" && (!monthlyDate||monthlyDate<1||monthlyDate>31)) {
-        alert("日付1-31");
-        return;
-    }
-    
-    const routines = getRoutines(user.id);
-    
-    // ユニークIDを生成（タイムスタンプ + ランダム文字列）
-    const timestamp = Date.now();
-    const randomStr = Math.random().toString(36).substring(2, 8);
-    const uniqueId = `${timestamp}_${randomStr}`;
-    
-    const newRoutine = {
-        id: uniqueId, // ユニークID
-        displayId: Date.now().toString(), // 表示用ID（従来のID）
-        name,
-        desc,
-        frequency: addFreq,
-        weeklyDays,
-        monthlyDate,
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        lastModified: new Date().toISOString()
-    };
-    
-    routines.push(newRoutine);
-    saveRoutines(user.id, routines);
-    console.log("ルーティン追加完了:", {
-        uniqueId: newRoutine.id,
-        displayId: newRoutine.displayId,
-        name: newRoutine.name,
-        frequency: newRoutine.frequency
-    });
-    
-    // フォームをクリアしてメイン画面に戻る
-    clearAddRoutineForm();
-    show("mainView");
-    renderMain();
-};
-// --- タブ切替 ---
-[...document.querySelectorAll("#mainView .tab")].forEach(btn=>{
-    btn.onclick = function(){
-        [...document.querySelectorAll("#mainView .tab")].forEach(b=>b.classList.remove("active"));
-        btn.classList.add("active");
-        renderMain();
-    };
-});
-// --- ルーティン完了 ---
-function toggleComplete(rid){
-    console.log("ルーティン完了切り替え:", rid);
-    const user = getCurrentUser();
-    if(!user) return;
-    
-    let completions = getCompletions(user.id);
-    const today = new Date().toISOString().split("T")[0];
-    
-    // ユニークIDまたは表示IDでルーティンを検索
-    const routines = getRoutines(user.id);
-    const routine = routines.find(r => r.id === rid || r.displayId === rid);
-    
-    if (!routine) {
-        console.error("ルーティンが見つかりません:", rid);
-        return;
-    }
-    
-    console.log("対象ルーティン:", {
-        uniqueId: routine.id,
-        displayId: routine.displayId,
-        name: routine.name
-    });
-    
-    // ユニークIDで完了データを管理
-    const idx = completions.findIndex(c=>c.rid===routine.id&&c.date===today);
-    if(idx!==-1) {
-        completions.splice(idx,1);
-        console.log("完了を解除:", routine.name);
-    } else {
-        completions.push({
-            rid: routine.id, // ユニークIDを使用
-            displayRid: routine.displayId, // 表示IDも保存
-            date: today,
-            completedAt: new Date().toISOString()
-        });
-        console.log("完了を設定:", routine.name);
-    }
-    
-    saveCompletions(user.id,completions);
-    renderMain();
-}
-// --- メイン画面描画 ---
-function showMain(){ 
-    console.log("メイン画面表示開始");
-    show("mainView"); 
-    addSyncButton(); // 同期ボタンを追加
-    addTestButton(); // テストボタンを追加
-    addManagementButtons(); // 管理ボタンを追加
-    renderMain(); 
-}
-function renderMain(){
-    console.log("メイン画面描画開始");
-    const user = getCurrentUser();
-    if(!user) {
-        console.error("ユーザー情報がありません");
-        show("authView");
-        return;
-    }
-    
-    try {
-        $("todayList").innerHTML = "";
-        $("allList").innerHTML = "";
-        const routines = getRoutines(user.id);
-        const completions = getCompletions(user.id);
-        const today = new Date();
-        console.log("描画データ:", {routines: routines.length, completions: completions.length});
-        
-        // 今日のルーティン
-        const todayR = routines.filter(r=>{
-            const todayDay = today.getDay(); // 0=日曜日, 1=月曜日, ..., 6=土曜日
-            const todayDate = today.getDate(); // 1-31
-            
-            console.log('ルーティンフィルタリング:', {
-                name: r.name,
-                frequency: r.frequency,
-                weeklyDays: r.weeklyDays,
-                monthlyDate: r.monthlyDate,
-                today: todayDay,
-                todayDate: todayDate,
-                todayString: today.toLocaleDateString('ja-JP', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                })
-            });
-            
-            if(r.frequency==="daily") {
-                console.log('毎日ルーティン:', r.name);
-                return true;
-            }
-            if(r.frequency==="weekly") {
-                const isToday = r.weeklyDays && r.weeklyDays.includes(todayDay);
-                console.log('週次ルーティン:', r.name, '今日かどうか:', isToday, '設定曜日:', r.weeklyDays, '今日の曜日:', todayDay);
-                return isToday;
-            }
-            if(r.frequency==="monthly") {
-                const isToday = r.monthlyDate === todayDate;
-                console.log('月次ルーティン:', r.name, '今日かどうか:', isToday, '設定日:', r.monthlyDate, '今日の日:', todayDate);
-                return isToday;
-            }
-            console.log('不明な頻度:', r.name, r.frequency);
-            return false;
-        });
-        console.log("今日のルーティン:", todayR.length, "件");
-        
-        for(const r of todayR){
-            const done = completions.some(c=>c.rid===r.id&&c.date===today.toISOString().split("T")[0]);
-            const li = document.createElement("li");
-            li.className = "routine-item"+(done?" completed":"");
-            li.innerHTML = `
-                <div>
-                    <h3>${r.name}</h3>
-                    ${r.desc?`<div>${r.desc}</div>`:""}
-                    <span class="frequency">${getFreqText(r.frequency)}</span>
-                </div>
-                <div class="button-group">
-                    <button onclick="toggleComplete('${r.id}')" class="complete-btn" data-routine-id="${r.id}" data-display-id="${r.displayId}">
-                        ${done?"✓ 完了":"○ 未完了"}
-                    </button>
-                    <button onclick="deleteRoutineFromUI('${r.id}')" class="delete-btn">
-                        🗑️ 削除
-                    </button>
-                </div>
-            `;
-            $("todayList").appendChild(li);
-        }
-        
-        // 全ルーティン
-        const freq = document.querySelector("#mainView .tab.active").dataset.freq;
-        const allR = freq==="all"?routines:routines.filter(r=>r.frequency===freq);
-        console.log("表示ルーティン:", freq, allR.length, "件");
-        
-        for(const r of allR){
-            const done = completions.some(c=>c.rid===r.id&&c.date===today.toISOString().split("T")[0]);
-            const li = document.createElement("li");
-            li.className = "routine-item"+(done?" completed":"");
-            li.innerHTML = `
-                <div>
-                    <h3>${r.name}</h3>
-                    ${r.desc?`<div>${r.desc}</div>`:""}
-                    <span class="frequency">${getFreqText(r.frequency)}</span>
-                </div>
-                <div class="button-group">
-                    <button onclick="toggleComplete('${r.id}')" class="complete-btn" data-routine-id="${r.id}" data-display-id="${r.displayId}">
-                        ${done?"✓ 完了":"○ 未完了"}
-                    </button>
-                    <button onclick="deleteRoutineFromUI('${r.id}')" class="delete-btn">
-                        🗑️ 削除
-                    </button>
-                </div>
-            `;
-            $("allList").appendChild(li);
-        }
-        
-        console.log("メイン画面描画完了");
-    } catch (error) {
-        console.error("メイン画面描画エラー:", error);
-        alert("画面描画エラーが発生しました。ページを再読み込みしてください。");
-    }
-}
-function getFreqText(f){ return f==="daily"?"毎日":f==="weekly"?"毎週":f==="monthly"?"毎月":f; }
-// --- 初期表示 ---
-window.onload = async function(){
-    console.log('ページ読み込み完了');
-    
-    // ストレージタイプの確認
-    const storageType = localStorage.getItem('storageType') || 'local';
-    console.log('ストレージタイプ:', storageType);
-    
-    // 現在のユーザーを確認
-    const currentUser = getCurrentUser();
-    console.log('現在のユーザー:', currentUser);
-    
-    if (currentUser) {
-        console.log('既存ユーザーでログイン中:', currentUser.email);
-        showMain();
-    } else {
-        console.log('未ログイン、認証画面表示');
-        show("authView");
-    }
-};
-
-// --- 同期機能 ---
-let syncStatus = 'idle'; // 'idle', 'syncing', 'success', 'error'
-
-// 同期状態表示
-function updateSyncStatus(status, message = '') {
-    const statusElement = $('syncStatus');
-    if (!statusElement) return;
-    
-    syncStatus = status;
-    statusElement.className = `sync-status ${status}`;
-    
-    switch (status) {
-        case 'syncing':
-            statusElement.textContent = '🔄 同期中...';
-            statusElement.style.animation = 'pulse 1s infinite';
-            break;
-        case 'success':
-            statusElement.textContent = '✅ 同期完了';
-            statusElement.style.animation = '';
-            setTimeout(() => {
-                statusElement.textContent = '';
-                statusElement.style.animation = '';
-            }, 3000);
-            break;
-        case 'error':
-            statusElement.textContent = `❌ 同期エラー: ${message}`;
-            statusElement.style.animation = '';
-            setTimeout(() => {
-                statusElement.textContent = '';
-                statusElement.style.animation = '';
-            }, 5000);
-            break;
-        default:
-            statusElement.textContent = '';
-            statusElement.style.animation = '';
-    }
-    
-    console.log('同期状態更新:', status, message);
-}
-
-// Firebase同期機能（改善版）
-async function syncToFirebase() {
-    if (typeof firebase === 'undefined') {
-        console.error('Firebase SDKが読み込まれていません');
-        return false;
-    }
-    
-    const user = getCurrentUser();
-    if (!user) {
-        console.error('ユーザー情報がありません');
-        return false;
-    }
-    
-    try {
-        updateSyncStatus('syncing');
-        console.log('Firebase同期開始 - ユーザー:', user.email);
-        
-        const db = firebase.firestore();
-        const routines = getRoutines(user.id);
-        const completions = getCompletions(user.id);
-        
-        console.log('同期するデータ:', {
-            routines: routines.length,
-            completions: completions.length,
-            routinesData: routines.map(r => ({
-                id: r.id,
-                displayId: r.displayId,
-                name: r.name,
-                frequency: r.frequency
-            }))
-        });
-        
-        // バッチ処理で一括保存
-        const batch = db.batch();
-        
-        // ユーザー情報を更新
-        const userRef = db.collection('users').doc(user.id);
-        batch.set(userRef, {
-            email: user.email,
-            lastSync: new Date().toISOString(),
-            lastSyncDirection: 'upload'
-        });
-        
-        // ルーティンデータを保存
-        const routinesRef = db.collection('users').doc(user.id).collection('routines').doc('data');
-        batch.set(routinesRef, {
-            routines: routines,
-            lastUpdated: new Date().toISOString(),
-            count: routines.length
-        });
-        
-        // 完了データを保存
-        const completionsRef = db.collection('users').doc(user.id).collection('completions').doc('data');
-        batch.set(completionsRef, {
-            completions: completions,
-            lastUpdated: new Date().toISOString(),
-            count: completions.length
-        });
-        
-        // バッチ処理を実行
-        await batch.commit();
-        
-        console.log('Firebase同期完了 - 保存されたデータ:', {
-            routines: routines.length,
-            completions: completions.length
-        });
-        updateSyncStatus('success');
-        return true;
-        
-    } catch (error) {
-        console.error('Firebase同期エラー:', error);
-        updateSyncStatus('error', error.message);
-        
-        // リトライ処理
-        if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
-            console.log('ネットワークエラーのため、3秒後にリトライします');
-            setTimeout(async () => {
-                console.log('リトライ開始');
-                await syncToFirebase();
-            }, 3000);
-        }
-        
-        return false;
-    }
-}
-
-async function syncFromFirebase() {
-    if (typeof firebase === 'undefined') {
-        console.error('Firebase SDKが読み込まれていません');
-        return false;
-    }
-    
-    const user = getCurrentUser();
-    if (!user) {
-        console.error('ユーザー情報がありません');
-        return false;
-    }
-    
-    try {
-        updateSyncStatus('syncing');
-        console.log('Firebaseから同期開始 - ユーザー:', user.email);
-        
-        const db = firebase.firestore();
-        
-        // ルーティンデータを取得
-        const routinesDoc = await db.collection('users').doc(user.id).collection('routines').doc('data').get();
-        console.log('Firebaseから取得したルーティンドキュメント:', routinesDoc.exists);
-        
-        if (routinesDoc.exists) {
-            const data = routinesDoc.data();
-            console.log('Firebaseから取得したルーティンデータ:', {
-                count: data.routines ? data.routines.length : 0,
-                lastUpdated: data.lastUpdated
-            });
-            
-            if (data.routines && Array.isArray(data.routines)) {
-                console.log('Firebaseからルーティンを同期:', data.routines.length, '件');
-                
-                // 既存のローカルデータとマージ
-                const existingRoutines = getRoutines(user.id);
-                console.log('既存のローカルルーティン:', existingRoutines.length, '件');
-                
-                // 新しいルーティンのみを追加（重複を避ける）
-                const newRoutines = data.routines.filter(fbRoutine => 
-                    !existingRoutines.some(localRoutine => localRoutine.id === fbRoutine.id)
-                );
-                
-                if (newRoutines.length > 0) {
-                    const mergedRoutines = [...existingRoutines, ...newRoutines];
-                    saveRoutines(user.id, mergedRoutines);
-                    console.log('ルーティンマージ完了:', mergedRoutines.length, '件');
-                } else {
-                    console.log('新しいルーティンなし、既存データを維持');
-                }
-            }
-        } else {
-            console.log('Firebaseにルーティンデータが存在しません');
-        }
-        
-        // 完了データを取得
-        const completionsDoc = await db.collection('users').doc(user.id).collection('completions').doc('data').get();
-        console.log('Firebaseから取得した完了データドキュメント:', completionsDoc.exists);
-        
-        if (completionsDoc.exists) {
-            const data = completionsDoc.data();
-            console.log('Firebaseから取得した完了データ:', {
-                count: data.completions ? data.completions.length : 0,
-                lastUpdated: data.lastUpdated
-            });
-            
-            if (data.completions && Array.isArray(data.completions)) {
-                console.log('Firebaseから完了データを同期:', data.completions.length, '件');
-                
-                // 既存のローカルデータとマージ
-                const existingCompletions = getCompletions(user.id);
-                console.log('既存のローカル完了データ:', existingCompletions.length, '件');
-                
-                // 新しい完了データのみを追加（重複を避ける）
-                const newCompletions = data.completions.filter(fbCompletion => 
-                    !existingCompletions.some(localCompletion => 
-                        localCompletion.rid === fbCompletion.rid && localCompletion.date === fbCompletion.date
-                    )
-                );
-                
-                if (newCompletions.length > 0) {
-                    const mergedCompletions = [...existingCompletions, ...newCompletions];
-                    saveCompletions(user.id, mergedCompletions);
-                    console.log('完了データマージ完了:', mergedCompletions.length, '件');
-                } else {
-                    console.log('新しい完了データなし、既存データを維持');
-                }
-            }
-        } else {
-            console.log('Firebaseに完了データが存在しません');
-        }
-        
-        console.log('Firebaseから同期完了');
-        updateSyncStatus('success');
-        return true;
-        
-    } catch (error) {
-        console.error('Firebaseから同期エラー:', error);
-        updateSyncStatus('error', error.message);
-        
-        // リトライ処理
-        if (error.code === 'unavailable' || error.code === 'deadline-exceeded') {
-            console.log('ネットワークエラーのため、3秒後にリトライします');
-            setTimeout(async () => {
-                console.log('リトライ開始');
-                await syncFromFirebase();
-            }, 3000);
-        }
-        
-        return false;
-    }
-}
-
-// 同期状態の詳細確認
-function checkSyncStatus() {
-    const user = getCurrentUser();
-    if (!user) {
-        console.error("ユーザー情報がありません");
-        return;
-    }
-    
-    console.log("=== 同期状態確認 ===");
-    console.log("ユーザー:", user.email);
-    console.log("ユーザーID:", user.id);
-    console.log("ストレージタイプ:", currentStorage);
-    
-    // ローカルデータ確認
-    const localRoutines = getRoutines(user.id);
-    const localCompletions = getCompletions(user.id);
-    
-    console.log("ローカルデータ:", {
-        routines: localRoutines.length,
-        completions: localCompletions.length,
-        routinesData: localRoutines.map(r => ({
-            id: r.id,
-            displayId: r.displayId,
-            name: r.name,
-            frequency: r.frequency
-        }))
-    });
-    
-    // Firebaseデータ確認
-    if (typeof firebase !== 'undefined') {
-        checkFirebaseData(user.id);
-    } else {
-        console.log("Firebase SDKが読み込まれていません");
-    }
-}
-
-// Firebaseデータの確認
-async function checkFirebaseData(userId) {
-    try {
-        console.log("Firebaseデータ確認開始");
-        const db = firebase.firestore();
-        
-        // ユーザードキュメント確認
-        const userDoc = await db.collection('users').doc(userId).get();
-        console.log("Firebaseユーザードキュメント:", userDoc.exists);
-        
-        if (userDoc.exists) {
-            console.log("ユーザー情報:", userDoc.data());
-        }
-        
-        // ルーティンデータ確認
-        const routinesDoc = await db.collection('users').doc(userId).collection('routines').doc('data').get();
-        console.log("Firebaseルーティンドキュメント:", routinesDoc.exists);
-        
-        if (routinesDoc.exists) {
-            const data = routinesDoc.data();
-            console.log("Firebaseルーティンデータ:", {
-                count: data.routines ? data.routines.length : 0,
-                lastUpdated: data.lastUpdated,
-                routines: data.routines ? data.routines.map(r => ({
-                    id: r.id,
-                    displayId: r.displayId,
-                    name: r.name,
-                    frequency: r.frequency
-                })) : []
-            });
-        }
-        
-        // 完了データ確認
-        const completionsDoc = await db.collection('users').doc(userId).collection('completions').doc('data').get();
-        console.log("Firebase完了データドキュメント:", completionsDoc.exists);
-        
-        if (completionsDoc.exists) {
-            const data = completionsDoc.data();
-            console.log("Firebase完了データ:", {
-                count: data.completions ? data.completions.length : 0,
-                lastUpdated: data.lastUpdated
-            });
-        }
-        
-    } catch (error) {
-        console.error("Firebaseデータ確認エラー:", error);
-    }
-}
-
-// 強制同期機能
-async function forceSync() {
-    console.log("=== 強制同期開始 ===");
-    
-    const user = getCurrentUser();
-    if (!user) {
-        console.error("ユーザー情報がありません");
-        return;
-    }
-    
-    try {
-        // 1. ローカルデータをFirebaseに強制アップロード
-        console.log("1. ローカルデータをFirebaseにアップロード");
-        await syncToFirebase();
-        
-        // 2. Firebaseからデータを強制ダウンロード
-        console.log("2. Firebaseからデータをダウンロード");
-        await syncFromFirebase();
-        
-        // 3. 画面を再描画
-        console.log("3. 画面を再描画");
-        renderMain();
-        
-        console.log("=== 強制同期完了 ===");
-        
-    } catch (error) {
-        console.error("強制同期エラー:", error);
-    }
-}
-
-// モバイル同期機能の改善
-function isMobile() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-           window.innerWidth <= 768;
-}
-
-// モバイル専用同期処理
-async function mobileSync() {
-    if (!isMobile()) return;
-    
-    console.log("モバイル同期開始");
-    
-    const user = getCurrentUser();
-    if (!user) {
-        console.error("ユーザー情報がありません");
-        return;
-    }
-    
-    try {
-        // モバイルでは常にFirebaseから同期を優先
-        console.log("モバイル: Firebaseから同期開始");
-        await syncFromFirebase();
-        
-        // 少し待ってからFirebaseに同期
-        setTimeout(async () => {
-            console.log("モバイル: Firebaseに同期開始");
-            await syncToFirebase();
-        }, 1000);
-        
-    } catch (error) {
-        console.error("モバイル同期エラー:", error);
-        updateSyncStatus('error', 'モバイル同期エラー: ' + error.message);
-    }
-}
-
-// 同期ボタンの改善（モバイル対応）
-function addSyncButton() {
-    const mainView = $('mainView');
-    if (!mainView) return;
-    
-    // 既存の同期ボタンを削除
-    const existingSyncBtn = document.querySelector('#syncButton');
-    if (existingSyncBtn) {
-        existingSyncBtn.remove();
-    }
-    
-    const syncButton = document.createElement('button');
-    syncButton.id = 'syncButton';
-    syncButton.textContent = isMobile() ? '📱 同期' : '同期';
-    syncButton.className = 'secondary';
-    syncButton.style.marginLeft = '8px';
-    syncButton.onclick = async () => {
-        console.log('手動同期開始');
-        
-        // 同期ボタンを無効化
-        syncButton.disabled = true;
-        syncButton.textContent = isMobile() ? '📱 同期中...' : '同期中...';
-        
-        try {
-            if (isMobile()) {
-                await mobileSync();
-            } else {
-                // まずFirebaseから同期
-                await syncFromFirebase();
-                
-                // 次にFirebaseに同期
-                await syncToFirebase();
-            }
-            
-            // 画面を再描画
-            renderMain();
-            
-            console.log('手動同期完了');
-        } catch (error) {
-            console.error('手動同期エラー:', error);
-        } finally {
-            // 同期ボタンを再有効化
-            syncButton.disabled = false;
-            syncButton.textContent = isMobile() ? '📱 同期' : '同期';
-        }
-    };
-    
-    // 強制同期ボタンを追加
-    const forceSyncButton = document.createElement('button');
-    forceSyncButton.id = 'forceSyncButton';
-    forceSyncButton.textContent = isMobile() ? '🔄 強制同期' : '強制同期';
-    forceSyncButton.className = 'secondary';
-    forceSyncButton.style.marginLeft = '8px';
-    forceSyncButton.onclick = async () => {
-        console.log('強制同期開始');
-        
-        // ボタンを無効化
-        forceSyncButton.disabled = true;
-        forceSyncButton.textContent = isMobile() ? '🔄 同期中...' : '強制同期中...';
-        
-        try {
-            await forceSync();
-        } catch (error) {
-            console.error('強制同期エラー:', error);
-        } finally {
-            // ボタンを再有効化
-            forceSyncButton.disabled = false;
-            forceSyncButton.textContent = isMobile() ? '🔄 強制同期' : '強制同期';
-        }
-    };
-    
-    // デバッグボタンを追加
-    const debugButton = document.createElement('button');
-    debugButton.id = 'debugButton';
-    debugButton.textContent = isMobile() ? '🔍 デバッグ' : 'デバッグ';
-    debugButton.className = 'secondary';
-    debugButton.style.marginLeft = '8px';
-    debugButton.onclick = () => {
-        checkSyncStatus();
-    };
-    
-    // ログアウトボタンの横にボタンを追加
-    const logoutBtn = $('logoutBtn');
-    if (logoutBtn && logoutBtn.parentNode) {
-        logoutBtn.parentNode.appendChild(syncButton);
-        logoutBtn.parentNode.appendChild(forceSyncButton);
-        logoutBtn.parentNode.appendChild(debugButton);
-    }
-}
-
-// 自動同期（データ変更時）
-function autoSync() {
-    if (currentStorage === 'firebase') {
-        syncToFirebase();
-    }
-}
-
-// 保存関数をオーバーライドして自動同期を追加
-const originalSaveRoutines = saveRoutines;
-const originalSaveCompletions = saveCompletions;
-
-function saveRoutines(uid, routines) {
-    try {
-        localStorage.setItem("routines_"+uid,JSON.stringify(routines));
-        console.log("ルーティン保存完了:", uid, routines.length, "件");
-        autoSync(); // 自動同期
-    } catch (error) {
-        console.error("ルーティン保存エラー:", error);
-    }
-}
-
-function saveCompletions(uid, completions) {
-    try {
-        localStorage.setItem("completions_"+uid,JSON.stringify(completions));
-        console.log("完了データ保存完了:", uid, completions.length, "件");
-        autoSync(); // 自動同期
-    } catch (error) {
-        console.error("完了データ保存エラー:", error);
-    }
-}
-
-// --- ルーティン管理機能 ---
-function findRoutineById(uniqueId) {
-    const user = getCurrentUser();
-    if (!user) return null;
-    
-    const routines = getRoutines(user.id);
-    return routines.find(r => r.id === uniqueId);
-}
-
-function findRoutineByDisplayId(displayId) {
-    const user = getCurrentUser();
-    if (!user) return null;
-    
-    const routines = getRoutines(user.id);
-    return routines.find(r => r.displayId === displayId);
-}
-
-function updateRoutine(uniqueId, updates) {
-    const user = getCurrentUser();
-    if (!user) return false;
-    
-    const routines = getRoutines(user.id);
-    const index = routines.findIndex(r => r.id === uniqueId);
-    
-    if (index === -1) {
-        console.error("ルーティンが見つかりません:", uniqueId);
-        return false;
-    }
-    
-    // 更新情報をマージ
-    routines[index] = {
-        ...routines[index],
-        ...updates,
-        lastModified: new Date().toISOString()
-    };
-    
-    saveRoutines(user.id, routines);
-    console.log("ルーティン更新完了:", {
-        uniqueId: routines[index].id,
-        name: routines[index].name,
-        updates: updates
-    });
-    
-    return true;
-}
-
-function deleteRoutine(uniqueId) {
-    const user = getCurrentUser();
-    if (!user) return false;
-    
-    const routines = getRoutines(user.id);
-    const index = routines.findIndex(r => r.id === uniqueId);
-    
-    if (index === -1) {
-        console.error("ルーティンが見つかりません:", uniqueId);
-        return false;
-    }
-    
-    const deletedRoutine = routines[index];
-    routines.splice(index, 1);
-    
-    // 関連する完了データも削除
-    let completions = getCompletions(user.id);
-    completions = completions.filter(c => c.rid !== uniqueId);
-    
-    saveRoutines(user.id, routines);
-    saveCompletions(user.id, completions);
-    
-    console.log("ルーティン削除完了:", {
-        uniqueId: deletedRoutine.id,
-        name: deletedRoutine.name
-    });
-    
-    return true;
-}
-
-// ルーティン情報表示機能（デバッグ用）
-function showRoutineInfo(uniqueId) {
-    const routine = findRoutineById(uniqueId);
-    if (!routine) {
-        console.error("ルーティンが見つかりません:", uniqueId);
-        return;
-    }
-    
-    console.log("ルーティン情報:", {
-        uniqueId: routine.id,
-        displayId: routine.displayId,
-        name: routine.name,
-        desc: routine.desc,
-        frequency: routine.frequency,
-        weeklyDays: routine.weeklyDays,
-        monthlyDate: routine.monthlyDate,
-        userId: routine.userId,
-        createdAt: routine.createdAt,
-        lastModified: routine.lastModified
-    });
-    
-    // 完了データも表示
-    const user = getCurrentUser();
-    if (user) {
-        const completions = getCompletions(user.id);
-        const routineCompletions = completions.filter(c => c.rid === uniqueId);
-        console.log("完了データ:", routineCompletions);
-    }
-}
-
-// 全ルーティンの一覧表示（デバッグ用）
-function listAllRoutines() {
-    const user = getCurrentUser();
-    if (!user) {
-        console.error("ユーザー情報がありません");
-        return;
-    }
-    
-    const routines = getRoutines(user.id);
-    console.log("全ルーティン一覧:", routines.map(r => ({
-        uniqueId: r.id,
-        displayId: r.displayId,
-        name: r.name,
-        frequency: r.frequency,
-        createdAt: r.createdAt
-    })));
-}
-
-// 既存ルーティンの移行機能
-function migrateExistingRoutines() {
-    const user = getCurrentUser();
-    if (!user) {
-        console.error("ユーザー情報がありません");
-        return;
-    }
-    
-    const routines = getRoutines(user.id);
-    let hasChanges = false;
-    
-    console.log("既存ルーティンの移行開始:", routines.length, "件");
-    
-    for (let i = 0; i < routines.length; i++) {
-        const routine = routines[i];
-        
-        // ユニークIDがない場合、追加
-        if (!routine.id || routine.id === routine.displayId) {
-            const timestamp = Date.now() + i; // 順序を保つため少しずつずらす
-            const randomStr = Math.random().toString(36).substring(2, 8);
-            const uniqueId = `${timestamp}_${randomStr}`;
-            
-            routines[i] = {
-                ...routine,
-                id: uniqueId,
-                displayId: routine.id || routine.displayId || Date.now().toString(),
-                createdAt: routine.createdAt || new Date().toISOString(),
-                lastModified: new Date().toISOString()
+        // 頻度ラベル
+        function getFrequencyLabel(frequency) {
+            const labels = {
+                'daily': '毎日',
+                'weekly': '毎週',
+                'monthly': '毎月'
             };
-            
-            hasChanges = true;
-            console.log("ルーティン移行完了:", {
-                name: routine.name,
-                oldId: routine.id,
-                newUniqueId: uniqueId,
-                displayId: routines[i].displayId
-            });
+            return labels[frequency] || frequency;
         }
-    }
-    
-    if (hasChanges) {
-        saveRoutines(user.id, routines);
-        console.log("移行完了 - 保存されたルーティン:", routines.length, "件");
-        
-        // 完了データも移行
-        migrateExistingCompletions();
-    } else {
-        console.log("移行不要 - すべてのルーティンにユニークIDが設定済み");
-    }
-}
 
-// 既存完了データの移行機能
-function migrateExistingCompletions() {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    const completions = getCompletions(user.id);
-    const routines = getRoutines(user.id);
-    let hasChanges = false;
-    
-    console.log("既存完了データの移行開始:", completions.length, "件");
-    
-    for (let i = 0; i < completions.length; i++) {
-        const completion = completions[i];
-        
-        // ユニークIDがない場合、対応するルーティンを検索して設定
-        if (!completion.rid || completion.rid === completion.displayRid) {
-            const routine = routines.find(r => 
-                r.displayId === completion.rid || 
-                r.id === completion.rid ||
-                r.displayId === completion.displayRid
-            );
+        // 頻度アイコン
+        function getFrequencyIcon(frequency) {
+            const icons = {
+                'daily': 'sun',
+                'weekly': 'calendar-days',
+                'monthly': 'calendar'
+            };
+            return icons[frequency] || 'clock';
+        }
+
+        // ルーティン表示
+        function renderRoutines() {
+            const filteredRoutines = getFilteredRoutines();
             
-            if (routine) {
-                completions[i] = {
-                    ...completion,
-                    rid: routine.id,
-                    displayRid: routine.displayId,
-                    completedAt: completion.completedAt || new Date().toISOString()
-                };
+            if (filteredRoutines.length === 0) {
+                routinesList.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="target" class="empty-icon"></i>
+                        <h3>${currentFilter === 'all' ? 'まだルーティンがありません' : getFrequencyLabel(currentFilter) + 'のルーティンがありません'}</h3>
+                        <p>${currentFilter === 'all' ? '新しいルーティンを追加して、毎日の習慣を始めましょう！' : getFrequencyLabel(currentFilter) + 'のルーティンを追加してみましょう！'}</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            routinesList.innerHTML = filteredRoutines.map(routine => {
+                const frequencyIcon = getFrequencyIcon(routine.frequency);
+                const frequencyLabel = getFrequencyLabel(routine.frequency);
+                const createdDate = new Date(routine.createdAt).toLocaleDateString('ja-JP');
                 
-                hasChanges = true;
-                console.log("完了データ移行完了:", {
-                    date: completion.date,
-                    routineName: routine.name,
-                    newRid: routine.id
-                });
+                return `
+                    <div class="routine-card ${routine.completed ? 'completed' : ''}" data-id="${routine.id}">
+                        <div class="routine-content">
+                            <div class="routine-header">
+                                <h3 class="routine-title">${routine.title}</h3>
+                                <div class="routine-actions">
+                                    <button class="action-button edit" onclick="startEditing('${routine.id}')" title="編集">
+                                        <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                                    </button>
+                                    <button class="action-button delete" onclick="deleteRoutine('${routine.id}')" title="削除">
+                                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            ${routine.description ? `<p class="routine-description">${routine.description}</p>` : ''}
+                            
+                            <div class="routine-meta">
+                                <div class="routine-frequency">
+                                    <i data-lucide="${frequencyIcon}" style="width: 14px; height: 14px;"></i>
+                                    <span>${frequencyLabel}</span>
+                                </div>
+                                ${routine.time ? `
+                                    <div class="routine-time">
+                                        <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                                        <span>${routine.time}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="routine-date">
+                                作成日: ${createdDate}
+                            </div>
+                        </div>
+                        
+                        <button class="complete-button ${routine.completed ? 'completed' : ''}" onclick="toggleRoutine('${routine.id}')">
+                            <i data-lucide="check" style="width: 20px; height: 20px;"></i>
+                            ${routine.completed ? '完了済み' : '完了にする'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+
+        // ルーティン追加
+        function addRoutine() {
+            const title = document.getElementById('routineTitle').value.trim();
+            if (!title) return;
+
+            const description = document.getElementById('routineDescription').value.trim();
+            const frequency = document.getElementById('routineFrequency').value;
+            const time = document.getElementById('routineTime').value;
+            
+            // チェックリスト項目を取得
+            const checklistItems = [];
+            document.querySelectorAll('#checklistItems .checklist-item').forEach(item => {
+                const text = item.querySelector('.checklist-text').value.trim();
+                const checked = item.querySelector('.checklist-checkbox').checked;
+                if (text) {
+                    checklistItems.push({ text, checked });
+                }
+            });
+
+            const routine = {
+                id: Date.now().toString(),
+                title,
+                description,
+                frequency,
+                time,
+                completed: false,
+                createdAt: new Date().toISOString(),
+                userId: 'local',
+                checklist: checklistItems
+            };
+
+            routines.push(routine);
+            localStorage.setItem('routines', JSON.stringify(routines));
+            
+            // フォームをリセット
+            document.getElementById('routineTitle').value = '';
+            document.getElementById('routineDescription').value = '';
+            document.getElementById('routineFrequency').value = 'daily';
+            document.getElementById('routineTime').value = '';
+            
+            // チェックリストをリセット
+            document.getElementById('checklistItems').innerHTML = `
+                <div class="checklist-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <input type="checkbox" class="checklist-checkbox">
+                    <input type="text" placeholder="メニュー名（例：ベンチプレス）" class="checklist-text" style="flex: 1;">
+                    <button type="button" class="remove-checklist-item" style="margin-left: 4px;">削除</button>
+                </div>
+            `;
+            
+            formContainer.style.display = 'none';
+            addButton.innerHTML = '<i data-lucide="plus" class="button-icon"></i>新しいルーティンを追加';
+            lucide.createIcons();
+            
+            renderRoutines();
+            updateStats();
+        }
+
+        // ルーティン切り替え
+        function toggleRoutine(id) {
+            const routine = routines.find(r => r.id === id);
+            if (routine) {
+                routine.completed = !routine.completed;
+                localStorage.setItem('routines', JSON.stringify(routines));
+                renderRoutines();
+                updateStats();
             }
         }
-    }
-    
-    if (hasChanges) {
-        saveCompletions(user.id, completions);
-        console.log("完了データ移行完了 - 保存された完了データ:", completions.length, "件");
-    } else {
-        console.log("完了データ移行不要 - すべての完了データにユニークIDが設定済み");
-    }
-}
 
-// 初期化時に移行を実行
-function runMigrationIfNeeded() {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    const routines = getRoutines(user.id);
-    const needsMigration = routines.some(r => !r.id || r.id === r.displayId);
-    
-    if (needsMigration) {
-        console.log("移行が必要なルーティンを検出");
-        migrateExistingRoutines();
-    } else {
-        console.log("移行不要 - すべてのルーティンが最新形式");
-    }
-}
-
-// 今日のルーティンをテストするための機能
-function addTodayTestRoutine() {
-    const user = getCurrentUser();
-    if (!user) {
-        console.error("ユーザー情報がありません");
-        return;
-    }
-    
-    const today = new Date();
-    const todayDay = today.getDay();
-    const todayDate = today.getDate();
-    
-    console.log("今日のテストルーティンを追加:", {
-        today: todayDay,
-        todayDate: todayDate,
-        todayString: today.toLocaleDateString('ja-JP', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        })
-    });
-    
-    const routines = getRoutines(user.id);
-    
-    // 今日の曜日に合わせた週次ルーティンを追加
-    const weeklyRoutine = {
-        id: `${Date.now()}_weekly_test`,
-        displayId: Date.now().toString(),
-        name: `今日の週次テスト (${todayDay}曜日)`,
-        desc: "今日の曜日に設定されたテストルーティン",
-        frequency: "weekly",
-        weeklyDays: [todayDay],
-        monthlyDate: null,
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        lastModified: new Date().toISOString()
-    };
-    
-    // 今日の日付に合わせた月次ルーティンを追加
-    const monthlyRoutine = {
-        id: `${Date.now()}_monthly_test`,
-        displayId: (Date.now() + 1).toString(),
-        name: `今日の月次テスト (${todayDate}日)`,
-        desc: "今日の日付に設定されたテストルーティン",
-        frequency: "monthly",
-        weeklyDays: [],
-        monthlyDate: todayDate,
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        lastModified: new Date().toISOString()
-    };
-    
-    // 毎日のルーティンを追加
-    const dailyRoutine = {
-        id: `${Date.now()}_daily_test`,
-        displayId: (Date.now() + 2).toString(),
-        name: "今日の毎日テスト",
-        desc: "毎日実行されるテストルーティン",
-        frequency: "daily",
-        weeklyDays: [],
-        monthlyDate: null,
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        lastModified: new Date().toISOString()
-    };
-    
-    routines.push(weeklyRoutine, monthlyRoutine, dailyRoutine);
-    saveRoutines(user.id, routines);
-    
-    console.log("テストルーティン追加完了:", {
-        weekly: weeklyRoutine.name,
-        monthly: monthlyRoutine.name,
-        daily: dailyRoutine.name
-    });
-    
-    // 画面を再描画
-    renderMain();
-}
-
-// テスト用ボタンを追加
-function addTestButton() {
-    const mainView = $('mainView');
-    if (!mainView) return;
-    
-    // 既存のテストボタンを削除
-    const existingTestBtn = document.querySelector('#testButton');
-    if (existingTestBtn) {
-        existingTestBtn.remove();
-    }
-    
-    const testButton = document.createElement('button');
-    testButton.id = 'testButton';
-    testButton.textContent = isMobile() ? '🧪 テスト追加' : 'テスト追加';
-    testButton.className = 'secondary';
-    testButton.style.marginLeft = '8px';
-    testButton.onclick = () => {
-        addTodayTestRoutine();
-    };
-    
-    // ログアウトボタンの横にテストボタンを追加
-    const logoutBtn = $('logoutBtn');
-    if (logoutBtn && logoutBtn.parentNode) {
-        logoutBtn.parentNode.appendChild(testButton);
-    }
-}
-
-// ルーティン削除のUI処理
-function deleteRoutineFromUI(uniqueId) {
-    const routine = findRoutineById(uniqueId);
-    if (!routine) {
-        console.error("削除対象のルーティンが見つかりません:", uniqueId);
-        alert("ルーティンが見つかりません");
-        return;
-    }
-    
-    console.log("ルーティン削除確認:", {
-        uniqueId: routine.id,
-        name: routine.name,
-        frequency: routine.frequency
-    });
-    
-    // 削除確認ダイアログ
-    const confirmMessage = `ルーティン「${routine.name}」を削除しますか？\n\nこの操作は取り消せません。`;
-    if (!confirm(confirmMessage)) {
-        console.log("削除をキャンセルしました");
-        return;
-    }
-    
-    // 削除実行
-    const success = deleteRoutine(uniqueId);
-    if (success) {
-        console.log("ルーティン削除完了:", routine.name);
-        alert(`ルーティン「${routine.name}」を削除しました`);
-        
-        // 画面を再描画
-        renderMain();
-        
-        // 自動同期
-        if (currentStorage === 'firebase') {
-            syncToFirebase();
+        // ルーティン削除
+        function deleteRoutine(id) {
+            if (confirm('このルーティンを削除しますか？')) {
+                routines = routines.filter(r => r.id !== id);
+                localStorage.setItem('routines', JSON.stringify(routines));
+                renderRoutines();
+                updateStats();
+            }
         }
-    } else {
-        console.error("ルーティン削除に失敗しました");
-        alert("ルーティンの削除に失敗しました");
-    }
-}
 
-// 複数ルーティンの一括削除機能
-function deleteMultipleRoutines(routineIds) {
-    if (!Array.isArray(routineIds) || routineIds.length === 0) {
-        console.error("削除対象のルーティンIDが指定されていません");
-        return;
-    }
-    
-    console.log("複数ルーティン削除開始:", routineIds.length, "件");
-    
-    const routines = routineIds.map(id => findRoutineById(id)).filter(r => r !== null);
-    if (routines.length === 0) {
-        alert("削除対象のルーティンが見つかりません");
-        return;
-    }
-    
-    // 削除確認ダイアログ
-    const routineNames = routines.map(r => r.name).join("\n• ");
-    const confirmMessage = `以下のルーティンを削除しますか？\n\n• ${routineNames}\n\nこの操作は取り消せません。`;
-    if (!confirm(confirmMessage)) {
-        console.log("一括削除をキャンセルしました");
-        return;
-    }
-    
-    // 削除実行
-    let successCount = 0;
-    for (const routine of routines) {
-        const success = deleteRoutine(routine.id);
-        if (success) {
-            successCount++;
+        // 編集開始
+        function startEditing(id) {
+            const routine = routines.find(r => r.id === id);
+            if (!routine) return;
+
+            editingId = id;
+            document.getElementById('editTitle').value = routine.title;
+            document.getElementById('editDescription').value = routine.description || '';
+            document.getElementById('editFrequency').value = routine.frequency;
+            document.getElementById('editTime').value = routine.time || '';
+
+            // チェックリストを設定
+            const editChecklistContainer = document.getElementById('editChecklistItems');
+            editChecklistContainer.innerHTML = '';
+            
+            if (routine.checklist && routine.checklist.length > 0) {
+                routine.checklist.forEach(item => {
+                    addEditChecklistItem(item.text, item.checked);
+                });
+            } else {
+                addEditChecklistItem();
+            }
+
+            editModal.style.display = 'flex';
         }
-    }
-    
-    console.log("一括削除完了:", successCount, "/", routines.length, "件");
-    alert(`${successCount}件のルーティンを削除しました`);
-    
-    // 画面を再描画
-    renderMain();
-    
-    // 自動同期
-    if (currentStorage === 'firebase') {
-        syncToFirebase();
-    }
-}
 
-// 完了データの一括削除機能
-function deleteAllCompletions() {
-    const user = getCurrentUser();
-    if (!user) {
-        console.error("ユーザー情報がありません");
-        return;
-    }
-    
-    const completions = getCompletions(user.id);
-    if (completions.length === 0) {
-        alert("削除する完了データがありません");
-        return;
-    }
-    
-    const confirmMessage = `すべての完了データ（${completions.length}件）を削除しますか？\n\nこの操作は取り消せません。`;
-    if (!confirm(confirmMessage)) {
-        console.log("完了データ削除をキャンセルしました");
-        return;
-    }
-    
-    // 完了データをクリア
-    saveCompletions(user.id, []);
-    console.log("完了データ削除完了:", completions.length, "件");
-    alert(`${completions.length}件の完了データを削除しました`);
-    
-    // 画面を再描画
-    renderMain();
-    
-    // 自動同期
-    if (currentStorage === 'firebase') {
-        syncToFirebase();
-    }
-}
+        // 編集用チェックリスト項目追加
+        function addEditChecklistItem(text = '', checked = false) {
+            const container = document.getElementById('editChecklistItems');
+            const item = document.createElement('div');
+            item.className = 'checklist-item';
+            item.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 4px;';
+            
+            item.innerHTML = `
+                <input type="checkbox" class="checklist-checkbox" ${checked ? 'checked' : ''}>
+                <input type="text" placeholder="メニュー名（例：ベンチプレス）" class="checklist-text" style="flex: 1;" value="${text}">
+                <button type="button" class="remove-checklist-item" style="margin-left: 4px;">削除</button>
+            `;
+            
+            container.appendChild(item);
+            
+            // 削除ボタンのイベント
+            item.querySelector('.remove-checklist-item').addEventListener('click', () => {
+                if (container.children.length > 1) {
+                    item.remove();
+                }
+            });
+        }
 
-// 管理機能用ボタンを追加
-function addManagementButtons() {
-    const mainView = $('mainView');
-    if (!mainView) return;
-    
-    // 既存の管理ボタンを削除
-    const existingManageBtn = document.querySelector('#manageButton');
-    if (existingManageBtn) {
-        existingManageBtn.remove();
-    }
-    
-    const manageButton = document.createElement('button');
-    manageButton.id = 'manageButton';
-    manageButton.textContent = isMobile() ? '⚙️ 管理' : '管理';
-    manageButton.className = 'secondary';
-    manageButton.style.marginLeft = '8px';
-    manageButton.onclick = () => {
-        showManagementMenu();
-    };
-    
-    // ログアウトボタンの横に管理ボタンを追加
-    const logoutBtn = $('logoutBtn');
-    if (logoutBtn && logoutBtn.parentNode) {
-        logoutBtn.parentNode.appendChild(manageButton);
-    }
-}
+        // 更新
+        function updateRoutine() {
+            if (!editingId) return;
 
-// 管理メニューの表示
-function showManagementMenu() {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    const routines = getRoutines(user.id);
-    const completions = getCompletions(user.id);
-    
-    const menuItems = [
-        `ルーティン管理 (${routines.length}件)`,
-        `完了データ削除 (${completions.length}件)`,
-        'テストルーティン削除',
-        '全データリセット',
-        'キャンセル'
-    ];
-    
-    const selected = prompt(
-        '管理メニュー\n\n' + 
-        menuItems.map((item, index) => `${index + 1}. ${item}`).join('\n') +
-        '\n\n番号を入力してください:'
-    );
-    
-    if (!selected) return;
-    
-    const choice = parseInt(selected);
-    switch (choice) {
-        case 1:
-            showRoutineManagement();
-            break;
-        case 2:
-            deleteAllCompletions();
-            break;
-        case 3:
-            deleteTestRoutines();
-            break;
-        case 4:
-            resetAllData();
-            break;
-        case 5:
-            console.log('管理メニューをキャンセルしました');
-            break;
-        default:
-            alert('無効な選択です');
-    }
-}
+            const title = document.getElementById('editTitle').value.trim();
+            if (!title) return;
 
-// ルーティン管理画面
-function showRoutineManagement() {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    const routines = getRoutines(user.id);
-    if (routines.length === 0) {
-        alert('管理するルーティンがありません');
-        return;
-    }
-    
-    const routineList = routines.map((r, index) => 
-        `${index + 1}. ${r.name} (${getFreqText(r.frequency)})`
-    ).join('\n');
-    
-    const selected = prompt(
-        'ルーティン管理\n\n' + 
-        routineList +
-        '\n\n削除するルーティンの番号を入力してください（複数の場合はカンマ区切り）:\n' +
-        '例: 1,3,5'
-    );
-    
-    if (!selected) return;
-    
-    const indices = selected.split(',').map(s => parseInt(s.trim()) - 1).filter(i => !isNaN(i) && i >= 0 && i < routines.length);
-    
-    if (indices.length === 0) {
-        alert('有効な番号が選択されていません');
-        return;
-    }
-    
-    const selectedRoutines = indices.map(i => routines[i]);
-    const routineIds = selectedRoutines.map(r => r.id);
-    
-    deleteMultipleRoutines(routineIds);
-}
+            const routine = routines.find(r => r.id === editingId);
+            if (!routine) return;
 
-// テストルーティンの削除
-function deleteTestRoutines() {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    const routines = getRoutines(user.id);
-    const testRoutines = routines.filter(r => 
-        r.name.includes('テスト') || 
-        r.name.includes('test') ||
-        r.id.includes('_test')
-    );
-    
-    if (testRoutines.length === 0) {
-        alert('削除するテストルーティンがありません');
-        return;
-    }
-    
-    const routineIds = testRoutines.map(r => r.id);
-    deleteMultipleRoutines(routineIds);
-}
+            routine.title = title;
+            routine.description = document.getElementById('editDescription').value.trim();
+            routine.frequency = document.getElementById('editFrequency').value;
+            routine.time = document.getElementById('editTime').value;
 
-// 全データリセット
-function resetAllData() {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    const confirmMessage = `すべてのデータをリセットしますか？\n\nこの操作は取り消せません。\n\n• ルーティン: ${getRoutines(user.id).length}件\n• 完了データ: ${getCompletions(user.id).length}件`;
-    if (!confirm(confirmMessage)) {
-        console.log('データリセットをキャンセルしました');
-        return;
-    }
-    
-    // データをクリア
-    saveRoutines(user.id, []);
-    saveCompletions(user.id, []);
-    
-    console.log('全データリセット完了');
-    alert('すべてのデータをリセットしました');
-    
-    // 画面を再描画
-    renderMain();
-    
-    // 自動同期
-    if (currentStorage === 'firebase') {
-        syncToFirebase();
-    }
-}
+            // チェックリストを更新
+            const checklistItems = [];
+            document.querySelectorAll('#editChecklistItems .checklist-item').forEach(item => {
+                const text = item.querySelector('.checklist-text').value.trim();
+                const checked = item.querySelector('.checklist-checkbox').checked;
+                if (text) {
+                    checklistItems.push({ text, checked });
+                }
+            });
+            routine.checklist = checklistItems;
 
-// 外部スクリプトの初期化は script-new.js で処理されるため削除
+            localStorage.setItem('routines', JSON.stringify(routines));
+            editModal.style.display = 'none';
+            editingId = null;
+            
+            renderRoutines();
+            updateStats();
+        }
 
-// 確実にsimpleAuthを初期化
-if (typeof startSimpleAuth === 'function' && !window.simpleAuth) {
-    window.simpleAuth = startSimpleAuth();
-    console.log('HTML側でsimpleAuth初期化完了:', window.simpleAuth);
-}
-</script>
+        // イベントリスナー
+        addButton.addEventListener('click', () => {
+            if (formContainer.style.display === 'none') {
+                formContainer.style.display = 'block';
+                addButton.innerHTML = '<i data-lucide="x" class="button-icon"></i>キャンセル';
+            } else {
+                formContainer.style.display = 'none';
+                addButton.innerHTML = '<i data-lucide="plus" class="button-icon"></i>新しいルーティンを追加';
+            }
+            lucide.createIcons();
+        });
+
+        saveButton.addEventListener('click', addRoutine);
+
+        cancelEditButton.addEventListener('click', () => {
+            editModal.style.display = 'none';
+            editingId = null;
+        });
+
+        updateButton.addEventListener('click', updateRoutine);
+
+        // タブフィルター
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentFilter = button.dataset.filter;
+                renderRoutines();
+                updateStats();
+            });
+        });
+
+        // チェックリスト項目追加
+        document.getElementById('addChecklistItem').addEventListener('click', () => {
+            const container = document.getElementById('checklistItems');
+            const item = document.createElement('div');
+            item.className = 'checklist-item';
+            item.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 4px;';
+            
+            item.innerHTML = `
+                <input type="checkbox" class="checklist-checkbox">
+                <input type="text" placeholder="メニュー名（例：ベンチプレス）" class="checklist-text" style="flex: 1;">
+                <button type="button" class="remove-checklist-item" style="margin-left: 4px;">削除</button>
+            `;
+            
+            container.appendChild(item);
+            
+            // 削除ボタンのイベント
+            item.querySelector('.remove-checklist-item').addEventListener('click', () => {
+                if (container.children.length > 1) {
+                    item.remove();
+                }
+            });
+        });
+
+        // 編集用チェックリスト項目追加
+        document.getElementById('addEditChecklistItem').addEventListener('click', () => {
+            addEditChecklistItem();
+        });
+
+        // 初期化
+        renderRoutines();
+        updateStats();
+    </script>
 </body>
-</html>
+</html> < ! - -   F o r c e   u p d a t e :   0 7 / 0 2 / 2 0 2 5   2 0 : 2 6 : 3 9   - - >  
+ < ! - -   U p d a t e d :   0 7 / 0 2 / 2 0 2 5   2 1 : 4 8 : 4 8   - - >  
+ 
