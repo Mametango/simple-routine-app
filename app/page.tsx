@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from './contexts/AuthContext'
-import { useRouter } from 'next/navigation'
 import { Plus, Check, Trash2, Edit, Calendar, Clock, Target, Sun, CalendarDays, List, LogOut, User } from 'lucide-react'
 import './page.css'
 
@@ -32,8 +30,6 @@ interface NewRoutine {
 }
 
 export default function Home() {
-  const { user, token, logout, loading } = useAuth()
-  const router = useRouter()
   const [routines, setRoutines] = useState<Routine[]>([])
   const [newRoutine, setNewRoutine] = useState<NewRoutine>({
     title: '',
@@ -46,97 +42,54 @@ export default function Home() {
   const [showForm, setShowForm] = useState(false)
   const [loadingRoutines, setLoadingRoutines] = useState(true)
   const [currentFilter, setCurrentFilter] = useState('all')
+  const [user, setUser] = useState({ username: 'ユーザー' })
 
-  // 認証チェック
+  // ローカルストレージからルーティンを読み込み
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth')
+    const savedRoutines = localStorage.getItem('routines')
+    if (savedRoutines) {
+      setRoutines(JSON.parse(savedRoutines))
     }
-  }, [user, loading, router])
+    setLoadingRoutines(false)
+  }, [])
 
-  // ルーティンを読み込み
-  useEffect(() => {
-    if (user && token) {
-      fetchRoutines()
-    }
-  }, [user, token])
-
-  const fetchRoutines = async () => {
-    try {
-      const response = await fetch('/api/routines', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setRoutines(data)
-      }
-    } catch (error) {
-      console.error('Failed to fetch routines:', error)
-    } finally {
-      setLoadingRoutines(false)
-    }
+  // ルーティンをローカルストレージに保存
+  const saveRoutines = (newRoutines: Routine[]) => {
+    setRoutines(newRoutines)
+    localStorage.setItem('routines', JSON.stringify(newRoutines))
   }
 
-  const addRoutine = async () => {
+  const addRoutine = () => {
     if (!newRoutine.title.trim()) return
 
-    try {
-      const response = await fetch('/api/routines', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newRoutine),
-      })
-
-      if (response.ok) {
-        const routine = await response.json()
-        setRoutines([...routines, routine])
-        setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
-        setShowForm(false)
-      }
-    } catch (error) {
-      console.error('Failed to add routine:', error)
+    const routine: Routine = {
+      id: Date.now().toString(),
+      title: newRoutine.title,
+      description: newRoutine.description,
+      frequency: newRoutine.frequency,
+      time: newRoutine.time,
+      completed: false,
+      createdAt: new Date().toISOString(),
+      userId: 'local',
+      checklist: newRoutine.checklist.filter(item => item.text.trim())
     }
+
+    const updatedRoutines = [...routines, routine]
+    saveRoutines(updatedRoutines)
+    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
+    setShowForm(false)
   }
 
-  const toggleRoutine = async (id: string) => {
-    try {
-      const response = await fetch(`/api/routines/${id}/toggle`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        setRoutines(routines.map(routine =>
-          routine.id === id ? { ...routine, completed: !routine.completed } : routine
-        ))
-      }
-    } catch (error) {
-      console.error('Failed to toggle routine:', error)
-    }
+  const toggleRoutine = (id: string) => {
+    const updatedRoutines = routines.map(routine =>
+      routine.id === id ? { ...routine, completed: !routine.completed } : routine
+    )
+    saveRoutines(updatedRoutines)
   }
 
-  const deleteRoutine = async (id: string) => {
-    try {
-      const response = await fetch(`/api/routines/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        setRoutines(routines.filter(routine => routine.id !== id))
-      }
-    } catch (error) {
-      console.error('Failed to delete routine:', error)
-    }
+  const deleteRoutine = (id: string) => {
+    const updatedRoutines = routines.filter(routine => routine.id !== id)
+    saveRoutines(updatedRoutines)
   }
 
   const startEditing = (routine: Routine) => {
@@ -150,41 +103,22 @@ export default function Home() {
     })
   }
 
-  const saveEdit = async () => {
+  const saveEdit = () => {
     if (!editingId || !newRoutine.title.trim()) return
 
-    try {
-      const response = await fetch(`/api/routines/${editingId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newRoutine),
-      })
-
-      if (response.ok) {
-        setRoutines(routines.map(routine =>
-          routine.id === editingId
-            ? { ...routine, title: newRoutine.title, description: newRoutine.description, frequency: newRoutine.frequency, time: newRoutine.time, checklist: newRoutine.checklist }
-            : routine
-        ))
-        setEditingId(null)
-        setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
-      }
-    } catch (error) {
-      console.error('Failed to update routine:', error)
-    }
+    const updatedRoutines = routines.map(routine =>
+      routine.id === editingId
+        ? { ...routine, title: newRoutine.title, description: newRoutine.description, frequency: newRoutine.frequency, time: newRoutine.time, checklist: newRoutine.checklist }
+        : routine
+    )
+    saveRoutines(updatedRoutines)
+    setEditingId(null)
+    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
   }
 
   const cancelEdit = () => {
     setEditingId(null)
     setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
-  }
-
-  const handleLogout = () => {
-    logout()
-    router.push('/auth')
   }
 
   const getFilteredRoutines = () => {
@@ -221,7 +155,7 @@ export default function Home() {
   const updateChecklistText = (idx: number, value: string) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.map((item, i) => i === idx ? { ...item, text: value } : item) }))
   const updateChecklistChecked = (idx: number, checked: boolean) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.map((item, i) => i === idx ? { ...item, checked } : item) }))
 
-  if (loading || !user) {
+  if (loadingRoutines) {
     return (
       <div className="app">
         <div className="loading">読み込み中...</div>
@@ -244,10 +178,6 @@ export default function Home() {
             <User size={16} />
             <span>{user.username}</span>
           </div>
-          <button onClick={handleLogout} className="logout-button">
-            <LogOut size={16} />
-            ログアウト
-          </button>
         </div>
       </header>
 
