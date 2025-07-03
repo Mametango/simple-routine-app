@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Check, Trash2, Edit, Calendar, Clock, Target, Sun, CalendarDays, List, LogOut, User } from 'lucide-react'
+import { useAuth } from './contexts/AuthContext'
 import './page.css'
 
 interface ChecklistItem {
@@ -50,6 +51,7 @@ interface NewTodo {
 }
 
 export default function Home() {
+  const { user, token } = useAuth()
   const [routines, setRoutines] = useState<Routine[]>([])
   const [newRoutine, setNewRoutine] = useState<NewRoutine>({
     title: '',
@@ -63,7 +65,6 @@ export default function Home() {
   const [showForm, setShowForm] = useState(false)
   const [loadingRoutines, setLoadingRoutines] = useState(true)
   const [currentFilter, setCurrentFilter] = useState('all')
-  const [user, setUser] = useState({ username: 'ユーザー' })
 
   // Todo関連の状態
   const [todos, setTodos] = useState<Todo[]>([])
@@ -79,37 +80,111 @@ export default function Home() {
   const [currentTodoFilter, setCurrentTodoFilter] = useState('all')
   const [activeTab, setActiveTab] = useState<'routines' | 'todos'>('routines')
 
-  // ローカルストレージからルーティンを読み込み
-  useEffect(() => {
-    const savedRoutines = localStorage.getItem('routines')
-    if (savedRoutines) {
-      setRoutines(JSON.parse(savedRoutines))
+  // API呼び出し用の関数
+  const apiCall = async (url: string, options: RequestInit = {}) => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
     }
-    setLoadingRoutines(false)
-  }, [])
 
-  // ローカルストレージからTodoを読み込み
-  useEffect(() => {
-    const savedTodos = localStorage.getItem('todos')
-    if (savedTodos) {
-      setTodos(JSON.parse(savedTodos))
+    // 認証トークンがある場合は追加
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
     }
-    setLoadingTodos(false)
-  }, [])
 
-  // ルーティンをローカルストレージに保存
-  const saveRoutines = (newRoutines: Routine[]) => {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...headers,
+        ...options.headers,
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error(`API call failed: ${response.status}`)
+    }
+    
+    return response.json()
+  }
+
+  // サーバーからルーティンを読み込み
+  useEffect(() => {
+    const loadRoutines = async () => {
+      try {
+        if (token) {
+          // 認証されている場合はサーバーから読み込み
+          const data = await apiCall('/api/routines')
+          setRoutines(data)
+        } else {
+          // 認証されていない場合はローカルストレージから読み込み
+          const savedRoutines = localStorage.getItem('routines')
+          if (savedRoutines) {
+            setRoutines(JSON.parse(savedRoutines))
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load routines:', error)
+        // エラー時はローカルストレージから読み込み
+        const savedRoutines = localStorage.getItem('routines')
+        if (savedRoutines) {
+          setRoutines(JSON.parse(savedRoutines))
+        }
+      } finally {
+        setLoadingRoutines(false)
+      }
+    }
+    
+    loadRoutines()
+  }, [token])
+
+  // サーバーからTodoを読み込み
+  useEffect(() => {
+    const loadTodos = async () => {
+      try {
+        if (token) {
+          // 認証されている場合はサーバーから読み込み
+          const data = await apiCall('/api/todos')
+          setTodos(data)
+        } else {
+          // 認証されていない場合はローカルストレージから読み込み
+          const savedTodos = localStorage.getItem('todos')
+          if (savedTodos) {
+            setTodos(JSON.parse(savedTodos))
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load todos:', error)
+        // エラー時はローカルストレージから読み込み
+        const savedTodos = localStorage.getItem('todos')
+        if (savedTodos) {
+          setTodos(JSON.parse(savedTodos))
+        }
+      } finally {
+        setLoadingTodos(false)
+      }
+    }
+    
+    loadTodos()
+  }, [token])
+
+  // ルーティンをサーバーに保存
+  const saveRoutines = async (newRoutines: Routine[]) => {
     setRoutines(newRoutines)
-    localStorage.setItem('routines', JSON.stringify(newRoutines))
+    // 認証されていない場合はローカルストレージに保存
+    if (!token) {
+      localStorage.setItem('routines', JSON.stringify(newRoutines))
+    }
   }
 
-  // Todoをローカルストレージに保存
-  const saveTodos = (newTodos: Todo[]) => {
+  // Todoをサーバーに保存
+  const saveTodos = async (newTodos: Todo[]) => {
     setTodos(newTodos)
-    localStorage.setItem('todos', JSON.stringify(newTodos))
+    // 認証されていない場合はローカルストレージに保存
+    if (!token) {
+      localStorage.setItem('todos', JSON.stringify(newTodos))
+    }
   }
 
-  const addRoutine = () => {
+  const addRoutine = async () => {
     if (!newRoutine.title.trim()) return
 
     const routine: Routine = {
@@ -120,26 +195,95 @@ export default function Home() {
       time: newRoutine.time,
       completed: false,
       createdAt: new Date().toISOString(),
-      userId: 'local',
+      userId: token ? 'server' : 'local',
       checklist: newRoutine.checklist.filter(item => item.text.trim())
     }
 
-    const updatedRoutines = [...routines, routine]
-    saveRoutines(updatedRoutines)
+    if (token) {
+      try {
+        const routineData = {
+          title: newRoutine.title,
+          description: newRoutine.description,
+          frequency: newRoutine.frequency,
+          time: newRoutine.time,
+          checklist: newRoutine.checklist.filter(item => item.text.trim())
+        }
+
+        const newRoutineData = await apiCall('/api/routines', {
+          method: 'POST',
+          body: JSON.stringify(routineData)
+        })
+
+        const updatedRoutines = [...routines, newRoutineData]
+        await saveRoutines(updatedRoutines)
+      } catch (error) {
+        console.error('Failed to add routine:', error)
+        // エラー時はローカルストレージに保存
+        const updatedRoutines = [...routines, routine]
+        saveRoutines(updatedRoutines)
+      }
+    } else {
+      // 認証されていない場合はローカルストレージに保存
+      const updatedRoutines = [...routines, routine]
+      saveRoutines(updatedRoutines)
+    }
+
     setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], checklist: [{ text: '', checked: false }] })
     setShowForm(false)
   }
 
-  const toggleRoutine = (id: string) => {
-    const updatedRoutines = routines.map(routine =>
-      routine.id === id ? { ...routine, completed: !routine.completed } : routine
+  const toggleRoutine = async (id: string) => {
+    const routine = routines.find(r => r.id === id)
+    if (!routine) return
+
+    const updatedRoutines = routines.map(r =>
+      r.id === id ? { ...r, completed: !r.completed } : r
     )
-    saveRoutines(updatedRoutines)
+
+    if (token) {
+      try {
+        const updatedRoutine = await apiCall(`/api/routines/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            ...routine,
+            completed: !routine.completed
+          })
+        })
+
+        const serverUpdatedRoutines = routines.map(r =>
+          r.id === id ? updatedRoutine : r
+        )
+        await saveRoutines(serverUpdatedRoutines)
+      } catch (error) {
+        console.error('Failed to toggle routine:', error)
+        // エラー時はローカルで更新
+        saveRoutines(updatedRoutines)
+      }
+    } else {
+      // 認証されていない場合はローカルで更新
+      saveRoutines(updatedRoutines)
+    }
   }
 
-  const deleteRoutine = (id: string) => {
+  const deleteRoutine = async (id: string) => {
     const updatedRoutines = routines.filter(routine => routine.id !== id)
-    saveRoutines(updatedRoutines)
+
+    if (token) {
+      try {
+        await apiCall(`/api/routines/${id}`, {
+          method: 'DELETE'
+        })
+
+        await saveRoutines(updatedRoutines)
+      } catch (error) {
+        console.error('Failed to delete routine:', error)
+        // エラー時はローカルで削除
+        saveRoutines(updatedRoutines)
+      }
+    } else {
+      // 認証されていない場合はローカルで削除
+      saveRoutines(updatedRoutines)
+    }
   }
 
   const startEditing = (routine: Routine) => {
@@ -154,7 +298,7 @@ export default function Home() {
     })
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editingId || !newRoutine.title.trim()) return
 
     const updatedRoutines = routines.map(routine =>
@@ -162,7 +306,38 @@ export default function Home() {
         ? { ...routine, title: newRoutine.title, description: newRoutine.description, frequency: newRoutine.frequency, time: newRoutine.time, checklist: newRoutine.checklist }
         : routine
     )
-    saveRoutines(updatedRoutines)
+
+    if (token) {
+      try {
+        const routine = routines.find(r => r.id === editingId)
+        if (!routine) return
+
+        const updatedRoutine = await apiCall(`/api/routines/${editingId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            ...routine,
+            title: newRoutine.title,
+            description: newRoutine.description,
+            frequency: newRoutine.frequency,
+            time: newRoutine.time,
+            checklist: newRoutine.checklist
+          })
+        })
+
+        const serverUpdatedRoutines = routines.map(r =>
+          r.id === editingId ? updatedRoutine : r
+        )
+        await saveRoutines(serverUpdatedRoutines)
+      } catch (error) {
+        console.error('Failed to save edit:', error)
+        // エラー時はローカルで更新
+        saveRoutines(updatedRoutines)
+      }
+    } else {
+      // 認証されていない場合はローカルで更新
+      saveRoutines(updatedRoutines)
+    }
+
     setEditingId(null)
     setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], checklist: [{ text: '', checked: false }] })
   }
@@ -207,7 +382,7 @@ export default function Home() {
   const updateChecklistChecked = (idx: number, checked: boolean) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.map((item, i) => i === idx ? { ...item, checked } : item) }))
 
   // Todo関連の関数
-  const addTodo = () => {
+  const addTodo = async () => {
     if (!newTodo.title.trim()) return
 
     const todo: Todo = {
@@ -218,25 +393,93 @@ export default function Home() {
       dueDate: newTodo.dueDate || null,
       completed: false,
       createdAt: new Date().toISOString(),
-      userId: 'local'
+      userId: token ? 'server' : 'local'
     }
 
-    const updatedTodos = [...todos, todo]
-    saveTodos(updatedTodos)
+    if (token) {
+      try {
+        const todoData = {
+          title: newTodo.title,
+          description: newTodo.description,
+          priority: newTodo.priority,
+          dueDate: newTodo.dueDate || null
+        }
+
+        const newTodoData = await apiCall('/api/todos', {
+          method: 'POST',
+          body: JSON.stringify(todoData)
+        })
+
+        const updatedTodos = [...todos, newTodoData]
+        await saveTodos(updatedTodos)
+      } catch (error) {
+        console.error('Failed to add todo:', error)
+        // エラー時はローカルストレージに保存
+        const updatedTodos = [...todos, todo]
+        saveTodos(updatedTodos)
+      }
+    } else {
+      // 認証されていない場合はローカルストレージに保存
+      const updatedTodos = [...todos, todo]
+      saveTodos(updatedTodos)
+    }
+
     setNewTodo({ title: '', description: '', priority: 'low', dueDate: '' })
     setShowTodoForm(false)
   }
 
-  const toggleTodo = (id: string) => {
-    const updatedTodos = todos.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+  const toggleTodo = async (id: string) => {
+    const todo = todos.find(t => t.id === id)
+    if (!todo) return
+
+    const updatedTodos = todos.map(t =>
+      t.id === id ? { ...t, completed: !t.completed } : t
     )
-    saveTodos(updatedTodos)
+
+    if (token) {
+      try {
+        const updatedTodo = await apiCall(`/api/todos/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            ...todo,
+            completed: !todo.completed
+          })
+        })
+
+        const serverUpdatedTodos = todos.map(t =>
+          t.id === id ? updatedTodo : t
+        )
+        await saveTodos(serverUpdatedTodos)
+      } catch (error) {
+        console.error('Failed to toggle todo:', error)
+        // エラー時はローカルで更新
+        saveTodos(updatedTodos)
+      }
+    } else {
+      // 認証されていない場合はローカルで更新
+      saveTodos(updatedTodos)
+    }
   }
 
-  const deleteTodo = (id: string) => {
+  const deleteTodo = async (id: string) => {
     const updatedTodos = todos.filter(todo => todo.id !== id)
-    saveTodos(updatedTodos)
+
+    if (token) {
+      try {
+        await apiCall(`/api/todos/${id}`, {
+          method: 'DELETE'
+        })
+
+        await saveTodos(updatedTodos)
+      } catch (error) {
+        console.error('Failed to delete todo:', error)
+        // エラー時はローカルで削除
+        saveTodos(updatedTodos)
+      }
+    } else {
+      // 認証されていない場合はローカルで削除
+      saveTodos(updatedTodos)
+    }
   }
 
   const startEditingTodo = (todo: Todo) => {
@@ -249,7 +492,7 @@ export default function Home() {
     })
   }
 
-  const saveTodoEdit = () => {
+  const saveTodoEdit = async () => {
     if (!editingTodoId || !newTodo.title.trim()) return
 
     const updatedTodos = todos.map(todo =>
@@ -257,7 +500,37 @@ export default function Home() {
         ? { ...todo, title: newTodo.title, description: newTodo.description, priority: newTodo.priority, dueDate: newTodo.dueDate || null }
         : todo
     )
-    saveTodos(updatedTodos)
+
+    if (token) {
+      try {
+        const todo = todos.find(t => t.id === editingTodoId)
+        if (!todo) return
+
+        const updatedTodo = await apiCall(`/api/todos/${editingTodoId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            ...todo,
+            title: newTodo.title,
+            description: newTodo.description,
+            priority: newTodo.priority,
+            dueDate: newTodo.dueDate || null
+          })
+        })
+
+        const serverUpdatedTodos = todos.map(t =>
+          t.id === editingTodoId ? updatedTodo : t
+        )
+        await saveTodos(serverUpdatedTodos)
+      } catch (error) {
+        console.error('Failed to save todo edit:', error)
+        // エラー時はローカルで更新
+        saveTodos(updatedTodos)
+      }
+    } else {
+      // 認証されていない場合はローカルで更新
+      saveTodos(updatedTodos)
+    }
+
     setEditingTodoId(null)
     setNewTodo({ title: '', description: '', priority: 'low', dueDate: '' })
   }
@@ -314,12 +587,12 @@ export default function Home() {
           </h1>
           <p className="subtitle">毎日の習慣を管理して、より良い生活を</p>
         </div>
-        <div className="user-section">
-          <div className="user-info">
-            <User size={16} />
-            <span>{user.username}</span>
+                  <div className="user-section">
+            <div className="user-info">
+              <User size={16} />
+              <span>{user?.username || 'ユーザー'}</span>
+            </div>
           </div>
-        </div>
       </header>
 
       <div className="stats">
