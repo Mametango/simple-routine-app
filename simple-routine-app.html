@@ -490,6 +490,253 @@
         .form-checklist button:hover {
             background: #f8ffae;
         }
+        /* メインタブ */
+        .main-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #a8edea;
+            padding-bottom: 0.5rem;
+        }
+
+        .main-tab-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem 0.75rem 0 0;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .main-tab-button:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .main-tab-button.active {
+            background: #ffd6e7;
+            color: #e91e63;
+        }
+
+        .main-tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e91e63;
+        }
+
+        .main-tab-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* タブコンテンツ */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Todoフィルター */
+        .todo-filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .todo-filter-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.75rem;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+
+        .todo-filter-button:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .todo-filter-button.active {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        /* Todoカード */
+        .todo-card {
+            background: rgba(255,255,255,0.98);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px #a8edea33;
+            transition: all 0.3s ease;
+            border-left: 4px solid #6c757d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .todo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px #f8ffae99;
+        }
+
+        .todo-card.completed {
+            opacity: 0.7;
+            border-left-color: #28a745;
+        }
+
+        .todo-card.high-priority {
+            border-left-color: #dc3545;
+        }
+
+        .todo-card.medium-priority {
+            border-left-color: #ffc107;
+        }
+
+        .todo-card.low-priority {
+            border-left-color: #6c757d;
+        }
+
+        .todo-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .todo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .todo-title {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #43cea2;
+        }
+
+        .todo-actions {
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .todo-card:hover .todo-actions {
+            opacity: 1;
+        }
+
+        .todo-description {
+            color: #7ec4cf;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .todo-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: #7ec4cf;
+        }
+
+        .todo-priority {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .todo-due-date {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .priority-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .priority-high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .priority-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .priority-low {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .todo-complete-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 0.75rem;
+            background: #e9ecef;
+            color: #6c757d;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .todo-complete-button:hover {
+            background: #dee2e6;
+        }
+
+        .todo-complete-button.completed {
+            background: linear-gradient(135deg, #f8ffae 0%, #43cea2 100%);
+            color: #fff;
+        }
+
+        .todos-container {
+            margin-top: 1.5rem;
+        }
+
+        .todos-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
         @media (max-width: 768px) {
             .app {
                 padding: 1rem;
@@ -550,6 +797,37 @@
                 grid-template-columns: 1fr;
                 gap: 1rem;
             }
+            .main-tabs {
+                gap: 0.25rem;
+            }
+            .main-tab-button {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+            .todo-card {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+                padding: 1.25rem;
+            }
+            .todo-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            .todo-actions {
+                align-self: flex-end;
+                opacity: 1;
+            }
+            .todo-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .todo-complete-button {
+                align-self: stretch;
+                justify-content: center;
+                padding: 1rem;
+            }
         }
     </style>
 </head>
@@ -595,73 +873,145 @@
             </div>
         </div>
 
-        <div class="frequency-tabs">
-            <button class="tab-button active" data-filter="all">
-                <i data-lucide="list" class="tab-icon"></i>
-                全て
+        <!-- メインタブ -->
+        <div class="main-tabs">
+            <button class="main-tab-button active" data-tab="routines">
+                <i data-lucide="target" class="main-tab-icon"></i>
+                ルーティーン
             </button>
-            <button class="tab-button" data-filter="daily">
-                <i data-lucide="sun" class="tab-icon"></i>
-                毎日
-            </button>
-            <button class="tab-button" data-filter="weekly">
-                <i data-lucide="calendar-days" class="tab-icon"></i>
-                毎週
-            </button>
-            <button class="tab-button" data-filter="monthly">
-                <i data-lucide="calendar" class="tab-icon"></i>
-                毎月
+            <button class="main-tab-button" data-tab="todos">
+                <i data-lucide="check-square" class="main-tab-icon"></i>
+                Todo
             </button>
         </div>
 
-        <div class="actions">
-            <button class="add-button" id="addButton">
-                <i data-lucide="plus" class="button-icon"></i>
-                新しいルーティンを追加
-            </button>
-        </div>
+        <!-- ルーティーンタブコンテンツ -->
+        <div class="tab-content active" id="routinesTab">
+            <div class="frequency-tabs">
+                <button class="tab-button active" data-filter="all">
+                    <i data-lucide="list" class="tab-icon"></i>
+                    全て
+                </button>
+                <button class="tab-button" data-filter="daily">
+                    <i data-lucide="sun" class="tab-icon"></i>
+                    毎日
+                </button>
+                <button class="tab-button" data-filter="weekly">
+                    <i data-lucide="calendar-days" class="tab-icon"></i>
+                    毎週
+                </button>
+                <button class="tab-button" data-filter="monthly">
+                    <i data-lucide="calendar" class="tab-icon"></i>
+                    毎月
+                </button>
+            </div>
 
-        <div class="form-container" id="formContainer" style="display: none;">
-            <div class="form">
-                <input type="text" placeholder="ルーティンのタイトル" id="routineTitle" class="form-input">
-                <textarea placeholder="説明（オプション）" id="routineDescription" class="form-textarea"></textarea>
-                
-                <div class="form-checklist">
-                    <label class="form-label">メニュー（チェックリスト）</label>
-                    <div id="checklistItems">
-                        <div class="checklist-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                            <input type="checkbox" class="checklist-checkbox">
-                            <input type="text" placeholder="メニュー名（例：ベンチプレス）" class="checklist-text" style="flex: 1;">
-                            <button type="button" class="remove-checklist-item" style="margin-left: 4px;">削除</button>
+            <div class="actions">
+                <button class="add-button" id="addRoutineButton">
+                    <i data-lucide="plus" class="button-icon"></i>
+                    新しいルーティンを追加
+                </button>
+            </div>
+
+            <div class="form-container" id="routineFormContainer" style="display: none;">
+                <div class="form">
+                    <input type="text" placeholder="ルーティンのタイトル" id="routineTitle" class="form-input">
+                    <textarea placeholder="説明（オプション）" id="routineDescription" class="form-textarea"></textarea>
+                    
+                    <div class="form-checklist">
+                        <label class="form-label">メニュー（チェックリスト）</label>
+                        <div id="checklistItems">
+                            <div class="checklist-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <input type="checkbox" class="checklist-checkbox">
+                                <input type="text" placeholder="メニュー名（例：ベンチプレス）" class="checklist-text" style="flex: 1;">
+                                <button type="button" class="remove-checklist-item" style="margin-left: 4px;">削除</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addChecklistItem" style="margin-top: 4px;">項目を追加</button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">頻度</label>
+                            <select id="routineFrequency" class="form-select">
+                                <option value="daily">毎日</option>
+                                <option value="weekly">毎週</option>
+                                <option value="monthly">毎月</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">時間</label>
+                            <input type="time" id="routineTime" class="form-input">
                         </div>
                     </div>
-                    <button type="button" id="addChecklistItem" style="margin-top: 4px;">項目を追加</button>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">頻度</label>
-                        <select id="routineFrequency" class="form-select">
-                            <option value="daily">毎日</option>
-                            <option value="weekly">毎週</option>
-                            <option value="monthly">毎月</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">時間</label>
-                        <input type="time" id="routineTime" class="form-input">
+                    
+                    <div class="form-buttons">
+                        <button class="save-button" id="saveRoutineButton">保存</button>
                     </div>
                 </div>
-                
-                <div class="form-buttons">
-                    <button class="save-button" id="saveButton">保存</button>
+            </div>
+
+            <div class="routines-container">
+                <div class="routines-list" id="routinesList">
+                    <!-- ルーティンがここに動的に追加されます -->
                 </div>
             </div>
         </div>
 
-        <div class="routines-container">
-            <div class="routines-list" id="routinesList">
-                <!-- ルーティンがここに動的に追加されます -->
+        <!-- Todoタブコンテンツ -->
+        <div class="tab-content" id="todosTab">
+            <div class="todo-filters">
+                <button class="todo-filter-button active" data-todo-filter="all">
+                    <i data-lucide="list" class="tab-icon"></i>
+                    全て
+                </button>
+                <button class="todo-filter-button" data-todo-filter="pending">
+                    <i data-lucide="clock" class="tab-icon"></i>
+                    未完了
+                </button>
+                <button class="todo-filter-button" data-todo-filter="completed">
+                    <i data-lucide="check" class="tab-icon"></i>
+                    完了済み
+                </button>
+            </div>
+
+            <div class="actions">
+                <button class="add-button" id="addTodoButton">
+                    <i data-lucide="plus" class="button-icon"></i>
+                    新しいTodoを追加
+                </button>
+            </div>
+
+            <div class="form-container" id="todoFormContainer" style="display: none;">
+                <div class="form">
+                    <input type="text" placeholder="Todoのタイトル" id="todoTitle" class="form-input">
+                    <textarea placeholder="説明（オプション）" id="todoDescription" class="form-textarea"></textarea>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">優先度</label>
+                            <select id="todoPriority" class="form-select">
+                                <option value="low">低</option>
+                                <option value="medium">中</option>
+                                <option value="high">高</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">期限</label>
+                            <input type="date" id="todoDueDate" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button class="save-button" id="saveTodoButton">保存</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="todos-container">
+                <div class="todos-list" id="todosList">
+                    <!-- Todoがここに動的に追加されます -->
+                </div>
             </div>
         </div>
     </div>
@@ -709,14 +1059,19 @@
         let currentFilter = 'all';
         let editingRoutineId = null;
 
+        // Todoデータの管理
+        let todos = [];
+        let currentTodoFilter = 'all';
+        let editingTodoId = null;
+
         // DOM要素の取得
-        const addButton = document.getElementById('addButton');
-        const formContainer = document.getElementById('formContainer');
+        const addRoutineButton = document.getElementById('addRoutineButton');
+        const routineFormContainer = document.getElementById('routineFormContainer');
         const routineTitle = document.getElementById('routineTitle');
         const routineDescription = document.getElementById('routineDescription');
         const routineFrequency = document.getElementById('routineFrequency');
         const routineTime = document.getElementById('routineTime');
-        const saveButton = document.getElementById('saveButton');
+        const saveRoutineButton = document.getElementById('saveRoutineButton');
         const routinesList = document.getElementById('routinesList');
         const totalCount = document.getElementById('totalCount');
         const completedCount = document.getElementById('completedCount');
@@ -733,6 +1088,16 @@
         const addEditChecklistItem = document.getElementById('addEditChecklistItem');
         const editChecklistItems = document.getElementById('editChecklistItems');
 
+        // Todo用DOM要素
+        const addTodoButton = document.getElementById('addTodoButton');
+        const todoFormContainer = document.getElementById('todoFormContainer');
+        const todoTitle = document.getElementById('todoTitle');
+        const todoDescription = document.getElementById('todoDescription');
+        const todoPriority = document.getElementById('todoPriority');
+        const todoDueDate = document.getElementById('todoDueDate');
+        const saveTodoButton = document.getElementById('saveTodoButton');
+        const todosList = document.getElementById('todosList');
+
         // ローカルストレージからルーティンを読み込み
         function loadRoutines() {
             const savedRoutines = localStorage.getItem('routines');
@@ -745,6 +1110,20 @@
         // ルーティンをローカルストレージに保存
         function saveRoutines() {
             localStorage.setItem('routines', JSON.stringify(routines));
+        }
+
+        // ローカルストレージからTodoを読み込み
+        function loadTodos() {
+            const savedTodos = localStorage.getItem('todos');
+            if (savedTodos) {
+                todos = JSON.parse(savedTodos);
+            }
+            updateTodoDisplay();
+        }
+
+        // Todoをローカルストレージに保存
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
         }
 
         // 表示を更新
@@ -771,6 +1150,111 @@
             totalCount.textContent = total;
             completedCount.textContent = completed;
             completionRate.textContent = rate + '%';
+        }
+
+        // Todo表示を更新
+        function updateTodoDisplay() {
+            const filteredTodos = getFilteredTodos();
+            displayTodos(filteredTodos);
+        }
+
+        // フィルタリングされたTodoを取得
+        function getFilteredTodos() {
+            if (currentTodoFilter === 'all') {
+                return todos;
+            } else if (currentTodoFilter === 'pending') {
+                return todos.filter(todo => !todo.completed);
+            } else if (currentTodoFilter === 'completed') {
+                return todos.filter(todo => todo.completed);
+            }
+            return todos;
+        }
+
+        // Todoを表示
+        function displayTodos(todosToDisplay) {
+            if (todosToDisplay.length === 0) {
+                const filterLabel = getTodoFilterLabel(currentTodoFilter);
+                todosList.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="check-square" class="empty-icon"></i>
+                        <h3>${currentTodoFilter === 'all' ? 'まだTodoがありません' : filterLabel + 'のTodoがありません'}</h3>
+                        <p>${currentTodoFilter === 'all' ? '新しいTodoを追加して、タスクを管理しましょう！' : filterLabel + 'のTodoを追加してみましょう！'}</p>
+                    </div>
+                `;
+            } else {
+                todosList.innerHTML = todosToDisplay.map(todo => createTodoHTML(todo)).join('');
+            }
+            
+            // Lucideアイコンを更新
+            lucide.createIcons();
+        }
+
+        // TodoのHTMLを生成
+        function createTodoHTML(todo) {
+            const priorityLabel = getPriorityLabel(todo.priority);
+            const priorityClass = `priority-${todo.priority}`;
+            const createdDate = new Date(todo.createdAt).toLocaleDateString('ja-JP');
+            const dueDate = todo.dueDate ? new Date(todo.dueDate).toLocaleDateString('ja-JP') : null;
+            
+            return `
+                <div class="todo-card ${todo.completed ? 'completed' : ''} ${todo.priority}-priority" data-id="${todo.id}">
+                    <div class="todo-content">
+                        <div class="todo-header">
+                            <h3 class="todo-title">${todo.title}</h3>
+                            <div class="todo-actions">
+                                <button class="action-button edit" onclick="editTodo('${todo.id}')" title="編集">
+                                    <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                                </button>
+                                <button class="action-button delete" onclick="deleteTodo('${todo.id}')" title="削除">
+                                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        ${todo.description ? `<p class="todo-description">${todo.description}</p>` : ''}
+                        
+                        <div class="todo-meta">
+                            <div class="todo-priority">
+                                <i data-lucide="flag" style="width: 14px; height: 14px;"></i>
+                                <span class="priority-badge ${priorityClass}">${priorityLabel}</span>
+                            </div>
+                            ${dueDate ? `
+                                <div class="todo-due-date">
+                                    <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                                    <span>期限: ${dueDate}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="todo-date">作成日: ${createdDate}</div>
+                    </div>
+                    
+                    <button class="todo-complete-button ${todo.completed ? 'completed' : ''}" onclick="toggleTodo('${todo.id}')">
+                        <i data-lucide="check" style="width: 20px; height: 20px;"></i>
+                        ${todo.completed ? '完了済み' : '完了にする'}
+                    </button>
+                </div>
+            `;
+        }
+
+        // 優先度のラベルを取得
+        function getPriorityLabel(priority) {
+            const labels = {
+                'high': '高',
+                'medium': '中',
+                'low': '低'
+            };
+            return labels[priority] || priority;
+        }
+
+        // Todoフィルターのラベルを取得
+        function getTodoFilterLabel(filter) {
+            const labels = {
+                'all': '全て',
+                'pending': '未完了',
+                'completed': '完了済み'
+            };
+            return labels[filter] || filter;
         }
 
         // ルーティンを表示
@@ -886,7 +1370,94 @@
             
             // フォームをリセット
             resetForm();
-            formContainer.style.display = 'none';
+            routineFormContainer.style.display = 'none';
+        }
+
+        // Todoの追加
+        function addTodo() {
+            const title = todoTitle.value.trim();
+            if (!title) return;
+            
+            const todo = {
+                id: Date.now().toString(),
+                title: title,
+                description: todoDescription.value.trim(),
+                priority: todoPriority.value,
+                dueDate: todoDueDate.value || null,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+
+            todos.push(todo);
+            saveTodos();
+            updateTodoDisplay();
+            
+            // フォームをリセット
+            resetTodoForm();
+            todoFormContainer.style.display = 'none';
+        }
+
+        // Todoフォームをリセット
+        function resetTodoForm() {
+            todoTitle.value = '';
+            todoDescription.value = '';
+            todoPriority.value = 'low';
+            todoDueDate.value = '';
+        }
+
+        // Todoの編集
+        function editTodo(id) {
+            const todo = todos.find(t => t.id === id);
+            if (!todo) return;
+
+            editingTodoId = id;
+            // 編集モーダルをTodo用に変更
+            editTitle.value = todo.title;
+            editDescription.value = todo.description || '';
+            editFrequency.value = todo.priority; // 一時的に頻度フィールドを使用
+            editTime.value = todo.dueDate || '';
+            
+            editModal.style.display = 'flex';
+        }
+
+        // Todoの編集を保存
+        function saveTodoEdit() {
+            if (!editingTodoId) return;
+
+            const todo = todos.find(t => t.id === editingTodoId);
+            if (!todo) return;
+
+            const title = editTitle.value.trim();
+            if (!title) return;
+
+            todo.title = title;
+            todo.description = editDescription.value.trim();
+            todo.priority = editFrequency.value; // 一時的に頻度フィールドを使用
+            todo.dueDate = editTime.value || null;
+
+            saveTodos();
+            updateTodoDisplay();
+            editModal.style.display = 'none';
+            editingTodoId = null;
+        }
+
+        // Todoの削除
+        function deleteTodo(id) {
+            if (confirm('このTodoを削除しますか？')) {
+                todos = todos.filter(t => t.id !== id);
+                saveTodos();
+                updateTodoDisplay();
+            }
+        }
+
+        // Todoの完了状態を切り替え
+        function toggleTodo(id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                saveTodos();
+                updateTodoDisplay();
+            }
         }
 
         // チェックリストアイテムを取得
@@ -1042,20 +1613,37 @@
         }
 
         // イベントリスナーの設定
-        addButton.addEventListener('click', () => {
-            if (formContainer.style.display === 'none') {
-                formContainer.style.display = 'block';
+        addRoutineButton.addEventListener('click', () => {
+            if (routineFormContainer.style.display === 'none') {
+                routineFormContainer.style.display = 'block';
             } else {
-                formContainer.style.display = 'none';
+                routineFormContainer.style.display = 'none';
             }
         });
 
-        saveButton.addEventListener('click', addRoutine);
+        saveRoutineButton.addEventListener('click', addRoutine);
 
-        editSaveButton.addEventListener('click', saveEdit);
+        addTodoButton.addEventListener('click', () => {
+            if (todoFormContainer.style.display === 'none') {
+                todoFormContainer.style.display = 'block';
+            } else {
+                todoFormContainer.style.display = 'none';
+            }
+        });
+
+        saveTodoButton.addEventListener('click', addTodo);
+
+        editSaveButton.addEventListener('click', () => {
+            if (editingRoutineId) {
+                saveEdit();
+            } else if (editingTodoId) {
+                saveTodoEdit();
+            }
+        });
         editCancelButton.addEventListener('click', () => {
             editModal.style.display = 'none';
             editingRoutineId = null;
+            editingTodoId = null;
         });
 
         addChecklistItem.addEventListener('click', () => {
@@ -1081,7 +1669,21 @@
             addEditChecklistItemToDOM();
         });
 
-        // フィルターボタンのイベントリスナー
+        // メインタブのイベントリスナー
+        document.querySelectorAll('.main-tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // アクティブクラスを更新
+                document.querySelectorAll('.main-tab-button').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // タブコンテンツを切り替え
+                const tabName = button.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(tabName + 'Tab').classList.add('active');
+            });
+        });
+
+        // ルーティンフィルターボタンのイベントリスナー
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 // アクティブクラスを更新
@@ -1094,9 +1696,23 @@
             });
         });
 
+        // Todoフィルターボタンのイベントリスナー
+        document.querySelectorAll('.todo-filter-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // アクティブクラスを更新
+                document.querySelectorAll('.todo-filter-button').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // フィルターを更新
+                currentTodoFilter = button.dataset.todoFilter;
+                updateTodoDisplay();
+            });
+        });
+
         // 初期化
         document.addEventListener('DOMContentLoaded', () => {
             loadRoutines();
+            loadTodos();
             lucide.createIcons();
         });
     </script>
