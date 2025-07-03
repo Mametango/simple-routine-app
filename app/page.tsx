@@ -569,6 +569,20 @@ export default function Home() {
     return colors[priority] || colors.low
   }
 
+  // ログアウト処理
+  const handleLogout = async () => {
+    try {
+      const result = await logout()
+      if (!result.success) {
+        console.error('Logout failed:', result.error)
+        alert('ログアウトに失敗しました: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+      alert('ログアウト中にエラーが発生しました')
+    }
+  }
+
   if (loadingRoutines) {
     return (
       <div className="app">
@@ -593,7 +607,7 @@ export default function Home() {
             <span>{user?.username || 'ゲスト'}</span>
           </div>
           {user ? (
-            <button onClick={logout} className="logout-button">
+            <button onClick={handleLogout} className="logout-button">
               <LogOut size={16} />
               ログアウト
             </button>

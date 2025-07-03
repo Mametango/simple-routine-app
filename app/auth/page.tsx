@@ -11,7 +11,8 @@ export default function AuthPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    username: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -27,10 +28,10 @@ export default function AuthPage() {
     setLoading(true)
 
     try {
-      let success = false
+      let result
 
       if (isLogin) {
-        success = await login(formData.email, formData.password)
+        result = await login(formData.email, formData.password)
       } else {
         if (formData.password !== formData.confirmPassword) {
           setError('パスワードが一致しません')
@@ -42,29 +43,17 @@ export default function AuthPage() {
           setLoading(false)
           return
         }
-        success = await register(formData.email, formData.password)
+        result = await register(formData.email, formData.password, formData.username)
       }
 
-      if (success) {
+      if (result.success) {
         router.push('/')
       } else {
-        setError(isLogin ? 'メールアドレスまたはパスワードが正しくありません' : '登録に失敗しました')
+        setError(result.error || '認証に失敗しました')
       }
     } catch (error: any) {
       console.error('Auth error:', error)
-      if (error.code === 'auth/user-not-found') {
-        setError('ユーザーが見つかりません')
-      } else if (error.code === 'auth/wrong-password') {
-        setError('パスワードが正しくありません')
-      } else if (error.code === 'auth/email-already-in-use') {
-        setError('このメールアドレスは既に使用されています')
-      } else if (error.code === 'auth/weak-password') {
-        setError('パスワードが弱すぎます')
-      } else if (error.code === 'auth/invalid-email') {
-        setError('無効なメールアドレスです')
-      } else {
-        setError('エラーが発生しました。もう一度お試しください。')
-      }
+      setError('エラーが発生しました。もう一度お試しください。')
     } finally {
       setLoading(false)
     }
@@ -75,19 +64,15 @@ export default function AuthPage() {
     setLoading(true)
 
     try {
-      const success = await loginWithGoogle()
-      if (success) {
+      const result = await loginWithGoogle()
+      if (result.success) {
         router.push('/')
       } else {
-        setError('Googleログインに失敗しました')
+        setError(result.error || 'Googleログインに失敗しました')
       }
     } catch (error: any) {
       console.error('Google login error:', error)
-      if (error.code === 'auth/popup-closed-by-user') {
-        setError('ログインがキャンセルされました')
-      } else {
-        setError('Googleログインでエラーが発生しました')
-      }
+      setError('Googleログインでエラーが発生しました')
     } finally {
       setLoading(false)
     }
@@ -109,6 +94,24 @@ export default function AuthPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
+          {!isLogin && (
+            <div className="form-group">
+              <label htmlFor="username">ユーザー名（オプション）</label>
+              <div className="input-wrapper">
+                <User size={20} className="input-icon" />
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="ユーザー名を入力"
+                  className="form-input"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="email">メールアドレス</label>
             <div className="input-wrapper">
@@ -214,7 +217,7 @@ export default function AuthPage() {
               onClick={() => {
                 setIsLogin(!isLogin)
                 setError('')
-                setFormData({ email: '', password: '', confirmPassword: '' })
+                setFormData({ email: '', password: '', confirmPassword: '', username: '' })
               }}
               className="toggle-button"
             >
