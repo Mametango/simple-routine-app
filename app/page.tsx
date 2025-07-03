@@ -15,6 +15,7 @@ interface Routine {
   description: string;
   frequency: string;
   time: string;
+  weekdays?: string[];
   completed: boolean;
   createdAt: string;
   userId: string;
@@ -26,7 +27,26 @@ interface NewRoutine {
   description: string;
   frequency: string;
   time: string;
+  weekdays: string[];
   checklist: ChecklistItem[];
+}
+
+interface Todo {
+  id: string;
+  title: string;
+  description: string;
+  priority: string;
+  dueDate: string | null;
+  completed: boolean;
+  createdAt: string;
+  userId: string;
+}
+
+interface NewTodo {
+  title: string;
+  description: string;
+  priority: string;
+  dueDate: string;
 }
 
 export default function Home() {
@@ -36,6 +56,7 @@ export default function Home() {
     description: '',
     frequency: 'daily',
     time: '',
+    weekdays: [],
     checklist: [{ text: '', checked: false }],
   })
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -43,6 +64,20 @@ export default function Home() {
   const [loadingRoutines, setLoadingRoutines] = useState(true)
   const [currentFilter, setCurrentFilter] = useState('all')
   const [user, setUser] = useState({ username: 'ユーザー' })
+
+  // Todo関連の状態
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [newTodo, setNewTodo] = useState<NewTodo>({
+    title: '',
+    description: '',
+    priority: 'low',
+    dueDate: '',
+  })
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
+  const [showTodoForm, setShowTodoForm] = useState(false)
+  const [loadingTodos, setLoadingTodos] = useState(true)
+  const [currentTodoFilter, setCurrentTodoFilter] = useState('all')
+  const [activeTab, setActiveTab] = useState<'routines' | 'todos'>('routines')
 
   // ローカルストレージからルーティンを読み込み
   useEffect(() => {
@@ -53,10 +88,25 @@ export default function Home() {
     setLoadingRoutines(false)
   }, [])
 
+  // ローカルストレージからTodoを読み込み
+  useEffect(() => {
+    const savedTodos = localStorage.getItem('todos')
+    if (savedTodos) {
+      setTodos(JSON.parse(savedTodos))
+    }
+    setLoadingTodos(false)
+  }, [])
+
   // ルーティンをローカルストレージに保存
   const saveRoutines = (newRoutines: Routine[]) => {
     setRoutines(newRoutines)
     localStorage.setItem('routines', JSON.stringify(newRoutines))
+  }
+
+  // Todoをローカルストレージに保存
+  const saveTodos = (newTodos: Todo[]) => {
+    setTodos(newTodos)
+    localStorage.setItem('todos', JSON.stringify(newTodos))
   }
 
   const addRoutine = () => {
@@ -76,7 +126,7 @@ export default function Home() {
 
     const updatedRoutines = [...routines, routine]
     saveRoutines(updatedRoutines)
-    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
+    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], checklist: [{ text: '', checked: false }] })
     setShowForm(false)
   }
 
@@ -99,6 +149,7 @@ export default function Home() {
       description: routine.description, 
       frequency: routine.frequency,
       time: routine.time,
+      weekdays: routine.weekdays || [],
       checklist: routine.checklist || [{ text: '', checked: false }]
     })
   }
@@ -113,12 +164,12 @@ export default function Home() {
     )
     saveRoutines(updatedRoutines)
     setEditingId(null)
-    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
+    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], checklist: [{ text: '', checked: false }] })
   }
 
   const cancelEdit = () => {
     setEditingId(null)
-    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', checklist: [{ text: '', checked: false }] })
+    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], checklist: [{ text: '', checked: false }] })
   }
 
   const getFilteredRoutines = () => {
@@ -154,6 +205,96 @@ export default function Home() {
   const removeChecklistItem = (idx: number) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.filter((_, i) => i !== idx) }))
   const updateChecklistText = (idx: number, value: string) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.map((item, i) => i === idx ? { ...item, text: value } : item) }))
   const updateChecklistChecked = (idx: number, checked: boolean) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.map((item, i) => i === idx ? { ...item, checked } : item) }))
+
+  // Todo関連の関数
+  const addTodo = () => {
+    if (!newTodo.title.trim()) return
+
+    const todo: Todo = {
+      id: Date.now().toString(),
+      title: newTodo.title,
+      description: newTodo.description,
+      priority: newTodo.priority,
+      dueDate: newTodo.dueDate || null,
+      completed: false,
+      createdAt: new Date().toISOString(),
+      userId: 'local'
+    }
+
+    const updatedTodos = [...todos, todo]
+    saveTodos(updatedTodos)
+    setNewTodo({ title: '', description: '', priority: 'low', dueDate: '' })
+    setShowTodoForm(false)
+  }
+
+  const toggleTodo = (id: string) => {
+    const updatedTodos = todos.map(todo =>
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    )
+    saveTodos(updatedTodos)
+  }
+
+  const deleteTodo = (id: string) => {
+    const updatedTodos = todos.filter(todo => todo.id !== id)
+    saveTodos(updatedTodos)
+  }
+
+  const startEditingTodo = (todo: Todo) => {
+    setEditingTodoId(todo.id)
+    setNewTodo({ 
+      title: todo.title, 
+      description: todo.description, 
+      priority: todo.priority,
+      dueDate: todo.dueDate || ''
+    })
+  }
+
+  const saveTodoEdit = () => {
+    if (!editingTodoId || !newTodo.title.trim()) return
+
+    const updatedTodos = todos.map(todo =>
+      todo.id === editingTodoId
+        ? { ...todo, title: newTodo.title, description: newTodo.description, priority: newTodo.priority, dueDate: newTodo.dueDate || null }
+        : todo
+    )
+    saveTodos(updatedTodos)
+    setEditingTodoId(null)
+    setNewTodo({ title: '', description: '', priority: 'low', dueDate: '' })
+  }
+
+  const cancelTodoEdit = () => {
+    setEditingTodoId(null)
+    setNewTodo({ title: '', description: '', priority: 'low', dueDate: '' })
+  }
+
+  const getFilteredTodos = () => {
+    if (currentTodoFilter === 'all') {
+      return todos
+    } else if (currentTodoFilter === 'pending') {
+      return todos.filter(todo => !todo.completed)
+    } else if (currentTodoFilter === 'completed') {
+      return todos.filter(todo => todo.completed)
+    }
+    return todos
+  }
+
+  const getPriorityLabel = (priority: string) => {
+    const labels: { [key: string]: string } = {
+      'high': '高',
+      'medium': '中',
+      'low': '低'
+    }
+    return labels[priority] || priority
+  }
+
+  const getPriorityColor = (priority: string) => {
+    const colors: { [key: string]: string } = {
+      'high': 'text-red-600 bg-red-100',
+      'medium': 'text-yellow-600 bg-yellow-100',
+      'low': 'text-blue-600 bg-blue-100'
+    }
+    return colors[priority] || colors.low
+  }
 
   if (loadingRoutines) {
     return (
@@ -207,46 +348,108 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="frequency-tabs">
+      {/* メインタブ */}
+      <div className="main-tabs">
         <button 
-          className={`tab-button ${currentFilter === 'all' ? 'active' : ''}`}
-          onClick={() => setCurrentFilter('all')}
+          className={`main-tab-button ${activeTab === 'routines' ? 'active' : ''}`}
+          onClick={() => setActiveTab('routines')}
         >
-          <List className="tab-icon" />
-          全て
+          <Target className="main-tab-icon" />
+          ルーティーン
         </button>
         <button 
-          className={`tab-button ${currentFilter === 'daily' ? 'active' : ''}`}
-          onClick={() => setCurrentFilter('daily')}
+          className={`main-tab-button ${activeTab === 'todos' ? 'active' : ''}`}
+          onClick={() => setActiveTab('todos')}
         >
-          <Sun className="tab-icon" />
-          毎日
-        </button>
-        <button 
-          className={`tab-button ${currentFilter === 'weekly' ? 'active' : ''}`}
-          onClick={() => setCurrentFilter('weekly')}
-        >
-          <CalendarDays className="tab-icon" />
-          毎週
-        </button>
-        <button 
-          className={`tab-button ${currentFilter === 'monthly' ? 'active' : ''}`}
-          onClick={() => setCurrentFilter('monthly')}
-        >
-          <Calendar className="tab-icon" />
-          毎月
+          <Check className="main-tab-icon" />
+          Todo
         </button>
       </div>
 
-      <div className="actions">
-        <button
-          className="add-button"
-          onClick={() => setShowForm(!showForm)}
-        >
-          <Plus className="button-icon" />
-          {showForm ? 'キャンセル' : '新しいルーティンを追加'}
-        </button>
-      </div>
+      {/* ルーティーンタブコンテンツ */}
+      {activeTab === 'routines' && (
+        <>
+          <div className="frequency-tabs">
+            <button 
+              className={`tab-button ${currentFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setCurrentFilter('all')}
+            >
+              <List className="tab-icon" />
+              全て
+            </button>
+            <button 
+              className={`tab-button ${currentFilter === 'daily' ? 'active' : ''}`}
+              onClick={() => setCurrentFilter('daily')}
+            >
+              <Sun className="tab-icon" />
+              毎日
+            </button>
+            <button 
+              className={`tab-button ${currentFilter === 'weekly' ? 'active' : ''}`}
+              onClick={() => setCurrentFilter('weekly')}
+            >
+              <CalendarDays className="tab-icon" />
+              毎週
+            </button>
+            <button 
+              className={`tab-button ${currentFilter === 'monthly' ? 'active' : ''}`}
+              onClick={() => setCurrentFilter('monthly')}
+            >
+              <Calendar className="tab-icon" />
+              毎月
+            </button>
+          </div>
+
+          <div className="actions">
+            <button
+              className="add-button"
+              onClick={() => setShowForm(!showForm)}
+            >
+              <Plus className="button-icon" />
+              {showForm ? 'キャンセル' : '新しいルーティンを追加'}
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Todoタブコンテンツ */}
+      {activeTab === 'todos' && (
+        <>
+          <div className="todo-filters">
+            <button 
+              className={`todo-filter-button ${currentTodoFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setCurrentTodoFilter('all')}
+            >
+              <List className="tab-icon" />
+              全て
+            </button>
+            <button 
+              className={`todo-filter-button ${currentTodoFilter === 'pending' ? 'active' : ''}`}
+              onClick={() => setCurrentTodoFilter('pending')}
+            >
+              <Clock className="tab-icon" />
+              未完了
+            </button>
+            <button 
+              className={`todo-filter-button ${currentTodoFilter === 'completed' ? 'active' : ''}`}
+              onClick={() => setCurrentTodoFilter('completed')}
+            >
+              <Check className="tab-icon" />
+              完了済み
+            </button>
+          </div>
+
+          <div className="actions">
+            <button
+              className="add-button"
+              onClick={() => setShowTodoForm(!showTodoForm)}
+            >
+              <Plus className="button-icon" />
+              {showTodoForm ? 'キャンセル' : '新しいTodoを追加'}
+            </button>
+          </div>
+        </>
+      )}
 
       {showForm && (
         <div className="form-container">
@@ -317,44 +520,177 @@ export default function Home() {
         </div>
       )}
 
-      <div className="routines-container">
-        {loadingRoutines ? (
-          <div className="loading">ルーティンを読み込み中...</div>
-        ) : filteredRoutines.length === 0 ? (
-          <div className="empty-state">
-            <Target className="empty-icon" />
-            <h3>
-              {currentFilter === 'all' 
-                ? 'まだルーティンがありません'
-                : `${getFrequencyLabel(currentFilter)}のルーティンがありません`
-              }
-            </h3>
-            <p>
-              {currentFilter === 'all'
-                ? '新しいルーティンを追加して、毎日の習慣を始めましょう！'
-                : `${getFrequencyLabel(currentFilter)}のルーティンを追加してみましょう！`
-              }
-            </p>
+      {showTodoForm && (
+        <div className="form-container">
+          <div className="form">
+            <input
+              type="text"
+              placeholder="Todoのタイトル"
+              value={newTodo.title}
+              onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
+              className="form-input"
+            />
+            <textarea
+              placeholder="説明（オプション）"
+              value={newTodo.description}
+              onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
+              className="form-textarea"
+            />
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">優先度</label>
+                <select
+                  value={newTodo.priority}
+                  onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value })}
+                  className="form-select"
+                >
+                  <option value="low">低</option>
+                  <option value="medium">中</option>
+                  <option value="high">高</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">期限</label>
+                <input
+                  type="date"
+                  value={newTodo.dueDate}
+                  onChange={(e) => setNewTodo({ ...newTodo, dueDate: e.target.value })}
+                  className="form-input"
+                />
+              </div>
+            </div>
+            <div className="form-buttons">
+              <button onClick={addTodo} className="save-button">
+                保存
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="routines-list">
-            {filteredRoutines.map((routine: Routine) => {
-              const FrequencyIcon = getFrequencyIcon(routine.frequency)
-              return (
-                <div key={routine.id} className={`routine-card ${routine.completed ? 'completed' : ''}`}>
-                  <div className="routine-content">
-                    <div className="routine-header">
-                      <h3 className="routine-title">{routine.title}</h3>
-                      <div className="routine-actions">
+        </div>
+      )}
+
+      {/* ルーティーン表示 */}
+      {activeTab === 'routines' && (
+        <div className="routines-container">
+          {loadingRoutines ? (
+            <div className="loading">ルーティンを読み込み中...</div>
+          ) : filteredRoutines.length === 0 ? (
+            <div className="empty-state">
+              <Target className="empty-icon" />
+              <h3>
+                {currentFilter === 'all' 
+                  ? 'まだルーティンがありません'
+                  : `${getFrequencyLabel(currentFilter)}のルーティンがありません`
+                }
+              </h3>
+              <p>
+                {currentFilter === 'all'
+                  ? '新しいルーティンを追加して、毎日の習慣を始めましょう！'
+                  : `${getFrequencyLabel(currentFilter)}のルーティンを追加してみましょう！`
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="routines-list">
+              {filteredRoutines.map((routine: Routine) => {
+                const FrequencyIcon = getFrequencyIcon(routine.frequency)
+                return (
+                  <div key={routine.id} className={`routine-card ${routine.completed ? 'completed' : ''}`}>
+                    <div className="routine-content">
+                      <div className="routine-header">
+                        <h3 className="routine-title">{routine.title}</h3>
+                        <div className="routine-actions">
+                          <button
+                            onClick={() => startEditing(routine)}
+                            className="action-button edit"
+                            title="編集"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => deleteRoutine(routine.id)}
+                            className="action-button delete"
+                            title="削除"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {routine.description && (
+                        <p className="routine-description">{routine.description}</p>
+                      )}
+                      
+                      <div className="routine-meta">
+                        <div className="routine-frequency">
+                          <FrequencyIcon size={14} />
+                          <span>{getFrequencyLabel(routine.frequency)}</span>
+                        </div>
+                        {routine.time && (
+                          <div className="routine-time">
+                            <Clock size={14} />
+                            <span>{routine.time}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="routine-date">
+                        作成日: {new Date(routine.createdAt).toLocaleDateString('ja-JP')}
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => toggleRoutine(routine.id)}
+                      className={`complete-button ${routine.completed ? 'completed' : ''}`}
+                    >
+                      <Check size={20} />
+                      {routine.completed ? '完了済み' : '完了にする'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Todo表示 */}
+      {activeTab === 'todos' && (
+        <div className="todos-container">
+          {loadingTodos ? (
+            <div className="loading">Todoを読み込み中...</div>
+          ) : getFilteredTodos().length === 0 ? (
+            <div className="empty-state">
+              <Check className="empty-icon" />
+              <h3>
+                {currentTodoFilter === 'all' 
+                  ? 'まだTodoがありません'
+                  : `${currentTodoFilter === 'pending' ? '未完了' : '完了済み'}のTodoがありません`
+                }
+              </h3>
+              <p>
+                {currentTodoFilter === 'all'
+                  ? '新しいTodoを追加して、タスクを管理しましょう！'
+                  : `${currentTodoFilter === 'pending' ? '未完了' : '完了済み'}のTodoを追加してみましょう！`
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="todos-list">
+              {getFilteredTodos().map((todo: Todo) => (
+                <div key={todo.id} className={`todo-card ${todo.completed ? 'completed' : ''} ${todo.priority}-priority`}>
+                  <div className="todo-content">
+                    <div className="todo-header">
+                      <h3 className="todo-title">{todo.title}</h3>
+                      <div className="todo-actions">
                         <button
-                          onClick={() => startEditing(routine)}
+                          onClick={() => startEditingTodo(todo)}
                           className="action-button edit"
                           title="編集"
                         >
                           <Edit size={16} />
                         </button>
                         <button
-                          onClick={() => deleteRoutine(routine.id)}
+                          onClick={() => deleteTodo(todo.id)}
                           className="action-button delete"
                           title="削除"
                         >
@@ -363,41 +699,42 @@ export default function Home() {
                       </div>
                     </div>
                     
-                    {routine.description && (
-                      <p className="routine-description">{routine.description}</p>
+                    {todo.description && (
+                      <p className="todo-description">{todo.description}</p>
                     )}
                     
-                    <div className="routine-meta">
-                      <div className="routine-frequency">
-                        <FrequencyIcon size={14} />
-                        <span>{getFrequencyLabel(routine.frequency)}</span>
+                    <div className="todo-meta">
+                      <div className="todo-priority">
+                        <span className={`priority-badge ${getPriorityColor(todo.priority)}`}>
+                          {getPriorityLabel(todo.priority)}
+                        </span>
                       </div>
-                      {routine.time && (
-                        <div className="routine-time">
-                          <Clock size={14} />
-                          <span>{routine.time}</span>
+                      {todo.dueDate && (
+                        <div className="todo-due-date">
+                          <Calendar size={14} />
+                          <span>期限: {new Date(todo.dueDate).toLocaleDateString('ja-JP')}</span>
                         </div>
                       )}
                     </div>
                     
-                    <div className="routine-date">
-                      作成日: {new Date(routine.createdAt).toLocaleDateString('ja-JP')}
+                    <div className="todo-date">
+                      作成日: {new Date(todo.createdAt).toLocaleDateString('ja-JP')}
                     </div>
                   </div>
                   
                   <button
-                    onClick={() => toggleRoutine(routine.id)}
-                    className={`complete-button ${routine.completed ? 'completed' : ''}`}
+                    onClick={() => toggleTodo(todo.id)}
+                    className={`todo-complete-button ${todo.completed ? 'completed' : ''}`}
                   >
                     <Check size={20} />
-                    {routine.completed ? '完了済み' : '完了にする'}
+                    {todo.completed ? '完了済み' : '完了にする'}
                   </button>
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {editingId && (
         <div className="modal-overlay">
@@ -465,6 +802,59 @@ export default function Home() {
                 保存
               </button>
               <button onClick={cancelEdit} className="cancel-button">
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Todo編集モーダル */}
+      {editingTodoId && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Todoを編集</h3>
+            <input
+              type="text"
+              placeholder="Todoのタイトル"
+              value={newTodo.title}
+              onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
+              className="form-input"
+            />
+            <textarea
+              placeholder="説明（オプション）"
+              value={newTodo.description}
+              onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
+              className="form-textarea"
+            />
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">優先度</label>
+                <select
+                  value={newTodo.priority}
+                  onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value })}
+                  className="form-select"
+                >
+                  <option value="low">低</option>
+                  <option value="medium">中</option>
+                  <option value="high">高</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">期限</label>
+                <input
+                  type="date"
+                  value={newTodo.dueDate}
+                  onChange={(e) => setNewTodo({ ...newTodo, dueDate: e.target.value })}
+                  className="form-input"
+                />
+              </div>
+            </div>
+            <div className="modal-buttons">
+              <button onClick={saveTodoEdit} className="save-button">
+                保存
+              </button>
+              <button onClick={cancelTodoEdit} className="cancel-button">
                 キャンセル
               </button>
             </div>
