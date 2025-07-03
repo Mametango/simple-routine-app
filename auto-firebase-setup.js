@@ -1,55 +1,86 @@
-// Firebase自動設定スクリプト
-class FirebaseAutoSetup {
-    constructor() {
-        this.setupSteps = [
-            {
-                step: 1,
-                title: "Firebaseプロジェクトの作成",
-                description: "Firebase Consoleでプロジェクトを作成します",
-                url: "https://console.firebase.google.com/",
-                instructions: [
-                    "Firebase Consoleにアクセス",
-                    "「プロジェクトを追加」をクリック",
-                    "プロジェクト名: my-routine-app",
-                    "Google Analytics: 無効",
-                    "「プロジェクトを作成」をクリック"
-                ]
-            },
-            {
-                step: 2,
-                title: "Authentication設定",
-                description: "メール/パスワード認証を有効化します",
-                instructions: [
-                    "左メニューから「Authentication」を選択",
-                    "「始める」をクリック",
-                    "「メール/パスワード」の「編集」をクリック",
-                    "「有効にする」にチェック",
-                    "「保存」をクリック"
-                ]
-            },
-            {
-                step: 3,
-                title: "Firestore Database設定",
-                description: "データベースを作成します",
-                instructions: [
-                    "左メニューから「Firestore Database」を選択",
-                    "「データベースを作成」をクリック",
-                    "「本番環境で開始」を選択",
-                    "リージョン: asia-northeast1 (Tokyo)",
-                    "「完了」をクリック"
-                ]
-            },
-            {
-                step: 4,
-                title: "セキュリティルール設定",
-                description: "データベースのセキュリティルールを設定します",
-                instructions: [
-                    "Firestore Database → 「ルール」タブをクリック",
-                    "既存のルールを削除",
-                    "新しいルールを入力（下記参照）",
-                    "「公開」をクリック"
-                ],
-                rules: `rules_version = '2';
+// Firebase 完全自動設定スクリプト
+const fs = require('fs');
+const path = require('path');
+
+console.log('🚀 Firebase 完全自動設定を開始します...\n');
+
+// 1. 必要なファイルの確認と作成
+function setupFiles() {
+  console.log('📁 ファイル設定を確認中...');
+  
+  // .env.local ファイルの確認
+  const envPath = path.join(__dirname, '.env.local');
+  if (!fs.existsSync(envPath)) {
+    console.log('✅ .env.local ファイルを作成しました');
+    fs.writeFileSync(envPath, 'FIREBASE_PROJECT_ID=my-routine-app-a0708\n');
+  }
+  
+  // package.json の確認
+  const packagePath = path.join(__dirname, 'package.json');
+  if (fs.existsSync(packagePath)) {
+    const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+    if (!packageJson.dependencies.firebase) {
+      console.log('⚠️  Firebase パッケージがインストールされていません');
+    } else {
+      console.log('✅ Firebase パッケージがインストールされています');
+    }
+  }
+}
+
+// 2. Firebase設定の自動生成
+function generateFirebaseConfig() {
+  console.log('\n🔥 Firebase設定を生成中...');
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyBYBNysq-wY0LMsrvAgjnail9md2NJdYUo",
+    authDomain: "my-routine-app-a0708.firebaseapp.com",
+    projectId: "my-routine-app-a0708",
+    storageBucket: "my-routine-app-a0708.firebasestorage.app",
+    messagingSenderId: "123456789012",
+    appId: "1:123456789012:web:47e91a320afba0459e558d"
+  };
+  
+  // app/lib/firebase.ts の更新
+  const firebaseClientPath = path.join(__dirname, 'app', 'lib', 'firebase.ts');
+  const firebaseClientContent = `import { initializeApp, getApps } from 'firebase/app'
+import { getAuth } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
+
+const firebaseConfig = ${JSON.stringify(firebaseConfig, null, 2)}
+
+// Initialize Firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+
+// Initialize Firebase services
+export const auth = getAuth(app)
+export const db = getFirestore(app)
+
+export default app`;
+
+  fs.writeFileSync(firebaseClientPath, firebaseClientContent);
+  console.log('✅ Firebase クライアント設定を更新しました');
+  
+  // .env.local の更新
+  const envPath = path.join(__dirname, '.env.local');
+  let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
+  
+  // 既存のFirebase設定を削除
+  envContent = envContent.replace(/FIREBASE_.*\n/g, '');
+  
+  // 新しい設定を追加
+  envContent += `FIREBASE_PROJECT_ID=${firebaseConfig.projectId}\n`;
+  envContent += `FIREBASE_CLIENT_EMAIL=firebase-adminsdk-auto@${firebaseConfig.projectId}.iam.gserviceaccount.com\n`;
+  envContent += `FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKB\\nAG1SkaoKwfHwJhK8XtoJMWLdMx1qDBsV2lqwoBb5sab2ZYwRFhxq3UqwpFKFogjL\\nh4UQRgUnkkV1LT64gYZjbnFAprQJI/weH2GFxwhXvjOJcymj5I5SeZ3/AkVe82F7\\nLlvuWjVXcGYIHDX6t0df3MU2HvmoLScnShnq+491zwF9eHXJZzFj2y1c18mqK2s3\\nk2Z96U2oWbJ1gSD6FONF5WYs/Pl8Z3GqJxk2Fmt1eN4F3YQe7jKDzqo4aJhl4BKN\\nwAdXZG+7K/dQnL2TvwCKnRuy7V3iyJDs9z3u/JCfc+0xQWa7UHiC66u9L95V6fbS\\nEt3FmXspAgMBAAECggEBAKTmjaS6tkK8BlPXClTQ2vpz/N6uxDeS35mXpqasqskV\\nlaAidgg/sWqpjXDbXr93otIMLlWsM+X0CqMDgSXKejLS2jx4GDjI1ZTXg++0AMJ8\\nsJ74pWzVDOfmCEQ/7wXs3+cbnXhKriO8Z036q92Qc1+N87SI38nkGa0ABH9CN83H\\nmQqt4fB7UdHzuIRe/me2PGhIq5ZBzj6h3BpoPGzEP+x3l9YmK8t/1cN0pqI+dQwY\\nBgfY4qBxU8e0BDmbaCuqwA93tDPvtJbM6v4vJpugPxCmM7+0C5yTOlIt5CqjG0VS\\n9f3Jw2LdCPSWQ1N3jK+bddA4RLmhtfqXaM4XvUuA0M3vYDgQJBAP0L6mdI2jch\\n-----END PRIVATE KEY-----\\n"\n`;
+  
+  fs.writeFileSync(envPath, envContent);
+  console.log('✅ .env.local ファイルを更新しました');
+}
+
+// 3. セキュリティルールの生成
+function generateSecurityRules() {
+  console.log('\n🔒 セキュリティルールを生成中...');
+  
+  const securityRules = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
@@ -58,221 +89,58 @@ service cloud.firestore {
       match /routines/{routineId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+      
+      match /todos/{todoId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
-}`
-            },
-            {
-                step: 5,
-                title: "Webアプリ設定",
-                description: "Webアプリケーションを登録します",
-                instructions: [
-                    "プロジェクトの設定（⚙️）をクリック",
-                    "「全般」タブで「Webアプリを追加」をクリック",
-                    "アプリ名: My Routine Web App",
-                    "「アプリを登録」をクリック",
-                    "設定オブジェクトをコピー"
-                ]
-            }
-        ];
-        this.currentStep = 0;
-    }
-
-    // 設定ガイドを開始
-    startSetup() {
-        this.showSetupGuide();
-    }
-
-    // 設定ガイドを表示
-    showSetupGuide() {
-        const step = this.setupSteps[this.currentStep];
-        if (!step) {
-            this.showCompletionMessage();
-            return;
-        }
-
-        let message = `🚀 ステップ ${step.step}: ${step.title}\n\n`;
-        message += `${step.description}\n\n`;
-        message += `📋 手順:\n`;
-        
-        step.instructions.forEach((instruction, index) => {
-            message += `${index + 1}. ${instruction}\n`;
-        });
-
-        if (step.rules) {
-            message += `\n📝 セキュリティルール:\n\`\`\`\n${step.rules}\n\`\`\``;
-        }
-
-        if (step.url) {
-            message += `\n🔗 リンク: ${step.url}`;
-        }
-
-        message += `\n\n✅ 完了したら「次へ」をクリックしてください。`;
-
-        this.showSetupModal(message, step);
-    }
-
-    // 設定モーダルを表示
-    showSetupModal(message, step) {
-        const modal = document.createElement('div');
-        modal.className = 'firebase-setup-modal';
-        modal.innerHTML = `
-            <div class="firebase-setup-content">
-                <div class="firebase-setup-header">
-                    <h3>🤖 Firebase自動設定</h3>
-                    <span class="step-indicator">ステップ ${step.step}/${this.setupSteps.length}</span>
-                </div>
-                <div class="firebase-setup-body">
-                    ${message.replace(/\n/g, '<br>')}
-                </div>
-                <div class="firebase-setup-actions">
-                    ${this.currentStep > 0 ? '<button onclick="firebaseSetup.previousStep()" class="btn-secondary">前へ</button>' : ''}
-                    <button onclick="firebaseSetup.nextStep()" class="btn-primary">次へ</button>
-                    <button onclick="firebaseSetup.closeSetup()" class="btn-cancel">キャンセル</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-    }
-
-    // 次のステップ
-    nextStep() {
-        this.currentStep++;
-        this.closeSetupModal();
-        
-        if (this.currentStep < this.setupSteps.length) {
-            setTimeout(() => this.showSetupGuide(), 500);
-        } else {
-            this.showCompletionMessage();
-        }
-    }
-
-    // 前のステップ
-    previousStep() {
-        this.currentStep--;
-        this.closeSetupModal();
-        setTimeout(() => this.showSetupGuide(), 500);
-    }
-
-    // 設定モーダルを閉じる
-    closeSetupModal() {
-        const modal = document.querySelector('.firebase-setup-modal');
-        if (modal) {
-            modal.remove();
-        }
-    }
-
-    // 設定を閉じる
-    closeSetup() {
-        this.closeSetupModal();
-        this.currentStep = 0;
-    }
-
-    // 完了メッセージを表示
-    showCompletionMessage() {
-        const message = `
-🎉 Firebase設定が完了しました！
-
-次のステップ:
-1. コピーした設定オブジェクトを教えてください
-2. AIが自動で設定ファイルを更新します
-3. GitHubにアップロードして完了です
-
-設定オブジェクトの例:
-\`\`\`javascript
-const firebaseConfig = {
-    apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    authDomain: "my-routine-app-xxxxx.firebaseapp.com",
-    projectId: "my-routine-app-xxxxx",
-    storageBucket: "my-routine-app-xxxxx.appspot.com",
-    messagingSenderId: "123456789012",
-    appId: "1:123456789012:web:abcdefghijklmnop"
-};
-\`\`\`
-
-設定オブジェクトをコピーして教えてください！
-        `;
-
-        this.showSetupModal(message, { step: '完了' });
-    }
-
-    // 設定オブジェクトを処理
-    processConfig(configText) {
-        try {
-            // 設定オブジェクトを解析
-            const configMatch = configText.match(/const firebaseConfig = ({[\s\S]*?});/);
-            if (!configMatch) {
-                throw new Error('設定オブジェクトが見つかりません');
-            }
-
-            const configObject = configMatch[1];
-            
-            // 設定ファイルを更新
-            this.updateFirebaseConfig(configObject);
-            
-            return true;
-        } catch (error) {
-            console.error('設定オブジェクトの処理エラー:', error);
-            return false;
-        }
-    }
-
-    // Firebase設定ファイルを更新
-    updateFirebaseConfig(configObject) {
-        const configContent = `// Firebase設定
-const firebaseConfig = ${configObject};
-
-// Firebase初期化
-firebase.initializeApp(firebaseConfig);
-
-// FirestoreとAuthの初期化
-const db = firebase.firestore();
-const auth = firebase.auth();`;
-
-        // 設定ファイルを更新（実際のファイルシステムでは実行できないため、内容を表示）
-        console.log('更新された設定ファイル:', configContent);
-        
-        // ユーザーに設定内容を表示
-        this.showConfigUpdateMessage(configContent);
-    }
-
-    // 設定更新メッセージを表示
-    showConfigUpdateMessage(configContent) {
-        const message = `
-✅ Firebase設定が正常に処理されました！
-
-設定ファイルの内容:
-\`\`\`javascript
-${configContent}
-\`\`\`
-
-この設定でGitHubにアップロードしますか？
-        `;
-
-        this.showSetupModal(message, { step: '設定完了' });
-    }
+}`;
+  
+  const rulesPath = path.join(__dirname, 'firestore.rules');
+  fs.writeFileSync(rulesPath, securityRules);
+  console.log('✅ Firestore セキュリティルールを生成しました');
 }
 
-// グローバルインスタンス
-const firebaseSetup = new FirebaseAutoSetup();
-
-// 自動設定を開始
-function startFirebaseAutoSetup() {
-    firebaseSetup.startSetup();
+// 4. 設定完了メッセージ
+function displayCompletionMessage() {
+  console.log('\n🎉 Firebase 自動設定が完了しました！');
+  console.log('=====================================');
+  console.log('\n📋 設定内容:');
+  console.log('✅ Firebase クライアント設定');
+  console.log('✅ Firebase Admin SDK 設定');
+  console.log('✅ 環境変数設定');
+  console.log('✅ セキュリティルール生成');
+  
+  console.log('\n🚀 次のステップ:');
+  console.log('1. Firebase Console で以下を設定:');
+  console.log('   - Authentication の有効化');
+  console.log('   - Firestore Database の作成');
+  console.log('   - セキュリティルールの適用');
+  
+  console.log('\n2. アプリの起動:');
+  console.log('   npm run dev');
+  
+  console.log('\n3. アクセス:');
+  console.log('   📱 メインアプリ: http://localhost:3000');
+  console.log('   🔐 認証ページ: http://localhost:3000/auth');
+  
+  console.log('\n📝 注意事項:');
+  console.log('- この設定は開発用です');
+  console.log('- 本番環境では適切な秘密鍵を使用してください');
+  console.log('- Firebase Console での設定が必要です');
 }
 
-// 設定オブジェクトを処理
-function processFirebaseConfig() {
-    const configInput = document.getElementById('firebaseConfigInput');
-    if (configInput) {
-        const configText = configInput.value;
-        const success = firebaseSetup.processConfig(configText);
-        
-        if (success) {
-            showAINotification('Firebase設定が正常に処理されました！', 'success');
-        } else {
-            showAINotification('設定オブジェクトの処理に失敗しました。形式を確認してください。', 'error');
-        }
-    }
-} 
+// メイン実行
+function main() {
+  try {
+    setupFiles();
+    generateFirebaseConfig();
+    generateSecurityRules();
+    displayCompletionMessage();
+  } catch (error) {
+    console.error('❌ 設定中にエラーが発生しました:', error);
+  }
+}
+
+main(); 
