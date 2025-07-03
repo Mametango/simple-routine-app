@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminDb, verifyToken } from '../../lib/firebase-admin'
 
-// GET /api/todos
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -11,22 +10,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const todosRef = adminDb.collection('users').doc(user.uid).collection('todos')
-    const snapshot = await todosRef.get()
+    const routinesRef = adminDb.collection('users').doc(user.uid).collection('routines')
+    const snapshot = await routinesRef.get()
     
-    const todos = snapshot.docs.map((doc: any) => ({
+    const routines = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     }))
 
-    return NextResponse.json(todos)
+    return NextResponse.json(routines)
   } catch (error) {
-    console.error('Error fetching todos:', error)
+    console.error('Error fetching routines:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// POST /api/todos
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -37,33 +35,35 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, priority, dueDate } = body
+    const { title, description, frequency, time, checklist } = body
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
     }
 
-    const todoData = {
+    const routineData = {
       title,
       description: description || '',
-      priority: priority || 'low',
-      dueDate: dueDate || null,
+      frequency: frequency || 'daily',
+      time: time || '',
+      weekdays: [],
       completed: false,
       createdAt: new Date().toISOString(),
-      userId: user.uid
+      userId: user.uid,
+      checklist: checklist || []
     }
 
-    const todosRef = adminDb.collection('users').doc(user.uid).collection('todos')
-    const docRef = await todosRef.add(todoData)
+    const routinesRef = adminDb.collection('users').doc(user.uid).collection('routines')
+    const docRef = await routinesRef.add(routineData)
     
-    const newTodo = {
+    const newRoutine = {
       id: docRef.id,
-      ...todoData
+      ...routineData
     }
 
-    return NextResponse.json(newTodo, { status: 201 })
+    return NextResponse.json(newRoutine, { status: 201 })
   } catch (error) {
-    console.error('Error creating todo:', error)
+    console.error('Error creating routine:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

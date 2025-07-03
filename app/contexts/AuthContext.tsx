@@ -1,7 +1,16 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { setCookie, deleteCookie, getCookie } from 'cookies-next'
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  User as FirebaseUser,
+  GoogleAuthProvider,
+  signInWithPopup
+} from 'firebase/auth'
+import { auth } from '../lib/firebase'
 
 interface User {
   id: string
@@ -13,8 +22,9 @@ interface User {
 interface AuthContextType {
   user: User | null
   token: string | null
-  login: (username: string, password: string) => Promise<boolean>
-  register: (username: string, email: string, password: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<boolean>
+  register: (email: string, password: string) => Promise<boolean>
+  loginWithGoogle: () => Promise<boolean>
   logout: () => void
   loading: boolean
 }
@@ -27,85 +37,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // ページ読み込み時にトークンをチェック
-    const savedToken = getCookie('token') as string
-    if (savedToken) {
-      setToken(savedToken)
-      // トークンからユーザー情報を復元（簡易版）
-      try {
-        const payload = JSON.parse(atob(savedToken.split('.')[1]))
-        setUser({
-          id: payload.userId,
-          username: payload.username,
-          email: '', // トークンには含まれていない
-          createdAt: ''
-        })
-      } catch (error) {
-        console.error('Invalid token:', error)
-        deleteCookie('token')
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        // Get the ID token
+        const idToken = await firebaseUser.getIdToken()
+        
+        // Convert Firebase user to our User interface
+        const userData: User = {
+          id: firebaseUser.uid,
+          username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+          email: firebaseUser.email || '',
+          createdAt: firebaseUser.metadata.creationTime || new Date().toISOString()
+        }
+        
+        setUser(userData)
+        setToken(idToken)
+      } else {
+        setUser(null)
+        setToken(null)
       }
-    }
-    setLoading(false)
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
   }, [])
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setUser(data.user)
-        setToken(data.token)
-        setCookie('token', data.token, { maxAge: 7 * 24 * 60 * 60 }) // 7日間
-        return true
-      } else {
-        const error = await response.json()
-        console.error('Login error:', error)
-        return false
-      }
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const idToken = await userCredential.user.getIdToken()
+      setToken(idToken)
+      return true
     } catch (error) {
       console.error('Login error:', error)
       return false
     }
   }
 
-  const register = async (username: string, email: string, password: string): Promise<boolean> => {
+  const register = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, email, password }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setUser(data.user)
-        setToken(data.token)
-        setCookie('token', data.token, { maxAge: 7 * 24 * 60 * 60 }) // 7日間
-        return true
-      } else {
-        const error = await response.json()
-        console.error('Registration error:', error)
-        return false
-      }
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const idToken = await userCredential.user.getIdToken()
+      setToken(idToken)
+      return true
     } catch (error) {
       console.error('Registration error:', error)
       return false
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    setToken(null)
-    deleteCookie('token')
+  const loginWithGoogle = async (): Promise<boolean> => {
+    try {
+      const provider = new GoogleAuthProvider()
+      const userCredential = await signInWithPopup(auth, provider)
+      const idToken = await userCredential.user.getIdToken()
+      setToken(idToken)
+      return true
+    } catch (error) {
+      console.error('Google login error:', error)
+      return false
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await signOut(auth)
+      setUser(null)
+      setToken(null)
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   const value: AuthContextType = {
@@ -113,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     token,
     login,
     register,
+    loginWithGoogle,
     logout,
     loading
   }
