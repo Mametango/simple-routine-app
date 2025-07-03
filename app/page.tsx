@@ -51,7 +51,7 @@ interface NewTodo {
 }
 
 export default function Home() {
-  const { user, token } = useAuth()
+  const { user, token, logout } = useAuth()
   const [routines, setRoutines] = useState<Routine[]>([])
   const [newRoutine, setNewRoutine] = useState<NewRoutine>({
     title: '',
@@ -587,13 +587,37 @@ export default function Home() {
           </h1>
           <p className="subtitle">毎日の習慣を管理して、より良い生活を</p>
         </div>
-                  <div className="user-section">
-            <div className="user-info">
-              <User size={16} />
-              <span>{user?.username || 'ユーザー'}</span>
-            </div>
+                          <div className="user-section">
+          <div className="user-info">
+            <User size={16} />
+            <span>{user?.username || 'ゲスト'}</span>
           </div>
+          {user ? (
+            <button onClick={logout} className="logout-button">
+              <LogOut size={16} />
+              ログアウト
+            </button>
+          ) : (
+            <a href="/auth" className="login-button">
+              <User size={16} />
+              ログイン
+            </a>
+          )}
+        </div>
       </header>
+
+      {!user && (
+        <div className="auth-notice">
+          <div className="auth-notice-content">
+            <h3>ログインしてデータを同期</h3>
+            <p>ログインすると、データがサーバーに保存され、複数のデバイス間で同期されます。</p>
+            <a href="/auth" className="auth-notice-button">
+              <User size={16} />
+              ログイン / 会員登録
+            </a>
+          </div>
+        </div>
+      )}
 
       <div className="stats">
         <div className="stat-card">
