@@ -1,12 +1,12 @@
 {
   "type": "service_account",
-  "project_id": "my-routine-app-a0708",
+  "project_id": "simple-routine-app-33cfc",
   "private_key_id": "auto-generated-key-id",
   "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKB\nAG1SkaoKwfHwJhK8XtoJMWLdMx1qDBsV2lqwoBb5sab2ZYwRFhxq3UqwpFKFogjL\nh4UQRgUnkkV1LT64gYZjbnFAprQJI/weH2GFxwhXvjOJcymj5I5SeZ3/AkVe82F7\nLlvuWjVXcGYIHDX6t0df3MU2HvmoLScnShnq+491zwF9eHXJZzFj2y1c18mqK2s3\nk2Z96U2oWbJ1gSD6FONF5WYs/Pl8Z3GqJxk2Fmt1eN4F3YQe7jKDzqo4aJhl4BKN\nwAdXZG+7K/dQnL2TvwCKnRuy7V3iyJDs9z3u/JCfc+0xQWa7UHiC66u9L95V6fbS\nEt3FmXspAgMBAAECggEBAKTmjaS6tkK8BlPXClTQ2vpz/N6uxDeS35mXpqasqskV\nlaAidgg/sWqpjXDbXr93otIMLlWsM+X0CqMDgSXKejLS2jx4GDjI1ZTXg++0AMJ8\nsJ74pWzVDOfmCEQ/7wXs3+cbnXhKriO8Z036q92Qc1+N87SI38nkGa0ABH9CN83H\nmQqt4fB7UdHzuIRe/me2PGhIq5ZBzj6h3BpoPGzEP+x3l9YmK8t/1cN0pqI+dQwY\nBgfY4qBxU8e0BDmbaCuqwA93tDPvtJbM6v4vJpugPxCmM7+0C5yTOlIt5CqjG0VS\n9f3Jw2LdCPSWQ1N3jK+bddA4RLmhtfqXaM4XvUuA0M3vYDgQJBAP0L6mdI2jch\n-----END PRIVATE KEY-----\n",
-  "client_email": "firebase-adminsdk-auto@my-routine-app-a0708.iam.gserviceaccount.com",
+  "client_email": "firebase-adminsdk-auto@simple-routine-app-33cfc.iam.gserviceaccount.com",
   "client_id": "123456789012345678901",
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
   "token_uri": "https://oauth2.googleapis.com/token",
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-auto%40my-routine-app-a0708.iam.gserviceaccount.com"
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-auto%40simple-routine-app-33cfc.iam.gserviceaccount.com"
 }
