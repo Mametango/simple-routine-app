@@ -490,6 +490,58 @@
         .form-checklist button:hover {
             background: #f8ffae;
         }
+
+        /* 曜日選択 */
+        .form-weekdays {
+            margin-top: 1rem;
+        }
+
+        .weekdays-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .weekday-checkbox {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.75rem 0.5rem;
+            border: 1px solid #a8edea;
+            border-radius: 0.75rem;
+            background: rgba(255,255,255,0.98);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .weekday-checkbox:hover {
+            background: #f8ffae;
+            border-color: #43cea2;
+        }
+
+        .weekday-checkbox input[type="checkbox"] {
+            display: none;
+        }
+
+        .weekday-checkbox input[type="checkbox"]:checked + span {
+            color: #43cea2;
+            font-weight: 600;
+        }
+
+        .weekday-checkbox input[type="checkbox"]:checked ~ .weekday-checkbox {
+            background: #ffd6e7;
+            border-color: #e91e63;
+        }
+
+        .weekday-checkbox:has(input[type="checkbox"]:checked) {
+            background: #ffd6e7;
+            border-color: #e91e63;
+            color: #e91e63;
+        }
         /* メインタブ */
         .main-tabs {
             display: flex;
@@ -945,6 +997,40 @@
                         </div>
                     </div>
                     
+                    <div class="form-weekdays" id="weekdaysContainer" style="display: none;">
+                        <label class="form-label">曜日</label>
+                        <div class="weekdays-grid">
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" value="monday">
+                                <span>月</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" value="tuesday">
+                                <span>火</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" value="wednesday">
+                                <span>水</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" value="thursday">
+                                <span>木</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" value="friday">
+                                <span>金</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" value="saturday">
+                                <span>土</span>
+                            </label>
+                            <label class="weekday-checkbox">
+                                <input type="checkbox" value="sunday">
+                                <span>日</span>
+                            </label>
+                        </div>
+                    </div>
+                    
                     <div class="form-buttons">
                         <button class="save-button" id="saveRoutineButton">保存</button>
                     </div>
@@ -1046,6 +1132,40 @@
                 </div>
             </div>
             
+            <div class="form-weekdays" id="editWeekdaysContainer" style="display: none;">
+                <label class="form-label">曜日</label>
+                <div class="weekdays-grid">
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="monday">
+                        <span>月</span>
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="tuesday">
+                        <span>火</span>
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="wednesday">
+                        <span>水</span>
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="thursday">
+                        <span>木</span>
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="friday">
+                        <span>金</span>
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="saturday">
+                        <span>土</span>
+                    </label>
+                    <label class="weekday-checkbox">
+                        <input type="checkbox" value="sunday">
+                        <span>日</span>
+                    </label>
+                </div>
+            </div>
+            
             <div class="modal-buttons">
                 <button class="save-button" id="editSaveButton">保存</button>
                 <button class="cancel-button" id="editCancelButton">キャンセル</button>
@@ -1097,6 +1217,10 @@
         const todoDueDate = document.getElementById('todoDueDate');
         const saveTodoButton = document.getElementById('saveTodoButton');
         const todosList = document.getElementById('todosList');
+
+        // 曜日選択用DOM要素
+        const weekdaysContainer = document.getElementById('weekdaysContainer');
+        const editWeekdaysContainer = document.getElementById('editWeekdaysContainer');
 
         // ローカルストレージからルーティンを読み込み
         function loadRoutines() {
@@ -1279,11 +1403,37 @@
             addRoutineEventListeners();
         }
 
+        // 曜日のラベルを取得
+        function getWeekdayLabel(weekday) {
+            const labels = {
+                'monday': '月',
+                'tuesday': '火',
+                'wednesday': '水',
+                'thursday': '木',
+                'friday': '金',
+                'saturday': '土',
+                'sunday': '日'
+            };
+            return labels[weekday] || weekday;
+        }
+
         // ルーティンのHTMLを生成
         function createRoutineHTML(routine) {
             const frequencyIcon = getFrequencyIcon(routine.frequency);
             const frequencyLabel = getFrequencyLabel(routine.frequency);
             const createdDate = new Date(routine.createdAt).toLocaleDateString('ja-JP');
+            
+            // 曜日表示を生成
+            let weekdaysDisplay = '';
+            if (routine.frequency === 'weekly' && routine.weekdays && routine.weekdays.length > 0) {
+                const weekdayLabels = routine.weekdays.map(day => getWeekdayLabel(day)).join('・');
+                weekdaysDisplay = `
+                    <div class="routine-weekdays">
+                        <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                        <span>${weekdayLabels}</span>
+                    </div>
+                `;
+            }
             
             return `
                 <div class="routine-card ${routine.completed ? 'completed' : ''}" data-id="${routine.id}">
@@ -1313,6 +1463,7 @@
                                     <span>${routine.time}</span>
                                 </div>
                             ` : ''}
+                            ${weekdaysDisplay}
                         </div>
                         
                         <div class="routine-date">作成日: ${createdDate}</div>
@@ -1346,12 +1497,77 @@
             return icons[frequency] || 'clock';
         }
 
+        // 頻度選択時の処理
+        function handleFrequencyChange() {
+            const frequency = routineFrequency.value;
+            if (frequency === 'weekly') {
+                weekdaysContainer.style.display = 'block';
+            } else {
+                weekdaysContainer.style.display = 'none';
+            }
+        }
+
+        // 編集時の頻度選択処理
+        function handleEditFrequencyChange() {
+            const frequency = editFrequency.value;
+            if (frequency === 'weekly') {
+                editWeekdaysContainer.style.display = 'block';
+            } else {
+                editWeekdaysContainer.style.display = 'none';
+            }
+        }
+
+        // 選択された曜日を取得
+        function getSelectedWeekdays() {
+            const checkboxes = weekdaysContainer.querySelectorAll('input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        // 編集用の選択された曜日を取得
+        function getEditSelectedWeekdays() {
+            const checkboxes = editWeekdaysContainer.querySelectorAll('input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        // 曜日を設定
+        function setWeekdays(weekdays) {
+            // 全てのチェックボックスをリセット
+            weekdaysContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // 指定された曜日をチェック
+            weekdays.forEach(day => {
+                const checkbox = weekdaysContainer.querySelector(`input[value="${day}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+
+        // 編集用の曜日を設定
+        function setEditWeekdays(weekdays) {
+            // 全てのチェックボックスをリセット
+            editWeekdaysContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // 指定された曜日をチェック
+            weekdays.forEach(day => {
+                const checkbox = editWeekdaysContainer.querySelector(`input[value="${day}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+
         // ルーティンの追加
         function addRoutine() {
             const title = routineTitle.value.trim();
             if (!title) return;
 
             const checklist = getChecklistItems();
+            const weekdays = routineFrequency.value === 'weekly' ? getSelectedWeekdays() : [];
             
             const routine = {
                 id: Date.now().toString(),
@@ -1359,6 +1575,7 @@
                 description: routineDescription.value.trim(),
                 frequency: routineFrequency.value,
                 time: routineTime.value,
+                weekdays: weekdays,
                 completed: false,
                 createdAt: new Date().toISOString(),
                 checklist: checklist
@@ -1485,6 +1702,8 @@
             routineDescription.value = '';
             routineFrequency.value = 'daily';
             routineTime.value = '';
+            weekdaysContainer.style.display = 'none';
+            setWeekdays([]);
             checklistItems.innerHTML = `
                 <div class="checklist-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                     <input type="checkbox" class="checklist-checkbox">
@@ -1504,6 +1723,15 @@
             editDescription.value = routine.description || '';
             editFrequency.value = routine.frequency;
             editTime.value = routine.time || '';
+            
+            // 曜日を設定
+            if (routine.frequency === 'weekly') {
+                editWeekdaysContainer.style.display = 'block';
+                setEditWeekdays(routine.weekdays || []);
+            } else {
+                editWeekdaysContainer.style.display = 'none';
+                setEditWeekdays([]);
+            }
             
             // チェックリストを設定
             editChecklistItems.innerHTML = '';
@@ -1549,11 +1777,13 @@
             if (!title) return;
 
             const checklist = getEditChecklistItems();
+            const weekdays = editFrequency.value === 'weekly' ? getEditSelectedWeekdays() : [];
 
             routine.title = title;
             routine.description = editDescription.value.trim();
             routine.frequency = editFrequency.value;
             routine.time = editTime.value;
+            routine.weekdays = weekdays;
             routine.checklist = checklist;
 
             saveRoutines();
@@ -1632,6 +1862,10 @@
         });
 
         saveTodoButton.addEventListener('click', addTodo);
+
+        // 頻度選択のイベントリスナー
+        routineFrequency.addEventListener('change', handleFrequencyChange);
+        editFrequency.addEventListener('change', handleEditFrequencyChange);
 
         editSaveButton.addEventListener('click', () => {
             if (editingRoutineId) {
