@@ -207,6 +207,21 @@
         .sync-indicator i {
             animation: pulse 2s infinite;
         }
+        .hide-sync-button {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            margin-left: 8px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .hide-sync-button:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.2);
+        }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -1273,6 +1288,9 @@
             <div class="sync-indicator">
                 <i data-lucide="cloud" style="width: 16px; height: 16px;"></i>
                 <span id="syncText">データを同期中...</span>
+                <button id="hideSyncButton" class="hide-sync-button" onclick="hideSyncStatus()">
+                    <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                </button>
             </div>
         </div>
 
@@ -1820,9 +1838,21 @@
             }
         }
 
+        // 同期状態を非表示にする
+        function hideSyncStatus() {
+            console.log('hideSyncStatus called');
+            if (syncStatus) {
+                syncStatus.style.display = 'none';
+            }
+        }
+
         // 同期状態を表示
         function showSyncStatus(message, isSuccess = null) {
-            if (!syncStatus || !syncText) return;
+            console.log('showSyncStatus called:', message, isSuccess);
+            if (!syncStatus || !syncText) {
+                console.error('Sync status elements not found');
+                return;
+            }
             
             syncText.textContent = message;
             syncStatus.style.display = 'block';
@@ -1844,7 +1874,9 @@
             // 成功の場合は3秒後、警告の場合は5秒後に非表示
             if (isSuccess !== null) {
                 const timeout = isSuccess === true ? 3000 : 5000;
+                console.log('Setting timeout to hide sync status in', timeout, 'ms');
                 setTimeout(() => {
+                    console.log('Hiding sync status after timeout');
                     syncStatus.style.display = 'none';
                 }, timeout);
             }
@@ -2634,6 +2666,9 @@
                             clearTimeout(loadTimeout);
                             console.error('Error loading data from Firestore:', error);
                             showSyncStatus('データの読み込みに失敗しました', false);
+                        }).finally(() => {
+                            // 確実にタイムアウトをクリア
+                            clearTimeout(loadTimeout);
                         });
                     } else {
                         currentUser = null;
@@ -2657,6 +2692,14 @@
                 if (syncStatus) {
                     syncStatus.style.display = 'none';
                 }
+                
+                // 5秒後に確実に同期状態を非表示にする（フォールバック）
+                setTimeout(() => {
+                    if (syncStatus && syncStatus.style.display !== 'none') {
+                        console.log('Force hiding sync status after timeout');
+                        syncStatus.style.display = 'none';
+                    }
+                }, 5000);
             }
         }
 
@@ -2947,7 +2990,10 @@
             
             // 同期状態を非表示にする
             if (syncStatus) {
+                console.log('Hiding sync status on initialization');
                 syncStatus.style.display = 'none';
+            } else {
+                console.error('Sync status element not found during initialization');
             }
             
             // まずローカルデータを読み込み
@@ -2955,12 +3001,23 @@
             loadTodos();
             lucide.createIcons();
             
+            // 非表示ボタンのイベントリスナーを設定
+            const hideSyncButton = document.getElementById('hideSyncButton');
+            if (hideSyncButton) {
+                hideSyncButton.addEventListener('click', hideSyncStatus);
+            }
+            
             // Firebase SDKの読み込みを待ってから認証を初期化
             setTimeout(() => {
                 console.log('Initializing Firebase auth...');
                 initializeAuth();
                 setupAuthEventListeners();
                 updateAuthUI();
+                
+                // 再度同期状態を非表示にする（念のため）
+                if (syncStatus) {
+                    syncStatus.style.display = 'none';
+                }
             }, 1000);
         });
     </script>
