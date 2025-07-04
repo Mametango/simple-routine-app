@@ -1725,9 +1725,13 @@
         }
 
         async function loadRoutinesFromFirestore() {
-            if (!isAuthenticated || !currentUser) return;
+            if (!isAuthenticated || !currentUser) {
+                console.log('Not authenticated, skipping Firestore load');
+                return;
+            }
             
             try {
+                console.log('Loading routines from Firestore for user:', currentUser.uid);
                 const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
                 const routinesCollectionRef = window.collection(userDocRef, 'routines');
                 const querySnapshot = await window.getDocs(routinesCollectionRef);
@@ -1740,10 +1744,14 @@
                     });
                 });
                 
+                console.log('Found routines in Firestore:', firestoreRoutines.length);
+                
                 if (firestoreRoutines.length > 0) {
                     routines = firestoreRoutines;
                     updateDisplay();
-                    console.log('Routines loaded from Firestore');
+                    console.log('Routines loaded from Firestore:', routines);
+                } else {
+                    console.log('No routines found in Firestore, keeping local data');
                 }
             } catch (error) {
                 console.error('Error loading routines from Firestore:', error);
@@ -1751,9 +1759,13 @@
         }
 
         async function loadTodosFromFirestore() {
-            if (!isAuthenticated || !currentUser) return;
+            if (!isAuthenticated || !currentUser) {
+                console.log('Not authenticated, skipping Firestore load');
+                return;
+            }
             
             try {
+                console.log('Loading todos from Firestore for user:', currentUser.uid);
                 const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
                 const todosCollectionRef = window.collection(userDocRef, 'todos');
                 const querySnapshot = await window.getDocs(todosCollectionRef);
@@ -1766,10 +1778,14 @@
                     });
                 });
                 
+                console.log('Found todos in Firestore:', firestoreTodos.length);
+                
                 if (firestoreTodos.length > 0) {
                     todos = firestoreTodos;
                     updateTodoDisplay();
-                    console.log('Todos loaded from Firestore');
+                    console.log('Todos loaded from Firestore:', todos);
+                } else {
+                    console.log('No todos found in Firestore, keeping local data');
                 }
             } catch (error) {
                 console.error('Error loading todos from Firestore:', error);
@@ -1820,9 +1836,13 @@
 
         // ルーティンをローカルストレージに保存
         function saveRoutines() {
+            console.log('Saving routines:', routines.length, 'items');
             localStorage.setItem('routines', JSON.stringify(routines));
             if (isAuthenticated && currentUser) {
+                console.log('User authenticated, syncing to Firestore');
                 syncRoutinesToFirestore();
+            } else {
+                console.log('User not authenticated, saving to localStorage only');
             }
         }
 
@@ -1841,9 +1861,13 @@
 
         // Todoをローカルストレージに保存
         function saveTodos() {
+            console.log('Saving todos:', todos.length, 'items');
             localStorage.setItem('todos', JSON.stringify(todos));
             if (isAuthenticated && currentUser) {
+                console.log('User authenticated, syncing to Firestore');
                 syncTodosToFirestore();
+            } else {
+                console.log('User not authenticated, saving to localStorage only');
             }
         }
 
@@ -2548,13 +2572,18 @@
 
         // 認証状態の監視
         function initializeAuth() {
+            console.log('Initializing auth...');
+            console.log('Firebase Auth available:', !!window.firebaseAuth);
+            console.log('Firebase DB available:', !!window.firebaseDb);
+            
             if (window.onAuthStateChanged && window.firebaseAuth) {
                 window.onAuthStateChanged(window.firebaseAuth, (user) => {
+                    console.log('Auth state changed:', user ? 'logged in' : 'logged out');
                     if (user) {
                         currentUser = user;
                         isAuthenticated = true;
                         updateAuthUI();
-                        console.log('User logged in:', user.email);
+                        console.log('User logged in:', user.email, 'UID:', user.uid);
                         
                         // ログイン時にFirestoreからデータを読み込み
                         showSyncStatus('データを読み込み中...');
@@ -2576,6 +2605,8 @@
                         }
                     }
                 });
+            } else {
+                console.error('Firebase Auth not available');
             }
         }
 

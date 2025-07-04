@@ -38,11 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    console.log('AuthProvider: Setting up auth state listener')
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       try {
         if (firebaseUser) {
+          console.log('AuthProvider: Firebase user detected:', firebaseUser.email, 'UID:', firebaseUser.uid)
           // Get the ID token
           const idToken = await firebaseUser.getIdToken()
+          console.log('AuthProvider: Got ID token:', idToken.substring(0, 20) + '...')
           
           // Convert Firebase user to our User interface
           const userData: User = {
@@ -54,14 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           setUser(userData)
           setToken(idToken)
-          console.log('User logged in:', userData.email)
+          console.log('AuthProvider: User logged in:', userData.email, 'Token set')
         } else {
+          console.log('AuthProvider: No Firebase user, logging out')
           setUser(null)
           setToken(null)
-          console.log('User logged out')
+          console.log('AuthProvider: User logged out')
         }
       } catch (error) {
-        console.error('Auth state change error:', error)
+        console.error('AuthProvider: Auth state change error:', error)
         setUser(null)
         setToken(null)
       } finally {

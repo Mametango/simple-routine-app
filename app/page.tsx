@@ -112,10 +112,13 @@ export default function Home() {
       try {
         if (token) {
           // 認証されている場合はサーバーから読み込み
+          console.log('Loading routines from server with token:', token.substring(0, 20) + '...')
           const data = await apiCall('/api/routines')
+          console.log('Routines loaded from server:', data)
           setRoutines(data)
         } else {
           // 認証されていない場合はローカルストレージから読み込み
+          console.log('No token, loading from localStorage')
           const savedRoutines = localStorage.getItem('routines')
           if (savedRoutines) {
             setRoutines(JSON.parse(savedRoutines))
@@ -142,10 +145,13 @@ export default function Home() {
       try {
         if (token) {
           // 認証されている場合はサーバーから読み込み
+          console.log('Loading todos from server with token:', token.substring(0, 20) + '...')
           const data = await apiCall('/api/todos')
+          console.log('Todos loaded from server:', data)
           setTodos(data)
         } else {
           // 認証されていない場合はローカルストレージから読み込み
+          console.log('No token, loading todos from localStorage')
           const savedTodos = localStorage.getItem('todos')
           if (savedTodos) {
             setTodos(JSON.parse(savedTodos))

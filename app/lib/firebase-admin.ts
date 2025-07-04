@@ -18,17 +18,22 @@ export const adminDb = getFirestore()
 
 // Verify Firebase token
 export async function verifyToken(authHeader: string | null) {
+  console.log('verifyToken: Checking auth header:', authHeader ? 'present' : 'missing')
+  
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('verifyToken: Invalid auth header format')
     return null
   }
 
   const token = authHeader.split('Bearer ')[1]
+  console.log('verifyToken: Token extracted:', token.substring(0, 20) + '...')
   
   try {
     const decodedToken = await adminAuth.verifyIdToken(token)
+    console.log('verifyToken: Token verified successfully for user:', decodedToken.uid)
     return decodedToken
   } catch (error) {
-    console.error('Token verification failed:', error)
+    console.error('verifyToken: Token verification failed:', error)
     return null
   }
 } 
