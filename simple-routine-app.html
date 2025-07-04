@@ -1739,7 +1739,7 @@
         async function loadRoutinesFromFirestore() {
             if (!isAuthenticated || !currentUser) {
                 console.log('Not authenticated, skipping Firestore load');
-                return;
+                return Promise.resolve();
             }
             
             try {
@@ -1765,6 +1765,8 @@
                 } else {
                     console.log('No routines found in Firestore, keeping local data');
                 }
+                
+                return Promise.resolve();
             } catch (error) {
                 console.error('Error loading routines from Firestore:', error);
                 // Firestore接続エラーの場合はローカルデータを使用
@@ -1772,13 +1774,14 @@
                     console.log('Firestore connection error, using local data');
                     showSyncStatus('オフラインです（ローカルデータを使用）', false);
                 }
+                return Promise.reject(error);
             }
         }
 
         async function loadTodosFromFirestore() {
             if (!isAuthenticated || !currentUser) {
                 console.log('Not authenticated, skipping Firestore load');
-                return;
+                return Promise.resolve();
             }
             
             try {
@@ -1804,6 +1807,8 @@
                 } else {
                     console.log('No todos found in Firestore, keeping local data');
                 }
+                
+                return Promise.resolve();
             } catch (error) {
                 console.error('Error loading todos from Firestore:', error);
                 // Firestore接続エラーの場合はローカルデータを使用
@@ -1811,6 +1816,7 @@
                     console.log('Firestore connection error, using local data');
                     showSyncStatus('オフラインです（ローカルデータを使用）', false);
                 }
+                return Promise.reject(error);
             }
         }
 
@@ -2610,8 +2616,25 @@
                         
                         // ログイン時にFirestoreからデータを読み込み
                         showSyncStatus('データを読み込み中...');
-                        loadRoutinesFromFirestore();
-                        loadTodosFromFirestore();
+                        
+                        // 非同期でデータを読み込み、完了後に同期状態を更新
+                        const loadTimeout = setTimeout(() => {
+                            console.log('Data loading timeout, hiding sync status');
+                            showSyncStatus('データの読み込みが完了しました', true);
+                        }, 10000); // 10秒でタイムアウト
+                        
+                        Promise.all([
+                            loadRoutinesFromFirestore(),
+                            loadTodosFromFirestore()
+                        ]).then(() => {
+                            clearTimeout(loadTimeout);
+                            console.log('All data loaded from Firestore');
+                            showSyncStatus('データの読み込みが完了しました', true);
+                        }).catch((error) => {
+                            clearTimeout(loadTimeout);
+                            console.error('Error loading data from Firestore:', error);
+                            showSyncStatus('データの読み込みに失敗しました', false);
+                        });
                     } else {
                         currentUser = null;
                         isAuthenticated = false;
@@ -2630,6 +2653,10 @@
                 });
             } else {
                 console.error('Firebase Auth not available');
+                // Firebase Authが利用できない場合は同期状態を非表示
+                if (syncStatus) {
+                    syncStatus.style.display = 'none';
+                }
             }
         }
 
@@ -2916,12 +2943,21 @@
 
         // 初期化
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, starting initialization...');
+            
+            // 同期状態を非表示にする
+            if (syncStatus) {
+                syncStatus.style.display = 'none';
+            }
+            
+            // まずローカルデータを読み込み
             loadRoutines();
             loadTodos();
             lucide.createIcons();
             
             // Firebase SDKの読み込みを待ってから認証を初期化
             setTimeout(() => {
+                console.log('Initializing Firebase auth...');
                 initializeAuth();
                 setupAuthEventListeners();
                 updateAuthUI();
