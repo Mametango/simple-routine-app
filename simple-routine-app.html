@@ -1687,7 +1687,13 @@
                 showSyncStatus('ルーティンが同期されました', true);
             } catch (error) {
                 console.error('Error syncing routines to Firestore:', error);
-                showSyncStatus('ルーティンの同期に失敗しました', false);
+                // Firestore接続エラーの場合は無視（ローカルデータは保持される）
+                if (error.code === 'unavailable' || error.code === 'permission-denied') {
+                    console.log('Firestore connection error, keeping local data');
+                    showSyncStatus('オフラインです（ローカルデータを保持）', false);
+                } else {
+                    showSyncStatus('ルーティンの同期に失敗しました', false);
+                }
             }
         }
 
@@ -1720,7 +1726,13 @@
                 showSyncStatus('Todoが同期されました', true);
             } catch (error) {
                 console.error('Error syncing todos to Firestore:', error);
-                showSyncStatus('Todoの同期に失敗しました', false);
+                // Firestore接続エラーの場合は無視（ローカルデータは保持される）
+                if (error.code === 'unavailable' || error.code === 'permission-denied') {
+                    console.log('Firestore connection error, keeping local data');
+                    showSyncStatus('オフラインです（ローカルデータを保持）', false);
+                } else {
+                    showSyncStatus('Todoの同期に失敗しました', false);
+                }
             }
         }
 
@@ -1755,6 +1767,11 @@
                 }
             } catch (error) {
                 console.error('Error loading routines from Firestore:', error);
+                // Firestore接続エラーの場合はローカルデータを使用
+                if (error.code === 'unavailable' || error.code === 'permission-denied') {
+                    console.log('Firestore connection error, using local data');
+                    showSyncStatus('オフラインです（ローカルデータを使用）', false);
+                }
             }
         }
 
@@ -1789,6 +1806,11 @@
                 }
             } catch (error) {
                 console.error('Error loading todos from Firestore:', error);
+                // Firestore接続エラーの場合はローカルデータを使用
+                if (error.code === 'unavailable' || error.code === 'permission-denied') {
+                    console.log('Firestore connection error, using local data');
+                    showSyncStatus('オフラインです（ローカルデータを使用）', false);
+                }
             }
         }
 
@@ -1804,20 +1826,21 @@
                 syncStatus.style.borderColor = '#4caf50';
                 syncText.style.color = '#2e7d32';
             } else if (isSuccess === false) {
-                syncStatus.style.background = 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)';
-                syncStatus.style.borderColor = '#f44336';
-                syncText.style.color = '#c62828';
+                syncStatus.style.background = 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)';
+                syncStatus.style.borderColor = '#ff9800';
+                syncText.style.color = '#e65100';
             } else {
                 syncStatus.style.background = 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)';
                 syncStatus.style.borderColor = '#2196f3';
                 syncText.style.color = '#1976d2';
             }
             
-            // 成功または失敗の場合は3秒後に非表示
+            // 成功の場合は3秒後、警告の場合は5秒後に非表示
             if (isSuccess !== null) {
+                const timeout = isSuccess === true ? 3000 : 5000;
                 setTimeout(() => {
                     syncStatus.style.display = 'none';
-                }, 3000);
+                }, timeout);
             }
         }
 
@@ -2764,10 +2787,25 @@
         // ログアウト処理
         async function handleLogout() {
             try {
-                await window.signOut(window.firebaseAuth);
+                console.log('Starting logout process...');
+                
+                // まずローカルデータを保存
+                if (routines.length > 0 || todos.length > 0) {
+                    console.log('Saving local data before logout...');
+                    localStorage.setItem('routines', JSON.stringify(routines));
+                    localStorage.setItem('todos', JSON.stringify(todos));
+                }
+                
+                if (window.signOut && window.firebaseAuth) {
+                    // Firestore接続を適切に閉じる前にログアウト
+                    await window.signOut(window.firebaseAuth);
+                    console.log('User logged out successfully');
+                }
+                
                 return { success: true };
             } catch (error) {
                 console.error('Logout error:', error);
+                // エラーが発生してもローカルデータは保持される
                 return { success: false, error: 'ログアウトに失敗しました' };
             }
         }
