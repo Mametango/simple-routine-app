@@ -1685,8 +1685,14 @@
                 const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
                 const routinesCollectionRef = window.collection(userDocRef, 'routines');
                 
-                // 既存のデータを削除
-                const existingDocs = await window.getDocs(routinesCollectionRef);
+                // タイムアウト付きで既存のデータを削除
+                const existingDocs = await Promise.race([
+                    window.getDocs(routinesCollectionRef),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+                    )
+                ]);
+                
                 const deletePromises = existingDocs.docs.map(doc => window.deleteDoc(doc.ref));
                 await Promise.all(deletePromises);
                 
@@ -1705,8 +1711,13 @@
                 showSyncStatus('ルーティンが同期されました', true);
             } catch (error) {
                 console.error('Error syncing routines to Firestore:', error);
-                // Firestore接続エラーの場合は無視（ローカルデータは保持される）
-                if (error.code === 'unavailable' || error.code === 'permission-denied') {
+                
+                // ネットワークエラーやタイムアウトの場合は無視（ローカルデータは保持される）
+                if (error.code === 'unavailable' || 
+                    error.code === 'permission-denied' || 
+                    error.message === 'Firestore timeout' ||
+                    error.message.includes('Failed to fetch') ||
+                    error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
                     console.log('Firestore connection error, keeping local data');
                     showSyncStatus('オフラインです（ローカルデータを保持）', false);
                 } else {
@@ -1724,8 +1735,14 @@
                 const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
                 const todosCollectionRef = window.collection(userDocRef, 'todos');
                 
-                // 既存のデータを削除
-                const existingDocs = await window.getDocs(todosCollectionRef);
+                // タイムアウト付きで既存のデータを削除
+                const existingDocs = await Promise.race([
+                    window.getDocs(todosCollectionRef),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+                    )
+                ]);
+                
                 const deletePromises = existingDocs.docs.map(doc => window.deleteDoc(doc.ref));
                 await Promise.all(deletePromises);
                 
@@ -1744,8 +1761,13 @@
                 showSyncStatus('Todoが同期されました', true);
             } catch (error) {
                 console.error('Error syncing todos to Firestore:', error);
-                // Firestore接続エラーの場合は無視（ローカルデータは保持される）
-                if (error.code === 'unavailable' || error.code === 'permission-denied') {
+                
+                // ネットワークエラーやタイムアウトの場合は無視（ローカルデータは保持される）
+                if (error.code === 'unavailable' || 
+                    error.code === 'permission-denied' || 
+                    error.message === 'Firestore timeout' ||
+                    error.message.includes('Failed to fetch') ||
+                    error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
                     console.log('Firestore connection error, keeping local data');
                     showSyncStatus('オフラインです（ローカルデータを保持）', false);
                 } else {
@@ -1764,7 +1786,14 @@
                 console.log('Loading routines from Firestore for user:', currentUser.uid);
                 const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
                 const routinesCollectionRef = window.collection(userDocRef, 'routines');
-                const querySnapshot = await window.getDocs(routinesCollectionRef);
+                
+                // タイムアウト付きでFirestoreから読み込み
+                const querySnapshot = await Promise.race([
+                    window.getDocs(routinesCollectionRef),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+                    )
+                ]);
                 
                 const firestoreRoutines = [];
                 querySnapshot.forEach((doc) => {
@@ -1787,11 +1816,19 @@
                 return Promise.resolve();
             } catch (error) {
                 console.error('Error loading routines from Firestore:', error);
-                // Firestore接続エラーの場合はローカルデータを使用
-                if (error.code === 'unavailable' || error.code === 'permission-denied') {
+                
+                // ネットワークエラーやタイムアウトの場合はローカルデータを使用
+                if (error.code === 'unavailable' || 
+                    error.code === 'permission-denied' || 
+                    error.message === 'Firestore timeout' ||
+                    error.message.includes('Failed to fetch') ||
+                    error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
                     console.log('Firestore connection error, using local data');
                     showSyncStatus('オフラインです（ローカルデータを使用）', false);
+                } else {
+                    showSyncStatus('データの読み込みに失敗しました', false);
                 }
+                
                 return Promise.reject(error);
             }
         }
@@ -1806,7 +1843,14 @@
                 console.log('Loading todos from Firestore for user:', currentUser.uid);
                 const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
                 const todosCollectionRef = window.collection(userDocRef, 'todos');
-                const querySnapshot = await window.getDocs(todosCollectionRef);
+                
+                // タイムアウト付きでFirestoreから読み込み
+                const querySnapshot = await Promise.race([
+                    window.getDocs(todosCollectionRef),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+                    )
+                ]);
                 
                 const firestoreTodos = [];
                 querySnapshot.forEach((doc) => {
@@ -1829,11 +1873,19 @@
                 return Promise.resolve();
             } catch (error) {
                 console.error('Error loading todos from Firestore:', error);
-                // Firestore接続エラーの場合はローカルデータを使用
-                if (error.code === 'unavailable' || error.code === 'permission-denied') {
+                
+                // ネットワークエラーやタイムアウトの場合はローカルデータを使用
+                if (error.code === 'unavailable' || 
+                    error.code === 'permission-denied' || 
+                    error.message === 'Firestore timeout' ||
+                    error.message.includes('Failed to fetch') ||
+                    error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
                     console.log('Firestore connection error, using local data');
                     showSyncStatus('オフラインです（ローカルデータを使用）', false);
+                } else {
+                    showSyncStatus('データの読み込みに失敗しました', false);
                 }
+                
                 return Promise.reject(error);
             }
         }
@@ -2655,16 +2707,22 @@
                             showSyncStatus('データの読み込みが完了しました', true);
                         }, 10000); // 10秒でタイムアウト
                         
-                        Promise.all([
+                        Promise.allSettled([
                             loadRoutinesFromFirestore(),
                             loadTodosFromFirestore()
-                        ]).then(() => {
+                        ]).then((results) => {
                             clearTimeout(loadTimeout);
-                            console.log('All data loaded from Firestore');
+                            console.log('All data loading operations completed:', results);
+                            
+                            const hasErrors = results.some(result => result.status === 'rejected');
+                            if (hasErrors) {
+                                console.log('Some data loading operations failed, but continuing');
+                            }
+                            
                             showSyncStatus('データの読み込みが完了しました', true);
                         }).catch((error) => {
                             clearTimeout(loadTimeout);
-                            console.error('Error loading data from Firestore:', error);
+                            console.error('Unexpected error in data loading:', error);
                             showSyncStatus('データの読み込みに失敗しました', false);
                         }).finally(() => {
                             // 確実にタイムアウトをクリア
