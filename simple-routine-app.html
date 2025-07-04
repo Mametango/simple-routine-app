@@ -187,6 +187,30 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
+        .sync-status {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #2196f3;
+            border-radius: 12px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .sync-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: #1976d2;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .sync-indicator i {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1245,6 +1269,13 @@
             </button>
         </div>
 
+        <div class="sync-status" id="syncStatus" style="display: none;">
+            <div class="sync-indicator">
+                <i data-lucide="cloud" style="width: 16px; height: 16px;"></i>
+                <span id="syncText">データを同期中...</span>
+            </div>
+        </div>
+
         <div class="stats">
             <div class="stat-card">
                 <i data-lucide="calendar" class="stat-icon"></i>
@@ -1623,33 +1654,197 @@
         // 曜日選択用DOM要素
         const weekdaysContainer = document.getElementById('weekdaysContainer');
         const editWeekdaysContainer = document.getElementById('editWeekdaysContainer');
+        const syncStatus = document.getElementById('syncStatus');
+        const syncText = document.getElementById('syncText');
+
+        // Firestoreとの同期関数
+        async function syncRoutinesToFirestore() {
+            if (!isAuthenticated || !currentUser) return;
+            
+            try {
+                showSyncStatus('ルーティンを同期中...');
+                
+                const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
+                const routinesCollectionRef = window.collection(userDocRef, 'routines');
+                
+                // 既存のデータを削除
+                const existingDocs = await window.getDocs(routinesCollectionRef);
+                const deletePromises = existingDocs.docs.map(doc => window.deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+                
+                // 新しいデータを追加
+                const addPromises = routines.map(routine => {
+                    const { id, ...routineData } = routine;
+                    return window.addDoc(routinesCollectionRef, {
+                        ...routineData,
+                        userId: currentUser.uid,
+                        createdAt: routine.createdAt || new Date().toISOString()
+                    });
+                });
+                await Promise.all(addPromises);
+                
+                console.log('Routines synced to Firestore');
+                showSyncStatus('ルーティンが同期されました', true);
+            } catch (error) {
+                console.error('Error syncing routines to Firestore:', error);
+                showSyncStatus('ルーティンの同期に失敗しました', false);
+            }
+        }
+
+        async function syncTodosToFirestore() {
+            if (!isAuthenticated || !currentUser) return;
+            
+            try {
+                showSyncStatus('Todoを同期中...');
+                
+                const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
+                const todosCollectionRef = window.collection(userDocRef, 'todos');
+                
+                // 既存のデータを削除
+                const existingDocs = await window.getDocs(todosCollectionRef);
+                const deletePromises = existingDocs.docs.map(doc => window.deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+                
+                // 新しいデータを追加
+                const addPromises = todos.map(todo => {
+                    const { id, ...todoData } = todo;
+                    return window.addDoc(todosCollectionRef, {
+                        ...todoData,
+                        userId: currentUser.uid,
+                        createdAt: todo.createdAt || new Date().toISOString()
+                    });
+                });
+                await Promise.all(addPromises);
+                
+                console.log('Todos synced to Firestore');
+                showSyncStatus('Todoが同期されました', true);
+            } catch (error) {
+                console.error('Error syncing todos to Firestore:', error);
+                showSyncStatus('Todoの同期に失敗しました', false);
+            }
+        }
+
+        async function loadRoutinesFromFirestore() {
+            if (!isAuthenticated || !currentUser) return;
+            
+            try {
+                const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
+                const routinesCollectionRef = window.collection(userDocRef, 'routines');
+                const querySnapshot = await window.getDocs(routinesCollectionRef);
+                
+                const firestoreRoutines = [];
+                querySnapshot.forEach((doc) => {
+                    firestoreRoutines.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                if (firestoreRoutines.length > 0) {
+                    routines = firestoreRoutines;
+                    updateDisplay();
+                    console.log('Routines loaded from Firestore');
+                }
+            } catch (error) {
+                console.error('Error loading routines from Firestore:', error);
+            }
+        }
+
+        async function loadTodosFromFirestore() {
+            if (!isAuthenticated || !currentUser) return;
+            
+            try {
+                const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
+                const todosCollectionRef = window.collection(userDocRef, 'todos');
+                const querySnapshot = await window.getDocs(todosCollectionRef);
+                
+                const firestoreTodos = [];
+                querySnapshot.forEach((doc) => {
+                    firestoreTodos.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                if (firestoreTodos.length > 0) {
+                    todos = firestoreTodos;
+                    updateTodoDisplay();
+                    console.log('Todos loaded from Firestore');
+                }
+            } catch (error) {
+                console.error('Error loading todos from Firestore:', error);
+            }
+        }
+
+        // 同期状態を表示
+        function showSyncStatus(message, isSuccess = null) {
+            if (!syncStatus || !syncText) return;
+            
+            syncText.textContent = message;
+            syncStatus.style.display = 'block';
+            
+            if (isSuccess === true) {
+                syncStatus.style.background = 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)';
+                syncStatus.style.borderColor = '#4caf50';
+                syncText.style.color = '#2e7d32';
+            } else if (isSuccess === false) {
+                syncStatus.style.background = 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)';
+                syncStatus.style.borderColor = '#f44336';
+                syncText.style.color = '#c62828';
+            } else {
+                syncStatus.style.background = 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)';
+                syncStatus.style.borderColor = '#2196f3';
+                syncText.style.color = '#1976d2';
+            }
+            
+            // 成功または失敗の場合は3秒後に非表示
+            if (isSuccess !== null) {
+                setTimeout(() => {
+                    syncStatus.style.display = 'none';
+                }, 3000);
+            }
+        }
 
         // ローカルストレージからルーティンを読み込み
         function loadRoutines() {
-            const savedRoutines = localStorage.getItem('routines');
-            if (savedRoutines) {
-                routines = JSON.parse(savedRoutines);
+            if (isAuthenticated && currentUser) {
+                loadRoutinesFromFirestore();
+            } else {
+                const savedRoutines = localStorage.getItem('routines');
+                if (savedRoutines) {
+                    routines = JSON.parse(savedRoutines);
+                }
+                updateDisplay();
             }
-            updateDisplay();
         }
 
         // ルーティンをローカルストレージに保存
         function saveRoutines() {
             localStorage.setItem('routines', JSON.stringify(routines));
+            if (isAuthenticated && currentUser) {
+                syncRoutinesToFirestore();
+            }
         }
 
         // ローカルストレージからTodoを読み込み
         function loadTodos() {
-            const savedTodos = localStorage.getItem('todos');
-            if (savedTodos) {
-                todos = JSON.parse(savedTodos);
+            if (isAuthenticated && currentUser) {
+                loadTodosFromFirestore();
+            } else {
+                const savedTodos = localStorage.getItem('todos');
+                if (savedTodos) {
+                    todos = JSON.parse(savedTodos);
+                }
+                updateTodoDisplay();
             }
-            updateTodoDisplay();
         }
 
         // Todoをローカルストレージに保存
         function saveTodos() {
             localStorage.setItem('todos', JSON.stringify(todos));
+            if (isAuthenticated && currentUser) {
+                syncTodosToFirestore();
+            }
         }
 
         // 表示を更新
@@ -1980,6 +2175,7 @@
                 weekdays: weekdays,
                 completed: false,
                 createdAt: new Date().toISOString(),
+                userId: isAuthenticated && currentUser ? currentUser.uid : 'local',
                 checklist: checklist
             };
 
@@ -2004,7 +2200,8 @@
                 priority: todoPriority.value,
                 dueDate: todoDueDate.value || null,
                 completed: false,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                userId: isAuthenticated && currentUser ? currentUser.uid : 'local'
             };
 
             todos.push(todo);
@@ -2358,11 +2555,25 @@
                         isAuthenticated = true;
                         updateAuthUI();
                         console.log('User logged in:', user.email);
+                        
+                        // ログイン時にFirestoreからデータを読み込み
+                        showSyncStatus('データを読み込み中...');
+                        loadRoutinesFromFirestore();
+                        loadTodosFromFirestore();
                     } else {
                         currentUser = null;
                         isAuthenticated = false;
                         updateAuthUI();
                         console.log('User logged out');
+                        
+                        // ログアウト時にローカルストレージからデータを読み込み
+                        loadRoutines();
+                        loadTodos();
+                        
+                        // 同期状態を非表示
+                        if (syncStatus) {
+                            syncStatus.style.display = 'none';
+                        }
                     }
                 });
             }
