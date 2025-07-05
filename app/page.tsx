@@ -21,6 +21,7 @@ interface Routine {
   createdAt: string;
   userId: string;
   checklist?: ChecklistItem[];
+  monthlyDate?: string;
 }
 
 interface NewRoutine {
@@ -29,6 +30,7 @@ interface NewRoutine {
   frequency: string;
   time: string;
   weekdays: string[];
+  monthlyDate?: string;
   checklist: ChecklistItem[];
 }
 
@@ -59,6 +61,7 @@ export default function Home() {
     frequency: 'daily',
     time: '',
     weekdays: [],
+    monthlyDate: '',
     checklist: [{ text: '', checked: false }],
   })
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -133,7 +136,11 @@ export default function Home() {
         // エラー時はローカルストレージから読み込み
         const savedRoutines = localStorage.getItem('routines')
         if (savedRoutines) {
-          setRoutines(JSON.parse(savedRoutines))
+          const parsedRoutines = JSON.parse(savedRoutines)
+          console.log('Loaded routines from localStorage as fallback:', parsedRoutines)
+          setRoutines(parsedRoutines)
+        } else {
+          console.log('No routines found in localStorage')
         }
       } finally {
         setLoadingRoutines(false)
@@ -170,7 +177,11 @@ export default function Home() {
         // エラー時はローカルストレージから読み込み
         const savedTodos = localStorage.getItem('todos')
         if (savedTodos) {
-          setTodos(JSON.parse(savedTodos))
+          const parsedTodos = JSON.parse(savedTodos)
+          console.log('Loaded todos from localStorage as fallback:', parsedTodos)
+          setTodos(parsedTodos)
+        } else {
+          console.log('No todos found in localStorage')
         }
       } finally {
         setLoadingTodos(false)
@@ -220,7 +231,8 @@ export default function Home() {
       completed: false,
       createdAt: new Date().toISOString(),
       userId: token ? 'server' : 'local',
-      checklist: newRoutine.checklist.filter(item => item.text.trim())
+      checklist: newRoutine.checklist.filter(item => item.text.trim()),
+      ...(newRoutine.frequency === 'monthly' ? { monthlyDate: newRoutine.monthlyDate } : {})
     }
 
     console.log('Adding routine:', routine);
@@ -232,7 +244,8 @@ export default function Home() {
           description: newRoutine.description,
           frequency: newRoutine.frequency,
           time: newRoutine.time,
-          checklist: newRoutine.checklist.filter(item => item.text.trim())
+          checklist: newRoutine.checklist.filter(item => item.text.trim()),
+          ...(newRoutine.frequency === 'monthly' ? { monthlyDate: newRoutine.monthlyDate } : {})
         }
 
         console.log('Sending routine data to server:', routineData);
@@ -258,7 +271,7 @@ export default function Home() {
       saveRoutines(updatedRoutines)
     }
 
-    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], checklist: [{ text: '', checked: false }] })
+    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], monthlyDate: '', checklist: [{ text: '', checked: false }] })
     setShowForm(false)
   }
 
@@ -324,6 +337,7 @@ export default function Home() {
       frequency: routine.frequency,
       time: routine.time,
       weekdays: routine.weekdays || [],
+      monthlyDate: routine.monthlyDate || '',
       checklist: routine.checklist || [{ text: '', checked: false }]
     })
   }
@@ -333,7 +347,7 @@ export default function Home() {
 
     const updatedRoutines = routines.map(routine =>
       routine.id === editingId
-        ? { ...routine, title: newRoutine.title, description: newRoutine.description, frequency: newRoutine.frequency, time: newRoutine.time, checklist: newRoutine.checklist }
+        ? { ...routine, title: newRoutine.title, description: newRoutine.description, frequency: newRoutine.frequency, time: newRoutine.time, checklist: newRoutine.checklist, ...(newRoutine.frequency === 'monthly' ? { monthlyDate: newRoutine.monthlyDate } : {}) }
         : routine
     )
 
@@ -350,7 +364,8 @@ export default function Home() {
             description: newRoutine.description,
             frequency: newRoutine.frequency,
             time: newRoutine.time,
-            checklist: newRoutine.checklist
+            checklist: newRoutine.checklist,
+            ...(newRoutine.frequency === 'monthly' ? { monthlyDate: newRoutine.monthlyDate } : {})
           })
         })
 
@@ -369,12 +384,12 @@ export default function Home() {
     }
 
     setEditingId(null)
-    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], checklist: [{ text: '', checked: false }] })
+    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], monthlyDate: '', checklist: [{ text: '', checked: false }] })
   }
 
   const cancelEdit = () => {
     setEditingId(null)
-    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], checklist: [{ text: '', checked: false }] })
+    setNewRoutine({ title: '', description: '', frequency: 'daily', time: '', weekdays: [], monthlyDate: '', checklist: [{ text: '', checked: false }] })
   }
 
   const getFilteredRoutines = () => {
@@ -858,6 +873,22 @@ export default function Home() {
                 />
               </div>
             </div>
+            {newRoutine.frequency === 'monthly' && (
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">日付</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="1-31"
+                    value={newRoutine.monthlyDate || ''}
+                    onChange={(e) => setNewRoutine({ ...newRoutine, monthlyDate: e.target.value })}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+            )}
             <div className="form-buttons">
               <button onClick={addRoutine} className="save-button">
                 保存
@@ -976,6 +1007,24 @@ export default function Home() {
                           <div className="routine-time">
                             <Clock size={14} />
                             <span>{routine.time}</span>
+                          </div>
+                        )}
+                        {routine.frequency === 'weekly' && routine.weekdays && routine.weekdays.length > 0 && (
+                          <div className="routine-weekdays">
+                            <CalendarDays size={14} />
+                            <span>{routine.weekdays.map(day => {
+                              const labels: { [key: string]: string } = {
+                                'monday': '月', 'tuesday': '火', 'wednesday': '水',
+                                'thursday': '木', 'friday': '金', 'saturday': '土', 'sunday': '日'
+                              };
+                              return labels[day] || day;
+                            }).join('・')}</span>
+                          </div>
+                        )}
+                        {routine.frequency === 'monthly' && routine.monthlyDate && (
+                          <div className="routine-monthly-date">
+                            <Calendar size={14} />
+                            <span>{routine.monthlyDate}日</span>
                           </div>
                         )}
                       </div>
@@ -1144,6 +1193,22 @@ export default function Home() {
                 />
               </div>
             </div>
+            {newRoutine.frequency === 'monthly' && (
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">日付</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="1-31"
+                    value={newRoutine.monthlyDate || ''}
+                    onChange={(e) => setNewRoutine({ ...newRoutine, monthlyDate: e.target.value })}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+            )}
             <div className="modal-buttons">
               <button onClick={saveEdit} className="save-button">
                 保存

@@ -1375,20 +1375,26 @@
                         <button type="button" id="addChecklistItem" style="margin-top: 4px;">項目を追加</button>
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">頻度</label>
-                            <select id="routineFrequency" class="form-select">
-                                <option value="daily">毎日</option>
-                                <option value="weekly">毎週</option>
-                                <option value="monthly">毎月</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">時間</label>
-                            <input type="time" id="routineTime" class="form-input">
-                        </div>
-                    </div>
+                                <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">頻度</label>
+                    <select id="routineFrequency" class="form-select">
+                        <option value="daily">毎日</option>
+                        <option value="weekly">毎週</option>
+                        <option value="monthly">毎月</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">時間</label>
+                    <input type="time" id="routineTime" class="form-input">
+                </div>
+            </div>
+            <div class="form-row" id="monthlyDateRow" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">日付</label>
+                    <input type="number" id="routineDate" class="form-input" min="1" max="31" placeholder="1-31">
+                </div>
+            </div>
                     
                     <div class="form-weekdays" id="weekdaysContainer" style="display: none;">
                         <label class="form-label">曜日</label>
@@ -1522,6 +1528,12 @@
                 <div class="form-group">
                     <label class="form-label">時間</label>
                     <input type="time" id="editTime" class="form-input">
+                </div>
+            </div>
+            <div class="form-row" id="editMonthlyDateRow" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">日付</label>
+                    <input type="number" id="editRoutineDate" class="form-input" min="1" max="31" placeholder="1-31">
                 </div>
             </div>
             
@@ -1807,10 +1819,15 @@
                 
                 if (firestoreRoutines.length > 0) {
                     routines = firestoreRoutines;
-                    updateDisplay();
                     console.log('Routines loaded from Firestore:', routines);
                 } else {
                     console.log('No routines found in Firestore, keeping local data');
+                    // ローカルストレージから読み込みを試行
+                    const savedRoutines = localStorage.getItem('routines');
+                    if (savedRoutines) {
+                        routines = JSON.parse(savedRoutines);
+                        console.log('Loaded routines from localStorage as fallback:', routines);
+                    }
                 }
                 
                 return Promise.resolve();
@@ -1864,10 +1881,15 @@
                 
                 if (firestoreTodos.length > 0) {
                     todos = firestoreTodos;
-                    updateTodoDisplay();
                     console.log('Todos loaded from Firestore:', todos);
                 } else {
                     console.log('No todos found in Firestore, keeping local data');
+                    // ローカルストレージから読み込みを試行
+                    const savedTodos = localStorage.getItem('todos');
+                    if (savedTodos) {
+                        todos = JSON.parse(savedTodos);
+                        console.log('Loaded todos from localStorage as fallback:', todos);
+                    }
                 }
                 
                 return Promise.resolve();
@@ -1935,10 +1957,24 @@
         }
 
         // ローカルストレージからルーティンを読み込み
-        function loadRoutines() {
+        async function loadRoutines() {
             if (isAuthenticated && currentUser) {
                 console.log('Loading routines from Firestore for authenticated user');
-                loadRoutinesFromFirestore();
+                try {
+                    await loadRoutinesFromFirestore();
+                    updateDisplay();
+                } catch (error) {
+                    console.error('Failed to load routines from Firestore:', error);
+                    // エラー時はローカルストレージから読み込み
+                    const savedRoutines = localStorage.getItem('routines');
+                    if (savedRoutines) {
+                        routines = JSON.parse(savedRoutines);
+                        console.log('Loaded routines from localStorage as fallback:', routines);
+                    } else {
+                        console.log('No routines found in localStorage');
+                    }
+                    updateDisplay();
+                }
             } else {
                 console.log('Loading routines from localStorage');
                 const savedRoutines = localStorage.getItem('routines');
@@ -1966,10 +2002,24 @@
         }
 
         // ローカルストレージからTodoを読み込み
-        function loadTodos() {
+        async function loadTodos() {
             if (isAuthenticated && currentUser) {
                 console.log('Loading todos from Firestore for authenticated user');
-                loadTodosFromFirestore();
+                try {
+                    await loadTodosFromFirestore();
+                    updateTodoDisplay();
+                } catch (error) {
+                    console.error('Failed to load todos from Firestore:', error);
+                    // エラー時はローカルストレージから読み込み
+                    const savedTodos = localStorage.getItem('todos');
+                    if (savedTodos) {
+                        todos = JSON.parse(savedTodos);
+                        console.log('Loaded todos from localStorage as fallback:', todos);
+                    } else {
+                        console.log('No todos found in localStorage');
+                    }
+                    updateTodoDisplay();
+                }
             } else {
                 console.log('Loading todos from localStorage');
                 const savedTodos = localStorage.getItem('todos');
@@ -2169,14 +2219,23 @@
             const frequencyLabel = getFrequencyLabel(routine.frequency);
             const createdDate = new Date(routine.createdAt).toLocaleDateString('ja-JP');
             
-            // 曜日表示を生成
+            // 曜日と日付表示を生成
             let weekdaysDisplay = '';
+            let monthlyDateDisplay = '';
+            
             if (routine.frequency === 'weekly' && routine.weekdays && routine.weekdays.length > 0) {
                 const weekdayLabels = routine.weekdays.map(day => getWeekdayLabel(day)).join('・');
                 weekdaysDisplay = `
                     <div class="routine-weekdays">
                         <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
                         <span>${weekdayLabels}</span>
+                    </div>
+                `;
+            } else if (routine.frequency === 'monthly' && routine.monthlyDate) {
+                monthlyDateDisplay = `
+                    <div class="routine-monthly-date">
+                        <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                        <span>${routine.monthlyDate}日</span>
                     </div>
                 `;
             }
@@ -2210,6 +2269,7 @@
                                 </div>
                             ` : ''}
                             ${weekdaysDisplay}
+                            ${monthlyDateDisplay}
                         </div>
                         
                         <div class="routine-date">作成日: ${createdDate}</div>
@@ -2246,20 +2306,40 @@
         // 頻度選択時の処理
         function handleFrequencyChange() {
             const frequency = routineFrequency.value;
+            const weekdaysContainer = document.getElementById('weekdaysContainer');
+            const monthlyDateRow = document.getElementById('monthlyDateRow');
+            
+            console.log('Frequency changed to:', frequency);
+            
             if (frequency === 'weekly') {
                 weekdaysContainer.style.display = 'block';
+                if (monthlyDateRow) monthlyDateRow.style.display = 'none';
+            } else if (frequency === 'monthly') {
+                weekdaysContainer.style.display = 'none';
+                if (monthlyDateRow) monthlyDateRow.style.display = 'block';
             } else {
                 weekdaysContainer.style.display = 'none';
+                if (monthlyDateRow) monthlyDateRow.style.display = 'none';
             }
         }
 
         // 編集時の頻度選択処理
         function handleEditFrequencyChange() {
             const frequency = editFrequency.value;
+            const editWeekdaysContainer = document.getElementById('editWeekdaysContainer');
+            const editMonthlyDateRow = document.getElementById('editMonthlyDateRow');
+            
+            console.log('Edit frequency changed to:', frequency);
+            
             if (frequency === 'weekly') {
                 editWeekdaysContainer.style.display = 'block';
+                if (editMonthlyDateRow) editMonthlyDateRow.style.display = 'none';
+            } else if (frequency === 'monthly') {
+                editWeekdaysContainer.style.display = 'none';
+                if (editMonthlyDateRow) editMonthlyDateRow.style.display = 'block';
             } else {
                 editWeekdaysContainer.style.display = 'none';
+                if (editMonthlyDateRow) editMonthlyDateRow.style.display = 'none';
             }
         }
 
@@ -2314,6 +2394,7 @@
 
             const checklist = getChecklistItems();
             const weekdays = routineFrequency.value === 'weekly' ? getSelectedWeekdays() : [];
+            const monthlyDate = routineFrequency.value === 'monthly' ? document.getElementById('routineDate').value : null;
             
             const routine = {
                 id: Date.now().toString(),
@@ -2322,6 +2403,7 @@
                 frequency: routineFrequency.value,
                 time: routineTime.value,
                 weekdays: weekdays,
+                monthlyDate: monthlyDate,
                 completed: false,
                 createdAt: new Date().toISOString(),
                 userId: isAuthenticated && currentUser ? currentUser.uid : 'local',
@@ -2453,7 +2535,11 @@
             routineFrequency.value = 'daily';
             routineTime.value = '';
             weekdaysContainer.style.display = 'none';
+            const monthlyDateRow = document.getElementById('monthlyDateRow');
+            if (monthlyDateRow) monthlyDateRow.style.display = 'none';
             setWeekdays([]);
+            const routineDate = document.getElementById('routineDate');
+            if (routineDate) routineDate.value = '';
             checklistItems.innerHTML = `
                 <div class="checklist-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                     <input type="checkbox" class="checklist-checkbox">
@@ -2474,13 +2560,24 @@
             editFrequency.value = routine.frequency;
             editTime.value = routine.time || '';
             
-            // 曜日を設定
+            // 曜日と日付を設定
             if (routine.frequency === 'weekly') {
                 editWeekdaysContainer.style.display = 'block';
                 setEditWeekdays(routine.weekdays || []);
+                const editMonthlyDateRow = document.getElementById('editMonthlyDateRow');
+                if (editMonthlyDateRow) editMonthlyDateRow.style.display = 'none';
+            } else if (routine.frequency === 'monthly') {
+                editWeekdaysContainer.style.display = 'none';
+                setEditWeekdays([]);
+                const editMonthlyDateRow = document.getElementById('editMonthlyDateRow');
+                if (editMonthlyDateRow) editMonthlyDateRow.style.display = 'block';
+                const editRoutineDate = document.getElementById('editRoutineDate');
+                if (editRoutineDate) editRoutineDate.value = routine.monthlyDate || '';
             } else {
                 editWeekdaysContainer.style.display = 'none';
                 setEditWeekdays([]);
+                const editMonthlyDateRow = document.getElementById('editMonthlyDateRow');
+                if (editMonthlyDateRow) editMonthlyDateRow.style.display = 'none';
             }
             
             // チェックリストを設定
@@ -2528,12 +2625,14 @@
 
             const checklist = getEditChecklistItems();
             const weekdays = editFrequency.value === 'weekly' ? getEditSelectedWeekdays() : [];
+            const monthlyDate = editFrequency.value === 'monthly' ? document.getElementById('editRoutineDate').value : null;
 
             routine.title = title;
             routine.description = editDescription.value.trim();
             routine.frequency = editFrequency.value;
             routine.time = editTime.value;
             routine.weekdays = weekdays;
+            routine.monthlyDate = monthlyDate;
             routine.checklist = checklist;
 
             saveRoutines();
@@ -2704,7 +2803,7 @@
             console.log('Firebase DB available:', !!window.firebaseDb);
             
             if (window.onAuthStateChanged && window.firebaseAuth) {
-                window.onAuthStateChanged(window.firebaseAuth, (user) => {
+                window.onAuthStateChanged(window.firebaseAuth, async (user) => {
                     console.log('Auth state changed:', user ? 'logged in' : 'logged out');
                     if (user) {
                         currentUser = user;
@@ -2749,8 +2848,8 @@
                         console.log('User logged out');
                         
                         // ログアウト時にローカルストレージからデータを読み込み
-                        loadRoutines();
-                        loadTodos();
+                        await loadRoutines();
+                        await loadTodos();
                         
                         // 同期状態を非表示
                         if (syncStatus) {
@@ -3069,8 +3168,16 @@
             }
             
             // まずローカルデータを読み込み
-            loadRoutines();
-            loadTodos();
+            loadRoutines().then(() => {
+                console.log('Routines loaded');
+            }).catch(error => {
+                console.error('Failed to load routines:', error);
+            });
+            loadTodos().then(() => {
+                console.log('Todos loaded');
+            }).catch(error => {
+                console.error('Failed to load todos:', error);
+            });
             lucide.createIcons();
             
             // 非表示ボタンのイベントリスナーを設定
