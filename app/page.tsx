@@ -121,7 +121,11 @@ export default function Home() {
           console.log('No token, loading from localStorage')
           const savedRoutines = localStorage.getItem('routines')
           if (savedRoutines) {
-            setRoutines(JSON.parse(savedRoutines))
+            const parsedRoutines = JSON.parse(savedRoutines)
+            console.log('Loaded routines from localStorage:', parsedRoutines)
+            setRoutines(parsedRoutines)
+          } else {
+            console.log('No routines found in localStorage')
           }
         }
       } catch (error) {
@@ -154,7 +158,11 @@ export default function Home() {
           console.log('No token, loading todos from localStorage')
           const savedTodos = localStorage.getItem('todos')
           if (savedTodos) {
-            setTodos(JSON.parse(savedTodos))
+            const parsedTodos = JSON.parse(savedTodos)
+            console.log('Loaded todos from localStorage:', parsedTodos)
+            setTodos(parsedTodos)
+          } else {
+            console.log('No todos found in localStorage')
           }
         }
       } catch (error) {
@@ -174,19 +182,29 @@ export default function Home() {
 
   // ルーティンをサーバーに保存
   const saveRoutines = async (newRoutines: Routine[]) => {
+    console.log('Saving routines:', newRoutines.length, 'items');
+    console.log('Routines data:', newRoutines);
     setRoutines(newRoutines)
     // 認証されていない場合はローカルストレージに保存
     if (!token) {
       localStorage.setItem('routines', JSON.stringify(newRoutines))
+      console.log('Saved to localStorage');
+    } else {
+      console.log('Data will be saved to server via API');
     }
   }
 
   // Todoをサーバーに保存
   const saveTodos = async (newTodos: Todo[]) => {
+    console.log('Saving todos:', newTodos.length, 'items');
+    console.log('Todos data:', newTodos);
     setTodos(newTodos)
     // 認証されていない場合はローカルストレージに保存
     if (!token) {
       localStorage.setItem('todos', JSON.stringify(newTodos))
+      console.log('Saved to localStorage');
+    } else {
+      console.log('Data will be saved to server via API');
     }
   }
 
@@ -205,6 +223,8 @@ export default function Home() {
       checklist: newRoutine.checklist.filter(item => item.text.trim())
     }
 
+    console.log('Adding routine:', routine);
+
     if (token) {
       try {
         const routineData = {
@@ -215,10 +235,14 @@ export default function Home() {
           checklist: newRoutine.checklist.filter(item => item.text.trim())
         }
 
+        console.log('Sending routine data to server:', routineData);
+
         const newRoutineData = await apiCall('/api/routines', {
           method: 'POST',
           body: JSON.stringify(routineData)
         })
+
+        console.log('Server response:', newRoutineData);
 
         const updatedRoutines = [...routines, newRoutineData]
         await saveRoutines(updatedRoutines)
@@ -402,6 +426,8 @@ export default function Home() {
       userId: token ? 'server' : 'local'
     }
 
+    console.log('Adding todo:', todo);
+
     if (token) {
       try {
         const todoData = {
@@ -411,10 +437,14 @@ export default function Home() {
           dueDate: newTodo.dueDate || null
         }
 
+        console.log('Sending todo data to server:', todoData);
+
         const newTodoData = await apiCall('/api/todos', {
           method: 'POST',
           body: JSON.stringify(todoData)
         })
+
+        console.log('Server response:', newTodoData);
 
         const updatedTodos = [...todos, newTodoData]
         await saveTodos(updatedTodos)

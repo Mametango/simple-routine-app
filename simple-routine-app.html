@@ -1937,11 +1937,16 @@
         // ローカルストレージからルーティンを読み込み
         function loadRoutines() {
             if (isAuthenticated && currentUser) {
+                console.log('Loading routines from Firestore for authenticated user');
                 loadRoutinesFromFirestore();
             } else {
+                console.log('Loading routines from localStorage');
                 const savedRoutines = localStorage.getItem('routines');
                 if (savedRoutines) {
                     routines = JSON.parse(savedRoutines);
+                    console.log('Loaded routines from localStorage:', routines);
+                } else {
+                    console.log('No routines found in localStorage');
                 }
                 updateDisplay();
             }
@@ -1950,6 +1955,7 @@
         // ルーティンをローカルストレージに保存
         function saveRoutines() {
             console.log('Saving routines:', routines.length, 'items');
+            console.log('Routines data:', routines);
             localStorage.setItem('routines', JSON.stringify(routines));
             if (isAuthenticated && currentUser) {
                 console.log('User authenticated, syncing to Firestore');
@@ -1962,11 +1968,16 @@
         // ローカルストレージからTodoを読み込み
         function loadTodos() {
             if (isAuthenticated && currentUser) {
+                console.log('Loading todos from Firestore for authenticated user');
                 loadTodosFromFirestore();
             } else {
+                console.log('Loading todos from localStorage');
                 const savedTodos = localStorage.getItem('todos');
                 if (savedTodos) {
                     todos = JSON.parse(savedTodos);
+                    console.log('Loaded todos from localStorage:', todos);
+                } else {
+                    console.log('No todos found in localStorage');
                 }
                 updateTodoDisplay();
             }
@@ -1975,6 +1986,7 @@
         // Todoをローカルストレージに保存
         function saveTodos() {
             console.log('Saving todos:', todos.length, 'items');
+            console.log('Todos data:', todos);
             localStorage.setItem('todos', JSON.stringify(todos));
             if (isAuthenticated && currentUser) {
                 console.log('User authenticated, syncing to Firestore');
@@ -2316,6 +2328,7 @@
                 checklist: checklist
             };
 
+            console.log('Adding routine:', routine);
             routines.push(routine);
             saveRoutines();
             updateDisplay();
@@ -2341,6 +2354,7 @@
                 userId: isAuthenticated && currentUser ? currentUser.uid : 'local'
             };
 
+            console.log('Adding todo:', todo);
             todos.push(todo);
             saveTodos();
             updateTodoDisplay();
