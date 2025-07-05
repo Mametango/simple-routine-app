@@ -12,7 +12,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, deleteDoc, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, deleteDoc, query, where, getDocs, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // Firebase設定
         const firebaseConfig = {
@@ -49,6 +49,7 @@
         window.query = query;
         window.where = where;
         window.getDocs = getDocs;
+        window.onSnapshot = onSnapshot;
     </script>
     
     <style>
@@ -1800,59 +1801,76 @@
                 return Promise.resolve();
             }
             
-            try {
-                console.log('Loading routines from Firestore for user:', currentUser.uid);
-                const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
-                const routinesCollectionRef = window.collection(userDocRef, 'routines');
-                
-                // タイムアウト付きでFirestoreから読み込み
-                const querySnapshot = await Promise.race([
-                    window.getDocs(routinesCollectionRef),
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
-                    )
-                ]);
-                
-                const firestoreRoutines = [];
-                querySnapshot.forEach((doc) => {
-                    firestoreRoutines.push({
-                        id: doc.id,
-                        ...doc.data()
+            // リトライ機能付きでFirestoreから読み込み
+            const maxRetries = 3;
+            let lastError;
+            
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    console.log(`Loading routines from Firestore (attempt ${attempt}/${maxRetries}) for user:`, currentUser.uid);
+                    const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
+                    const routinesCollectionRef = window.collection(userDocRef, 'routines');
+                    
+                    // タイムアウト付きでFirestoreから読み込み
+                    const querySnapshot = await Promise.race([
+                        window.getDocs(routinesCollectionRef),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Firestore timeout')), 10000)
+                        )
+                    ]);
+                    
+                    const firestoreRoutines = [];
+                    querySnapshot.forEach((doc) => {
+                        firestoreRoutines.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
                     });
-                });
-                
-                console.log('Found routines in Firestore:', firestoreRoutines.length);
-                
-                if (firestoreRoutines.length > 0) {
-                    routines = firestoreRoutines;
-                    console.log('Routines loaded from Firestore:', routines);
-                } else {
-                    console.log('No routines found in Firestore, keeping local data');
-                    // ローカルストレージから読み込みを試行
-                    const savedRoutines = localStorage.getItem('routines');
-                    if (savedRoutines) {
-                        routines = JSON.parse(savedRoutines);
-                        console.log('Loaded routines from localStorage as fallback:', routines);
+                    
+                    console.log('Found routines in Firestore:', firestoreRoutines.length);
+                    
+                    if (firestoreRoutines.length > 0) {
+                        routines = firestoreRoutines;
+                        console.log('Routines loaded from Firestore:', routines);
+                    } else {
+                        console.log('No routines found in Firestore, keeping local data');
+                        // ローカルストレージから読み込みを試行
+                        const savedRoutines = localStorage.getItem('routines');
+                        if (savedRoutines) {
+                            routines = JSON.parse(savedRoutines);
+                            console.log('Loaded routines from localStorage as fallback:', routines);
+                        }
                     }
+                    
+                    return Promise.resolve();
+                } catch (error) {
+                    lastError = error;
+                    console.error(`Error loading routines from Firestore (attempt ${attempt}/${maxRetries}):`, error);
+                    
+                    if (attempt < maxRetries) {
+                        console.log(`Retrying in ${attempt * 1000}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+                        continue;
+                    }
+                    
+                    // 全てのリトライが失敗した場合
+                    console.error('All retry attempts failed for loading routines from Firestore');
+                    
+                    // ネットワークエラーやタイムアウトの場合はローカルデータを使用
+                    if (error.code === 'unavailable' || 
+                        error.code === 'permission-denied' || 
+                        error.message === 'Firestore timeout' ||
+                        error.message.includes('Failed to fetch') ||
+                        error.message.includes('ERR_BLOCKED_BY_CLIENT') ||
+                        error.message.includes('webchannel')) {
+                        console.log('Firestore connection error, using local data');
+                        showSyncStatus('オフラインです（ローカルデータを使用）', false);
+                    } else {
+                        showSyncStatus('データの読み込みに失敗しました', false);
+                    }
+                    
+                    return Promise.reject(lastError);
                 }
-                
-                return Promise.resolve();
-            } catch (error) {
-                console.error('Error loading routines from Firestore:', error);
-                
-                // ネットワークエラーやタイムアウトの場合はローカルデータを使用
-                if (error.code === 'unavailable' || 
-                    error.code === 'permission-denied' || 
-                    error.message === 'Firestore timeout' ||
-                    error.message.includes('Failed to fetch') ||
-                    error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
-                    console.log('Firestore connection error, using local data');
-                    showSyncStatus('オフラインです（ローカルデータを使用）', false);
-                } else {
-                    showSyncStatus('データの読み込みに失敗しました', false);
-                }
-                
-                return Promise.reject(error);
             }
         }
 
@@ -1862,66 +1880,83 @@
                 return Promise.resolve();
             }
             
-            try {
-                console.log('Loading todos from Firestore for user:', currentUser.uid);
-                console.log('Firebase DB available:', !!window.firebaseDb);
-                console.log('Firebase functions available:', {
-                    doc: !!window.doc,
-                    collection: !!window.collection,
-                    getDocs: !!window.getDocs
-                });
-                
-                const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
-                const todosCollectionRef = window.collection(userDocRef, 'todos');
-                
-                // タイムアウト付きでFirestoreから読み込み
-                const querySnapshot = await Promise.race([
-                    window.getDocs(todosCollectionRef),
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
-                    )
-                ]);
-                
-                const firestoreTodos = [];
-                querySnapshot.forEach((doc) => {
-                    firestoreTodos.push({
-                        id: doc.id,
-                        ...doc.data()
+            // リトライ機能付きでFirestoreから読み込み
+            const maxRetries = 3;
+            let lastError;
+            
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    console.log(`Loading todos from Firestore (attempt ${attempt}/${maxRetries}) for user:`, currentUser.uid);
+                    console.log('Firebase DB available:', !!window.firebaseDb);
+                    console.log('Firebase functions available:', {
+                        doc: !!window.doc,
+                        collection: !!window.collection,
+                        getDocs: !!window.getDocs
                     });
-                });
+                    
+                    const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
+                    const todosCollectionRef = window.collection(userDocRef, 'todos');
+                    
+                    // タイムアウト付きでFirestoreから読み込み
+                    const querySnapshot = await Promise.race([
+                        window.getDocs(todosCollectionRef),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Firestore timeout')), 10000)
+                        )
+                    ]);
                 
-                console.log('Found todos in Firestore:', firestoreTodos.length);
-                
-                if (firestoreTodos.length > 0) {
-                    todos = firestoreTodos;
-                    console.log('Todos loaded from Firestore:', todos);
-                } else {
-                    console.log('No todos found in Firestore, keeping local data');
-                    // ローカルストレージから読み込みを試行
-                    const savedTodos = localStorage.getItem('todos');
-                    if (savedTodos) {
-                        todos = JSON.parse(savedTodos);
-                        console.log('Loaded todos from localStorage as fallback:', todos);
+                    const firestoreTodos = [];
+                    querySnapshot.forEach((doc) => {
+                        firestoreTodos.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    console.log('Found todos in Firestore:', firestoreTodos.length);
+                    
+                    if (firestoreTodos.length > 0) {
+                        todos = firestoreTodos;
+                        console.log('Todos loaded from Firestore:', todos);
+                    } else {
+                        console.log('No todos found in Firestore, keeping local data');
+                        // ローカルストレージから読み込みを試行
+                        const savedTodos = localStorage.getItem('todos');
+                        if (savedTodos) {
+                            todos = JSON.parse(savedTodos);
+                            console.log('Loaded todos from localStorage as fallback:', todos);
+                        }
                     }
+                    
+                    return Promise.resolve();
+                } catch (error) {
+                    lastError = error;
+                    console.error(`Error loading todos from Firestore (attempt ${attempt}/${maxRetries}):`, error);
+                    
+                    if (attempt < maxRetries) {
+                        console.log(`Retrying in ${attempt * 1000}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+                        continue;
+                    }
+                    
+                    // 全てのリトライが失敗した場合
+                    console.error('All retry attempts failed for loading todos from Firestore');
+                    
+                    // ネットワークエラーやタイムアウトの場合はローカルデータを使用
+                    if (error.code === 'unavailable' || 
+                        error.code === 'permission-denied' || 
+                        error.message === 'Firestore timeout' ||
+                        error.message.includes('Failed to fetch') ||
+                        error.message.includes('ERR_BLOCKED_BY_CLIENT') ||
+                        error.message.includes('webchannel')) {
+                        console.log('Firestore connection error, using local data');
+                        showSyncStatus('オフラインです（ローカルデータを使用）', false);
+                    } else {
+                        showSyncStatus('データの読み込みに失敗しました', false);
+                    }
+                    
+                    return Promise.reject(lastError);
                 }
-                
-                return Promise.resolve();
-            } catch (error) {
-                console.error('Error loading todos from Firestore:', error);
-                
-                // ネットワークエラーやタイムアウトの場合はローカルデータを使用
-                if (error.code === 'unavailable' || 
-                    error.code === 'permission-denied' || 
-                    error.message === 'Firestore timeout' ||
-                    error.message.includes('Failed to fetch') ||
-                    error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
-                    console.log('Firestore connection error, using local data');
-                    showSyncStatus('オフラインです（ローカルデータを使用）', false);
-                } else {
-                    showSyncStatus('データの読み込みに失敗しました', false);
-                }
-                
-                return Promise.reject(error);
             }
         }
 
@@ -3238,12 +3273,94 @@
                 setupAuthEventListeners();
                 updateAuthUI();
                 
+                // Firebase接続監視を設定
+                setupFirebaseConnectionMonitoring();
+                
                 // 再度同期状態を非表示にする（念のため）
                 if (syncStatus) {
                     syncStatus.style.display = 'none';
                 }
             }, 1000);
         });
+
+        // Firebase接続状態の監視
+        function setupFirebaseConnectionMonitoring() {
+            if (window.firebaseDb) {
+                // Firestore接続状態を監視
+                window.onSnapshot(window.doc(window.firebaseDb, 'users', 'connection-test'), 
+                    () => {
+                        console.log('Firebase connection is healthy');
+                        showSyncStatus('オンライン', true);
+                    },
+                    (error) => {
+                        console.error('Firebase connection error:', error);
+                        if (error.code === 'unavailable' || 
+                            error.message.includes('webchannel') ||
+                            error.message.includes('Failed to fetch')) {
+                            showSyncStatus('オフラインです（ローカルデータを使用）', false);
+                        }
+                    }
+                );
+            }
+        }
+
+        // Firebase接続の再試行
+        async function retryFirebaseConnection() {
+            console.log('Retrying Firebase connection...');
+            try {
+                // Firebase SDKの再初期化を試行
+                if (window.firebaseDb) {
+                    // 簡単なテストクエリを実行
+                    const testDoc = window.doc(window.firebaseDb, 'users', 'test');
+                    await window.getDoc(testDoc);
+                    console.log('Firebase connection restored');
+                    showSyncStatus('接続が復旧しました', true);
+                    return true;
+                }
+            } catch (error) {
+                console.error('Firebase connection retry failed:', error);
+                return false;
+            }
+        }
+
+        // エラーメッセージからWebChannel接続エラーを検出
+        function isWebChannelError(error) {
+            const errorMessage = error.message || error.toString();
+            return errorMessage.includes('webchannel') ||
+                   errorMessage.includes('ERR_BLOCKED_BY_CLIENT') ||
+                   errorMessage.includes('Failed to fetch') ||
+                   errorMessage.includes('NetworkError') ||
+                   errorMessage.includes('connection') ||
+                   error.code === 'unavailable' ||
+                   error.code === 'permission-denied';
+        }
+
+        // 接続エラー時の復旧処理
+        async function handleConnectionError(error, operation) {
+            console.error(`Connection error during ${operation}:`, error);
+            
+            if (isWebChannelError(error)) {
+                console.log('WebChannel connection error detected, switching to offline mode');
+                showSyncStatus('オフラインです（ローカルデータを使用）', false);
+                
+                // 接続復旧を試行
+                setTimeout(async () => {
+                    const recovered = await retryFirebaseConnection();
+                    if (recovered) {
+                        console.log('Connection recovered, retrying operation');
+                        // 操作を再試行
+                        if (operation === 'load') {
+                            await loadRoutines();
+                            await loadTodos();
+                        }
+                    }
+                }, 5000);
+                
+                return true; // エラーが処理された
+            }
+            
+            return false; // エラーが処理されなかった
+        }
     </script>
 </body>
 </html> 
