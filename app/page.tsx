@@ -163,8 +163,10 @@ export default function Home() {
         if (token) {
           // 認証されている場合はサーバーから読み込み
           console.log('Loading todos from server with token:', token.substring(0, 20) + '...')
+          console.log('API call to /api/todos')
           const data = await apiCall('/api/todos')
           console.log('Todos loaded from server:', data)
+          console.log('Todos count:', data.length)
           setTodos(data)
         } else {
           // 認証されていない場合はローカルストレージから読み込み
@@ -173,6 +175,7 @@ export default function Home() {
           if (savedTodos) {
             const parsedTodos = JSON.parse(savedTodos)
             console.log('Loaded todos from localStorage:', parsedTodos)
+            console.log('Todos count:', parsedTodos.length)
             setTodos(parsedTodos)
           } else {
             console.log('No todos found in localStorage')
@@ -180,11 +183,13 @@ export default function Home() {
         }
       } catch (error) {
         console.error('Failed to load todos:', error)
+        console.error('Error details:', error instanceof Error ? error.message : String(error))
         // エラー時はローカルストレージから読み込み
         const savedTodos = localStorage.getItem('todos')
         if (savedTodos) {
           const parsedTodos = JSON.parse(savedTodos)
           console.log('Loaded todos from localStorage as fallback:', parsedTodos)
+          console.log('Todos count:', parsedTodos.length)
           setTodos(parsedTodos)
         } else {
           console.log('No todos found in localStorage')
@@ -221,7 +226,8 @@ export default function Home() {
       localStorage.setItem('todos', JSON.stringify(newTodos))
       console.log('Saved to localStorage');
     } else {
-      console.log('Data will be saved to server via API');
+      console.log('User authenticated, todos will be saved to server via API');
+      console.log('Token available:', !!token);
     }
   }
 
@@ -459,6 +465,7 @@ export default function Home() {
         }
 
         console.log('Sending todo data to server:', todoData);
+        console.log('API call to /api/todos with POST method');
 
         const newTodoData = await apiCall('/api/todos', {
           method: 'POST',
@@ -466,17 +473,20 @@ export default function Home() {
         })
 
         console.log('Server response:', newTodoData);
+        console.log('New todo ID:', newTodoData.id);
 
         const updatedTodos = [...todos, newTodoData]
         await saveTodos(updatedTodos)
       } catch (error) {
         console.error('Failed to add todo:', error)
+        console.error('Error details:', error instanceof Error ? error.message : String(error))
         // エラー時はローカルストレージに保存
         const updatedTodos = [...todos, todo]
         saveTodos(updatedTodos)
       }
     } else {
       // 認証されていない場合はローカルストレージに保存
+      console.log('User not authenticated, saving todo to localStorage');
       const updatedTodos = [...todos, todo]
       saveTodos(updatedTodos)
     }

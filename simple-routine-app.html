@@ -1739,9 +1739,15 @@
         }
 
         async function syncTodosToFirestore() {
-            if (!isAuthenticated || !currentUser) return;
+            if (!isAuthenticated || !currentUser) {
+                console.log('Not authenticated, skipping Todo sync');
+                return;
+            }
             
             try {
+                console.log('Starting Todo sync to Firestore');
+                console.log('Todos to sync:', todos.length);
+                console.log('Todos data:', todos);
                 showSyncStatus('Todoを同期中...');
                 
                 const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
@@ -1858,6 +1864,13 @@
             
             try {
                 console.log('Loading todos from Firestore for user:', currentUser.uid);
+                console.log('Firebase DB available:', !!window.firebaseDb);
+                console.log('Firebase functions available:', {
+                    doc: !!window.doc,
+                    collection: !!window.collection,
+                    getDocs: !!window.getDocs
+                });
+                
                 const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
                 const todosCollectionRef = window.collection(userDocRef, 'todos');
                 
