@@ -64,6 +64,12 @@ export default function Home() {
     monthlyDate: '',
     checklist: [{ text: '', checked: false }],
   })
+
+  // デバッグ用：頻度変更時のログ
+  useEffect(() => {
+    console.log('Frequency changed to:', newRoutine.frequency);
+    console.log('Monthly date field should be visible:', newRoutine.frequency === 'monthly');
+  }, [newRoutine.frequency])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [loadingRoutines, setLoadingRoutines] = useState(true)

@@ -2310,14 +2310,27 @@
             const monthlyDateRow = document.getElementById('monthlyDateRow');
             
             console.log('Frequency changed to:', frequency);
+            console.log('weekdaysContainer found:', !!weekdaysContainer);
+            console.log('monthlyDateRow found:', !!monthlyDateRow);
             
             if (frequency === 'weekly') {
+                console.log('Setting weekly display');
                 weekdaysContainer.style.display = 'block';
-                if (monthlyDateRow) monthlyDateRow.style.display = 'none';
+                if (monthlyDateRow) {
+                    monthlyDateRow.style.display = 'none';
+                    console.log('Hidden monthly date row');
+                }
             } else if (frequency === 'monthly') {
+                console.log('Setting monthly display');
                 weekdaysContainer.style.display = 'none';
-                if (monthlyDateRow) monthlyDateRow.style.display = 'block';
+                if (monthlyDateRow) {
+                    monthlyDateRow.style.display = 'block';
+                    console.log('Showed monthly date row');
+                } else {
+                    console.error('monthlyDateRow element not found!');
+                }
             } else {
+                console.log('Setting daily display');
                 weekdaysContainer.style.display = 'none';
                 if (monthlyDateRow) monthlyDateRow.style.display = 'none';
             }
@@ -3158,6 +3171,25 @@
         // 初期化
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM loaded, starting initialization...');
+            
+            // 要素の存在確認
+            const routineFrequency = document.getElementById('routineFrequency');
+            const monthlyDateRow = document.getElementById('monthlyDateRow');
+            const weekdaysContainer = document.getElementById('weekdaysContainer');
+            
+            console.log('routineFrequency found:', !!routineFrequency);
+            console.log('monthlyDateRow found:', !!monthlyDateRow);
+            console.log('weekdaysContainer found:', !!weekdaysContainer);
+            
+            if (!routineFrequency) {
+                console.error('routineFrequency element not found!');
+            }
+            if (!monthlyDateRow) {
+                console.error('monthlyDateRow element not found!');
+            }
+            if (!weekdaysContainer) {
+                console.error('weekdaysContainer element not found!');
+            }
             
             // 同期状態を非表示にする
             if (syncStatus) {
