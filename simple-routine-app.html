@@ -1745,52 +1745,107 @@
                 return;
             }
             
-            try {
-                console.log('Starting Todo sync to Firestore');
-                console.log('Todos to sync:', todos.length);
-                console.log('Todos data:', todos);
-                showSyncStatus('Todoを同期中...');
-                
-                const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
-                const todosCollectionRef = window.collection(userDocRef, 'todos');
-                
-                // タイムアウト付きで既存のデータを削除
-                const existingDocs = await Promise.race([
-                    window.getDocs(todosCollectionRef),
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
-                    )
-                ]);
-                
-                const deletePromises = existingDocs.docs.map(doc => window.deleteDoc(doc.ref));
-                await Promise.all(deletePromises);
-                
-                // 新しいデータを追加
-                const addPromises = todos.map(todo => {
-                    const { id, ...todoData } = todo;
-                    return window.addDoc(todosCollectionRef, {
-                        ...todoData,
-                        userId: currentUser.uid,
-                        createdAt: todo.createdAt || new Date().toISOString()
+            // リトライ機能付きでTodoを同期
+            const maxRetries = 3;
+            let lastError;
+            
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    console.log(`Syncing todos to Firestore (attempt ${attempt}/${maxRetries})`);
+                    console.log('Todos to sync:', todos.length);
+                    console.log('Todos data:', todos);
+                    console.log('User ID:', currentUser.uid);
+                    console.log('Firebase DB available:', !!window.firebaseDb);
+                    console.log('Firebase functions available:', {
+                        doc: !!window.doc,
+                        collection: !!window.collection,
+                        addDoc: !!window.addDoc,
+                        deleteDoc: !!window.deleteDoc,
+                        getDocs: !!window.getDocs
                     });
-                });
-                await Promise.all(addPromises);
-                
-                console.log('Todos synced to Firestore');
-                showSyncStatus('Todoが同期されました', true);
-            } catch (error) {
-                console.error('Error syncing todos to Firestore:', error);
-                
-                // ネットワークエラーやタイムアウトの場合は無視（ローカルデータは保持される）
-                if (error.code === 'unavailable' || 
-                    error.code === 'permission-denied' || 
-                    error.message === 'Firestore timeout' ||
-                    error.message.includes('Failed to fetch') ||
-                    error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
-                    console.log('Firestore connection error, keeping local data');
-                    showSyncStatus('オフラインです（ローカルデータを保持）', false);
-                } else {
-                    showSyncStatus('Todoの同期に失敗しました', false);
+                    
+                    showSyncStatus('Todoを同期中...');
+                    
+                    const userDocRef = window.doc(window.firebaseDb, 'users', currentUser.uid);
+                    const todosCollectionRef = window.collection(userDocRef, 'todos');
+                    
+                    console.log('User doc ref created:', !!userDocRef);
+                    console.log('Todos collection ref created:', !!todosCollectionRef);
+                    
+                    // タイムアウト付きで既存のデータを削除
+                    console.log('Fetching existing todos for deletion...');
+                    const existingDocs = await Promise.race([
+                        window.getDocs(todosCollectionRef),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Firestore timeout')), 10000)
+                        )
+                    ]);
+                    
+                    console.log('Existing todos found:', existingDocs.docs.length);
+                    
+                    if (existingDocs.docs.length > 0) {
+                        console.log('Deleting existing todos...');
+                        const deletePromises = existingDocs.docs.map(doc => window.deleteDoc(doc.ref));
+                        await Promise.all(deletePromises);
+                        console.log('Existing todos deleted');
+                    }
+                    
+                    // 新しいデータを追加
+                    if (todos.length > 0) {
+                        console.log('Adding new todos to Firestore...');
+                        const addPromises = todos.map((todo, index) => {
+                            const { id, ...todoData } = todo;
+                            const todoToAdd = {
+                                ...todoData,
+                                userId: currentUser.uid,
+                                createdAt: todo.createdAt || new Date().toISOString()
+                            };
+                            console.log(`Adding todo ${index + 1}/${todos.length}:`, todoToAdd);
+                            return window.addDoc(todosCollectionRef, todoToAdd);
+                        });
+                        
+                        const results = await Promise.all(addPromises);
+                        console.log('Todos added to Firestore:', results.length);
+                        console.log('Added todo IDs:', results.map(doc => doc.id));
+                    } else {
+                        console.log('No todos to add');
+                    }
+                    
+                    console.log('Todos synced to Firestore successfully');
+                    showSyncStatus('Todoが同期されました', true);
+                    return;
+                } catch (error) {
+                    lastError = error;
+                    console.error(`Error syncing todos to Firestore (attempt ${attempt}/${maxRetries}):`, error);
+                    console.error('Error details:', {
+                        code: error.code,
+                        message: error.message,
+                        stack: error.stack
+                    });
+                    
+                    if (attempt < maxRetries) {
+                        console.log(`Retrying in ${attempt * 1000}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+                        continue;
+                    }
+                    
+                    // 全てのリトライが失敗した場合
+                    console.error('All retry attempts failed for syncing todos to Firestore');
+                    
+                    // ネットワークエラーやタイムアウトの場合は無視（ローカルデータは保持される）
+                    if (error.code === 'unavailable' || 
+                        error.code === 'permission-denied' || 
+                        error.message === 'Firestore timeout' ||
+                        error.message.includes('Failed to fetch') ||
+                        error.message.includes('ERR_BLOCKED_BY_CLIENT') ||
+                        error.message.includes('webchannel')) {
+                        console.log('Firestore connection error, keeping local data');
+                        showSyncStatus('オフラインです（ローカルデータを保持）', false);
+                    } else {
+                        showSyncStatus('Todoの同期に失敗しました', false);
+                    }
+                    
+                    throw lastError;
                 }
             }
         }
@@ -2038,14 +2093,29 @@
 
         // ルーティンをローカルストレージに保存
         function saveRoutines() {
+            console.log('=== saveRoutines called ===');
             console.log('Saving routines:', routines.length, 'items');
             console.log('Routines data:', routines);
+            console.log('Authentication status:', {
+                isAuthenticated: isAuthenticated,
+                currentUser: currentUser ? currentUser.uid : null
+            });
+            
             localStorage.setItem('routines', JSON.stringify(routines));
+            console.log('Routines saved to localStorage');
+            
             if (isAuthenticated && currentUser) {
-                console.log('User authenticated, syncing to Firestore');
-                syncRoutinesToFirestore();
+                console.log('User authenticated, triggering Firestore sync');
+                console.log('Calling syncRoutinesToFirestore...');
+                syncRoutinesToFirestore().then(() => {
+                    console.log('syncRoutinesToFirestore completed successfully');
+                }).catch(error => {
+                    console.error('syncRoutinesToFirestore failed:', error);
+                });
             } else {
                 console.log('User not authenticated, saving to localStorage only');
+                console.log('isAuthenticated:', isAuthenticated);
+                console.log('currentUser:', currentUser);
             }
         }
 
@@ -2083,14 +2153,29 @@
 
         // Todoをローカルストレージに保存
         function saveTodos() {
+            console.log('=== saveTodos called ===');
             console.log('Saving todos:', todos.length, 'items');
             console.log('Todos data:', todos);
+            console.log('Authentication status:', {
+                isAuthenticated: isAuthenticated,
+                currentUser: currentUser ? currentUser.uid : null
+            });
+            
             localStorage.setItem('todos', JSON.stringify(todos));
+            console.log('Todos saved to localStorage');
+            
             if (isAuthenticated && currentUser) {
-                console.log('User authenticated, syncing to Firestore');
-                syncTodosToFirestore();
+                console.log('User authenticated, triggering Firestore sync');
+                console.log('Calling syncTodosToFirestore...');
+                syncTodosToFirestore().then(() => {
+                    console.log('syncTodosToFirestore completed successfully');
+                }).catch(error => {
+                    console.error('syncTodosToFirestore failed:', error);
+                });
             } else {
                 console.log('User not authenticated, saving to localStorage only');
+                console.log('isAuthenticated:', isAuthenticated);
+                console.log('currentUser:', currentUser);
             }
         }
 
@@ -2483,8 +2568,12 @@
 
         // Todoの追加
         function addTodo() {
+            console.log('=== addTodo called ===');
             const title = todoTitle.value.trim();
-            if (!title) return;
+            if (!title) {
+                console.log('Todo title is empty, returning');
+                return;
+            }
             
             const todo = {
                 id: Date.now().toString(),
@@ -2497,14 +2586,22 @@
                 userId: isAuthenticated && currentUser ? currentUser.uid : 'local'
             };
 
-            console.log('Adding todo:', todo);
+            console.log('Created todo object:', todo);
+            console.log('Current todos before adding:', todos.length);
+            
             todos.push(todo);
+            console.log('Todo added to array, new count:', todos.length);
+            
+            console.log('Calling saveTodos...');
             saveTodos();
+            
+            console.log('Calling updateTodoDisplay...');
             updateTodoDisplay();
             
             // フォームをリセット
             resetTodoForm();
             todoFormContainer.style.display = 'none';
+            console.log('=== addTodo completed ===');
         }
 
         // Todoフォームをリセット
