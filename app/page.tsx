@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Check, Trash2, Edit, Calendar, Clock, Target, Sun, CalendarDays, List, LogOut, User } from 'lucide-react'
+import { Plus, Check, Trash2, Edit, Calendar, Clock, Target, Sun, CalendarDays, List, LogOut, User, Dumbbell } from 'lucide-react'
 import { useAuth } from './contexts/AuthContext'
 import './page.css'
 
@@ -34,22 +34,32 @@ interface NewRoutine {
   checklist: ChecklistItem[];
 }
 
-interface Todo {
+interface Exercise {
+  name: string;
+  sets: number;
+  reps: number;
+  weight?: number;
+  completed: boolean;
+}
+
+interface Training {
   id: string;
   title: string;
   description: string;
-  priority: string;
-  dueDate: string | null;
+  date: string;
+  duration: string;
+  exercises: Exercise[];
   completed: boolean;
   createdAt: string;
   userId: string;
 }
 
-interface NewTodo {
+interface NewTraining {
   title: string;
   description: string;
-  priority: string;
-  dueDate: string;
+  date: string;
+  duration: string;
+  exercises: Exercise[];
 }
 
 export default function Home() {
@@ -75,19 +85,20 @@ export default function Home() {
   const [loadingRoutines, setLoadingRoutines] = useState(true)
   const [currentFilter, setCurrentFilter] = useState('all')
 
-  // Todo関連の状態
-  const [todos, setTodos] = useState<Todo[]>([])
-  const [newTodo, setNewTodo] = useState<NewTodo>({
+  // トレーニング記録関連の状態
+  const [trainings, setTrainings] = useState<Training[]>([])
+  const [newTraining, setNewTraining] = useState<NewTraining>({
     title: '',
     description: '',
-    priority: 'low',
-    dueDate: '',
+    date: '',
+    duration: '',
+    exercises: [{ name: '', sets: 3, reps: 10, weight: 0, completed: false }],
   })
-  const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
-  const [showTodoForm, setShowTodoForm] = useState(false)
-  const [loadingTodos, setLoadingTodos] = useState(true)
-  const [currentTodoFilter, setCurrentTodoFilter] = useState('all')
-  const [activeTab, setActiveTab] = useState<'routines' | 'todos'>('routines')
+  const [editingTrainingId, setEditingTrainingId] = useState<string | null>(null)
+  const [showTrainingForm, setShowTrainingForm] = useState(false)
+  const [loadingTrainings, setLoadingTrainings] = useState(true)
+  const [currentTrainingFilter, setCurrentTrainingFilter] = useState('all')
+  const [activeTab, setActiveTab] = useState<'routines' | 'trainings'>('routines')
 
   // API呼び出し用の関数
   const apiCall = async (url: string, options: RequestInit = {}) => {
@@ -156,79 +167,66 @@ export default function Home() {
     loadRoutines()
   }, [token])
 
-  // サーバーからTodoを読み込み
+  // サーバーからトレーニング記録を読み込み
   useEffect(() => {
-    const loadTodos = async () => {
+    const loadTrainings = async () => {
       try {
         if (token) {
           // 認証されている場合はサーバーから読み込み
-          console.log('Loading todos from server with token:', token.substring(0, 20) + '...')
-          console.log('API call to /api/todos')
-          const data = await apiCall('/api/todos')
-          console.log('Todos loaded from server:', data)
-          console.log('Todos count:', data.length)
-          setTodos(data)
+          console.log('Loading trainings from server with token:', token.substring(0, 20) + '...')
+          console.log('API call to /api/trainings')
+          const data = await apiCall('/api/trainings')
+          console.log('Trainings loaded from server:', data)
+          console.log('Trainings count:', data.length)
+          setTrainings(data)
         } else {
           // 認証されていない場合はローカルストレージから読み込み
-          console.log('No token, loading todos from localStorage')
-          const savedTodos = localStorage.getItem('todos')
-          if (savedTodos) {
-            const parsedTodos = JSON.parse(savedTodos)
-            console.log('Loaded todos from localStorage:', parsedTodos)
-            console.log('Todos count:', parsedTodos.length)
-            setTodos(parsedTodos)
+          console.log('No token, loading trainings from localStorage')
+          const savedTrainings = localStorage.getItem('trainings')
+          if (savedTrainings) {
+            const parsedTrainings = JSON.parse(savedTrainings)
+            console.log('Loaded trainings from localStorage:', parsedTrainings)
+            console.log('Trainings count:', parsedTrainings.length)
+            setTrainings(parsedTrainings)
           } else {
-            console.log('No todos found in localStorage')
+            console.log('No trainings found in localStorage')
           }
         }
       } catch (error) {
-        console.error('Failed to load todos:', error)
+        console.error('Failed to load trainings:', error)
         console.error('Error details:', error instanceof Error ? error.message : String(error))
         // エラー時はローカルストレージから読み込み
-        const savedTodos = localStorage.getItem('todos')
-        if (savedTodos) {
-          const parsedTodos = JSON.parse(savedTodos)
-          console.log('Loaded todos from localStorage as fallback:', parsedTodos)
-          console.log('Todos count:', parsedTodos.length)
-          setTodos(parsedTodos)
+        const savedTrainings = localStorage.getItem('trainings')
+        if (savedTrainings) {
+          const parsedTrainings = JSON.parse(savedTrainings)
+          console.log('Loaded trainings from localStorage as fallback:', parsedTrainings)
+          console.log('Trainings count:', parsedTrainings.length)
+          setTrainings(parsedTrainings)
         } else {
-          console.log('No todos found in localStorage')
+          console.log('No trainings found in localStorage')
         }
       } finally {
-        setLoadingTodos(false)
+        setLoadingTrainings(false)
       }
     }
     
-    loadTodos()
+    loadTrainings()
   }, [token])
 
-  // ルーティンをサーバーに保存
+  // ルーティンをローカルストレージに保存（認証されていない場合のみ使用）
   const saveRoutines = async (newRoutines: Routine[]) => {
-    console.log('Saving routines:', newRoutines.length, 'items');
-    console.log('Routines data:', newRoutines);
+    console.log('Saving routines to localStorage:', newRoutines.length, 'items');
     setRoutines(newRoutines)
-    // 認証されていない場合はローカルストレージに保存
-    if (!token) {
-      localStorage.setItem('routines', JSON.stringify(newRoutines))
-      console.log('Saved to localStorage');
-    } else {
-      console.log('Data will be saved to server via API');
-    }
+    localStorage.setItem('routines', JSON.stringify(newRoutines))
+    console.log('Saved to localStorage');
   }
 
-  // Todoをサーバーに保存
-  const saveTodos = async (newTodos: Todo[]) => {
-    console.log('Saving todos:', newTodos.length, 'items');
-    console.log('Todos data:', newTodos);
-    setTodos(newTodos)
-    // 認証されていない場合はローカルストレージに保存
-    if (!token) {
-      localStorage.setItem('todos', JSON.stringify(newTodos))
-      console.log('Saved to localStorage');
-    } else {
-      console.log('User authenticated, todos will be saved to server via API');
-      console.log('Token available:', !!token);
-    }
+  // トレーニング記録をローカルストレージに保存（認証されていない場合のみ使用）
+  const saveTrainings = async (newTrainings: Training[]) => {
+    console.log('Saving trainings to localStorage:', newTrainings.length, 'items');
+    setTrainings(newTrainings)
+    localStorage.setItem('trainings', JSON.stringify(newTrainings))
+    console.log('Saved to localStorage');
   }
 
   const addRoutine = async () => {
@@ -269,8 +267,8 @@ export default function Home() {
 
         console.log('Server response:', newRoutineData);
 
-        const updatedRoutines = [...routines, newRoutineData]
-        await saveRoutines(updatedRoutines)
+        // サーバーから返されたroutineを直接stateに追加
+        setRoutines(prevRoutines => [...prevRoutines, newRoutineData])
       } catch (error) {
         console.error('Failed to add routine:', error)
         // エラー時はローカルストレージに保存
@@ -305,10 +303,10 @@ export default function Home() {
           })
         })
 
-        const serverUpdatedRoutines = routines.map(r =>
+        // サーバーから返された更新されたroutineでstateを更新
+        setRoutines(prevRoutines => prevRoutines.map(r =>
           r.id === id ? updatedRoutine : r
-        )
-        await saveRoutines(serverUpdatedRoutines)
+        ))
       } catch (error) {
         console.error('Failed to toggle routine:', error)
         // エラー時はローカルで更新
@@ -329,7 +327,8 @@ export default function Home() {
           method: 'DELETE'
         })
 
-        await saveRoutines(updatedRoutines)
+        // サーバーで削除が成功したら、ローカルのstateからも削除
+        setRoutines(prevRoutines => prevRoutines.filter(routine => routine.id !== id))
       } catch (error) {
         console.error('Failed to delete routine:', error)
         // エラー時はローカルで削除
@@ -381,10 +380,10 @@ export default function Home() {
           })
         })
 
-        const serverUpdatedRoutines = routines.map(r =>
+        // サーバーから返された更新されたroutineでstateを更新
+        setRoutines(prevRoutines => prevRoutines.map(r =>
           r.id === editingId ? updatedRoutine : r
-        )
-        await saveRoutines(serverUpdatedRoutines)
+        ))
       } catch (error) {
         console.error('Failed to save edit:', error)
         // エラー時はローカルで更新
@@ -429,212 +428,232 @@ export default function Home() {
     return icons[frequency] || Clock
   }
 
-  const filteredRoutines = getFilteredRoutines()
-  const completedCount = filteredRoutines.filter(routine => routine.completed).length
-  const totalCount = filteredRoutines.length
-
   const addChecklistItem = () => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: [...r.checklist, { text: '', checked: false }] }))
   const removeChecklistItem = (idx: number) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.filter((_, i) => i !== idx) }))
   const updateChecklistText = (idx: number, value: string) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.map((item, i) => i === idx ? { ...item, text: value } : item) }))
   const updateChecklistChecked = (idx: number, checked: boolean) => setNewRoutine((r: NewRoutine) => ({ ...r, checklist: r.checklist.map((item, i) => i === idx ? { ...item, checked } : item) }))
 
-  // Todo関連の関数
-  const addTodo = async () => {
-    if (!newTodo.title.trim()) return
+  // トレーニング記録関連の関数
+  const addTraining = async () => {
+    if (!newTraining.title.trim() || !newTraining.date) return
 
-    const todo: Todo = {
+    const training: Training = {
       id: Date.now().toString(),
-      title: newTodo.title,
-      description: newTodo.description,
-      priority: newTodo.priority,
-      dueDate: newTodo.dueDate || null,
+      title: newTraining.title,
+      description: newTraining.description,
+      date: newTraining.date,
+      duration: newTraining.duration,
+      exercises: newTraining.exercises.filter(exercise => exercise.name.trim()),
       completed: false,
       createdAt: new Date().toISOString(),
       userId: token ? 'server' : 'local'
     }
 
-    console.log('Adding todo:', todo);
+    console.log('Adding training:', training);
 
     if (token) {
       try {
-        const todoData = {
-          title: newTodo.title,
-          description: newTodo.description,
-          priority: newTodo.priority,
-          dueDate: newTodo.dueDate || null
+        const trainingData = {
+          title: newTraining.title,
+          description: newTraining.description,
+          date: newTraining.date,
+          duration: newTraining.duration,
+          exercises: newTraining.exercises.filter(exercise => exercise.name.trim())
         }
 
-        console.log('Sending todo data to server:', todoData);
-        console.log('API call to /api/todos with POST method');
+        console.log('Sending training data to server:', trainingData);
+        console.log('API call to /api/trainings with POST method');
 
-        const newTodoData = await apiCall('/api/todos', {
+        const newTrainingData = await apiCall('/api/trainings', {
           method: 'POST',
-          body: JSON.stringify(todoData)
+          body: JSON.stringify(trainingData)
         })
 
-        console.log('Server response:', newTodoData);
-        console.log('New todo ID:', newTodoData.id);
+        console.log('Server response:', newTrainingData);
+        console.log('New training ID:', newTrainingData.id);
 
-        const updatedTodos = [...todos, newTodoData]
-        await saveTodos(updatedTodos)
+        // サーバーから返されたtrainingを直接stateに追加
+        setTrainings(prevTrainings => [...prevTrainings, newTrainingData])
       } catch (error) {
-        console.error('Failed to add todo:', error)
+        console.error('Failed to add training:', error)
         console.error('Error details:', error instanceof Error ? error.message : String(error))
         // エラー時はローカルストレージに保存
-        const updatedTodos = [...todos, todo]
-        saveTodos(updatedTodos)
+        const updatedTrainings = [...trainings, training]
+        saveTrainings(updatedTrainings)
       }
     } else {
       // 認証されていない場合はローカルストレージに保存
-      console.log('User not authenticated, saving todo to localStorage');
-      const updatedTodos = [...todos, todo]
-      saveTodos(updatedTodos)
+      console.log('User not authenticated, saving training to localStorage');
+      const updatedTrainings = [...trainings, training]
+      saveTrainings(updatedTrainings)
     }
 
-    setNewTodo({ title: '', description: '', priority: 'low', dueDate: '' })
-    setShowTodoForm(false)
+    setNewTraining({ 
+      title: '', 
+      description: '', 
+      date: '', 
+      duration: '', 
+      exercises: [{ name: '', sets: 3, reps: 10, weight: 0, completed: false }] 
+    })
+    setShowTrainingForm(false)
   }
 
-  const toggleTodo = async (id: string) => {
-    const todo = todos.find(t => t.id === id)
-    if (!todo) return
+  const toggleTraining = async (id: string) => {
+    const training = trainings.find(t => t.id === id)
+    if (!training) return
 
-    const updatedTodos = todos.map(t =>
+    const updatedTrainings = trainings.map(t =>
       t.id === id ? { ...t, completed: !t.completed } : t
     )
 
     if (token) {
       try {
-        const updatedTodo = await apiCall(`/api/todos/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            ...todo,
-            completed: !todo.completed
-          })
+        const updatedTraining = await apiCall(`/api/trainings/${id}/toggle`, {
+          method: 'PATCH'
         })
 
-        const serverUpdatedTodos = todos.map(t =>
-          t.id === id ? updatedTodo : t
-        )
-        await saveTodos(serverUpdatedTodos)
+        // サーバーから返された更新されたtrainingでstateを更新
+        setTrainings(prevTrainings => prevTrainings.map(t =>
+          t.id === id ? updatedTraining : t
+        ))
       } catch (error) {
-        console.error('Failed to toggle todo:', error)
+        console.error('Failed to toggle training:', error)
         // エラー時はローカルで更新
-        saveTodos(updatedTodos)
+        saveTrainings(updatedTrainings)
       }
     } else {
       // 認証されていない場合はローカルで更新
-      saveTodos(updatedTodos)
+      saveTrainings(updatedTrainings)
     }
   }
 
-  const deleteTodo = async (id: string) => {
-    const updatedTodos = todos.filter(todo => todo.id !== id)
+  const deleteTraining = async (id: string) => {
+    const updatedTrainings = trainings.filter(training => training.id !== id)
 
     if (token) {
       try {
-        await apiCall(`/api/todos/${id}`, {
+        await apiCall(`/api/trainings/${id}`, {
           method: 'DELETE'
         })
 
-        await saveTodos(updatedTodos)
+        // サーバーで削除が成功したら、ローカルのstateからも削除
+        setTrainings(prevTrainings => prevTrainings.filter(training => training.id !== id))
       } catch (error) {
-        console.error('Failed to delete todo:', error)
+        console.error('Failed to delete training:', error)
         // エラー時はローカルで削除
-        saveTodos(updatedTodos)
+        saveTrainings(updatedTrainings)
       }
     } else {
       // 認証されていない場合はローカルで削除
-      saveTodos(updatedTodos)
+      saveTrainings(updatedTrainings)
     }
   }
 
-  const startEditingTodo = (todo: Todo) => {
-    setEditingTodoId(todo.id)
-    setNewTodo({ 
-      title: todo.title, 
-      description: todo.description, 
-      priority: todo.priority,
-      dueDate: todo.dueDate || ''
+  const startEditingTraining = (training: Training) => {
+    setEditingTrainingId(training.id)
+    setNewTraining({ 
+      title: training.title, 
+      description: training.description, 
+      date: training.date,
+      duration: training.duration,
+      exercises: training.exercises.length > 0 ? training.exercises : [{ name: '', sets: 3, reps: 10, weight: 0, completed: false }]
     })
   }
 
-  const saveTodoEdit = async () => {
-    if (!editingTodoId || !newTodo.title.trim()) return
+  const saveTrainingEdit = async () => {
+    if (!editingTrainingId || !newTraining.title.trim() || !newTraining.date) return
 
-    const updatedTodos = todos.map(todo =>
-      todo.id === editingTodoId
-        ? { ...todo, title: newTodo.title, description: newTodo.description, priority: newTodo.priority, dueDate: newTodo.dueDate || null }
-        : todo
+    const updatedTrainings = trainings.map(training =>
+      training.id === editingTrainingId
+        ? { ...training, title: newTraining.title, description: newTraining.description, date: newTraining.date, duration: newTraining.duration, exercises: newTraining.exercises.filter(exercise => exercise.name.trim()) }
+        : training
     )
 
     if (token) {
       try {
-        const todo = todos.find(t => t.id === editingTodoId)
-        if (!todo) return
+        const training = trainings.find(t => t.id === editingTrainingId)
+        if (!training) return
 
-        const updatedTodo = await apiCall(`/api/todos/${editingTodoId}`, {
+        const updatedTraining = await apiCall(`/api/trainings/${editingTrainingId}`, {
           method: 'PUT',
           body: JSON.stringify({
-            ...todo,
-            title: newTodo.title,
-            description: newTodo.description,
-            priority: newTodo.priority,
-            dueDate: newTodo.dueDate || null
+            title: newTraining.title,
+            description: newTraining.description,
+            date: newTraining.date,
+            duration: newTraining.duration,
+            exercises: newTraining.exercises.filter(exercise => exercise.name.trim())
           })
         })
 
-        const serverUpdatedTodos = todos.map(t =>
-          t.id === editingTodoId ? updatedTodo : t
-        )
-        await saveTodos(serverUpdatedTodos)
+        // サーバーから返された更新されたtrainingでstateを更新
+        setTrainings(prevTrainings => prevTrainings.map(t =>
+          t.id === editingTrainingId ? updatedTraining : t
+        ))
       } catch (error) {
-        console.error('Failed to save todo edit:', error)
+        console.error('Failed to save training edit:', error)
         // エラー時はローカルで更新
-        saveTodos(updatedTodos)
+        saveTrainings(updatedTrainings)
       }
     } else {
       // 認証されていない場合はローカルで更新
-      saveTodos(updatedTodos)
+      saveTrainings(updatedTrainings)
     }
 
-    setEditingTodoId(null)
-    setNewTodo({ title: '', description: '', priority: 'low', dueDate: '' })
+    setEditingTrainingId(null)
+    setNewTraining({ 
+      title: '', 
+      description: '', 
+      date: '', 
+      duration: '', 
+      exercises: [{ name: '', sets: 3, reps: 10, weight: 0, completed: false }] 
+    })
   }
 
-  const cancelTodoEdit = () => {
-    setEditingTodoId(null)
-    setNewTodo({ title: '', description: '', priority: 'low', dueDate: '' })
+  const cancelTrainingEdit = () => {
+    setEditingTrainingId(null)
+    setNewTraining({ 
+      title: '', 
+      description: '', 
+      date: '', 
+      duration: '', 
+      exercises: [{ name: '', sets: 3, reps: 10, weight: 0, completed: false }] 
+    })
   }
 
-  const getFilteredTodos = () => {
-    if (currentTodoFilter === 'all') {
-      return todos
-    } else if (currentTodoFilter === 'pending') {
-      return todos.filter(todo => !todo.completed)
-    } else if (currentTodoFilter === 'completed') {
-      return todos.filter(todo => todo.completed)
+  const getFilteredTrainings = () => {
+    if (currentTrainingFilter === 'all') {
+      return trainings
+    } else if (currentTrainingFilter === 'pending') {
+      return trainings.filter(training => !training.completed)
+    } else if (currentTrainingFilter === 'completed') {
+      return trainings.filter(training => training.completed)
     }
-    return todos
+    return trainings
   }
 
-  const getPriorityLabel = (priority: string) => {
-    const labels: { [key: string]: string } = {
-      'high': '高',
-      'medium': '中',
-      'low': '低'
-    }
-    return labels[priority] || priority
-  }
+  // エクササイズ関連の関数
+  const addExercise = () => setNewTraining((t: NewTraining) => ({ 
+    ...t, 
+    exercises: [...t.exercises, { name: '', sets: 3, reps: 10, weight: 0, completed: false }] 
+  }))
+  
+  const removeExercise = (idx: number) => setNewTraining((t: NewTraining) => ({ 
+    ...t, 
+    exercises: t.exercises.filter((_, i) => i !== idx) 
+  }))
+  
+  const updateExercise = (idx: number, field: keyof Exercise, value: string | number) => setNewTraining((t: NewTraining) => ({ 
+    ...t, 
+    exercises: t.exercises.map((exercise, i) => i === idx ? { ...exercise, [field]: value } : exercise) 
+  }))
 
-  const getPriorityColor = (priority: string) => {
-    const colors: { [key: string]: string } = {
-      'high': 'text-red-600 bg-red-100',
-      'medium': 'text-yellow-600 bg-yellow-100',
-      'low': 'text-blue-600 bg-blue-100'
-    }
-    return colors[priority] || colors.low
-  }
+  // 統計情報の計算
+  const filteredRoutines = getFilteredRoutines()
+  const filteredTrainings = getFilteredTrainings()
+  const completedRoutinesCount = filteredRoutines.filter(routine => routine.completed).length
+  const completedTrainingsCount = filteredTrainings.filter(training => training.completed).length
+  const totalRoutinesCount = filteredRoutines.length
+  const totalTrainingsCount = filteredTrainings.length
 
   // ログアウト処理
   const handleLogout = async () => {
@@ -704,14 +723,14 @@ export default function Home() {
         <div className="stat-card">
           <Calendar className="stat-icon" />
           <div className="stat-info">
-            <span className="stat-number">{totalCount}</span>
+            <span className="stat-number">{totalRoutinesCount}</span>
             <span className="stat-label">総ルーティン</span>
           </div>
         </div>
         <div className="stat-card">
           <Check className="stat-icon completed" />
           <div className="stat-info">
-            <span className="stat-number">{completedCount}</span>
+            <span className="stat-number">{completedRoutinesCount}</span>
             <span className="stat-label">完了済み</span>
           </div>
         </div>
@@ -719,9 +738,16 @@ export default function Home() {
           <Clock className="stat-icon" />
           <div className="stat-info">
             <span className="stat-number">
-              {totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0}%
+              {totalRoutinesCount > 0 ? Math.round((completedRoutinesCount / totalRoutinesCount) * 100) : 0}%
             </span>
             <span className="stat-label">達成率</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <Dumbbell className="stat-icon" />
+          <div className="stat-info">
+            <span className="stat-number">{totalTrainingsCount}</span>
+            <span className="stat-label">トレーニング</span>
           </div>
         </div>
       </div>
@@ -736,11 +762,11 @@ export default function Home() {
           ルーティーン
         </button>
         <button 
-          className={`main-tab-button ${activeTab === 'todos' ? 'active' : ''}`}
-          onClick={() => setActiveTab('todos')}
+          className={`main-tab-button ${activeTab === 'trainings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('trainings')}
         >
-          <Check className="main-tab-icon" />
-          Todo
+          <Dumbbell className="main-tab-icon" />
+          トレーニング
         </button>
       </div>
 
@@ -790,27 +816,27 @@ export default function Home() {
         </>
       )}
 
-      {/* Todoタブコンテンツ */}
-      {activeTab === 'todos' && (
+      {/* トレーニングタブコンテンツ */}
+      {activeTab === 'trainings' && (
         <>
-          <div className="todo-filters">
+          <div className="training-filters">
             <button 
-              className={`todo-filter-button ${currentTodoFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setCurrentTodoFilter('all')}
+              className={`training-filter-button ${currentTrainingFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setCurrentTrainingFilter('all')}
             >
               <List className="tab-icon" />
               全て
             </button>
             <button 
-              className={`todo-filter-button ${currentTodoFilter === 'pending' ? 'active' : ''}`}
-              onClick={() => setCurrentTodoFilter('pending')}
+              className={`training-filter-button ${currentTrainingFilter === 'pending' ? 'active' : ''}`}
+              onClick={() => setCurrentTrainingFilter('pending')}
             >
               <Clock className="tab-icon" />
               未完了
             </button>
             <button 
-              className={`todo-filter-button ${currentTodoFilter === 'completed' ? 'active' : ''}`}
-              onClick={() => setCurrentTodoFilter('completed')}
+              className={`training-filter-button ${currentTrainingFilter === 'completed' ? 'active' : ''}`}
+              onClick={() => setCurrentTrainingFilter('completed')}
             >
               <Check className="tab-icon" />
               完了済み
@@ -820,10 +846,10 @@ export default function Home() {
           <div className="actions">
             <button
               className="add-button"
-              onClick={() => setShowTodoForm(!showTodoForm)}
+              onClick={() => setShowTrainingForm(!showTrainingForm)}
             >
               <Plus className="button-icon" />
-              {showTodoForm ? 'キャンセル' : '新しいTodoを追加'}
+              {showTrainingForm ? 'キャンセル' : '新しいトレーニングを追加'}
             </button>
           </div>
         </>
@@ -914,47 +940,86 @@ export default function Home() {
         </div>
       )}
 
-      {showTodoForm && (
+      {showTrainingForm && (
         <div className="form-container">
           <div className="form">
             <input
               type="text"
-              placeholder="Todoのタイトル"
-              value={newTodo.title}
-              onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
+              placeholder="トレーニングのタイトル"
+              value={newTraining.title}
+              onChange={(e) => setNewTraining({ ...newTraining, title: e.target.value })}
               className="form-input"
             />
             <textarea
               placeholder="説明（オプション）"
-              value={newTodo.description}
-              onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
+              value={newTraining.description}
+              onChange={(e) => setNewTraining({ ...newTraining, description: e.target.value })}
               className="form-textarea"
             />
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">優先度</label>
-                <select
-                  value={newTodo.priority}
-                  onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value })}
-                  className="form-select"
-                >
-                  <option value="low">低</option>
-                  <option value="medium">中</option>
-                  <option value="high">高</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">期限</label>
+                <label className="form-label">日付</label>
                 <input
                   type="date"
-                  value={newTodo.dueDate}
-                  onChange={(e) => setNewTodo({ ...newTodo, dueDate: e.target.value })}
+                  value={newTraining.date}
+                  onChange={(e) => setNewTraining({ ...newTraining, date: e.target.value })}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">時間</label>
+                <input
+                  type="text"
+                  placeholder="例：60分"
+                  value={newTraining.duration}
+                  onChange={(e) => setNewTraining({ ...newTraining, duration: e.target.value })}
                   className="form-input"
                 />
               </div>
             </div>
+            <div className="form-exercises">
+              <label className="form-label">エクササイズ</label>
+              {newTraining.exercises.map((exercise, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <input
+                    type="text"
+                    value={exercise.name}
+                    onChange={e => updateExercise(idx, 'name', e.target.value)}
+                    placeholder="エクササイズ名（例：ベンチプレス）"
+                    style={{ flex: 2 }}
+                    className="form-input"
+                  />
+                  <input
+                    type="number"
+                    value={exercise.sets}
+                    onChange={e => updateExercise(idx, 'sets', parseInt(e.target.value) || 0)}
+                    placeholder="セット数"
+                    style={{ width: 80 }}
+                    className="form-input"
+                  />
+                  <input
+                    type="number"
+                    value={exercise.reps}
+                    onChange={e => updateExercise(idx, 'reps', parseInt(e.target.value) || 0)}
+                    placeholder="回数"
+                    style={{ width: 80 }}
+                    className="form-input"
+                  />
+                  <input
+                    type="number"
+                    value={exercise.weight}
+                    onChange={e => updateExercise(idx, 'weight', parseInt(e.target.value) || 0)}
+                    placeholder="重量(kg)"
+                    style={{ width: 100 }}
+                    className="form-input"
+                  />
+                  <button type="button" onClick={() => removeExercise(idx)} style={{ marginLeft: 4 }}>削除</button>
+                </div>
+              ))}
+              <button type="button" onClick={addExercise} style={{ marginTop: 8 }}>エクササイズを追加</button>
+            </div>
             <div className="form-buttons">
-              <button onClick={addTodo} className="save-button">
+              <button onClick={addTraining} className="save-button">
                 保存
               </button>
             </div>
@@ -1065,44 +1130,44 @@ export default function Home() {
         </div>
       )}
 
-      {/* Todo表示 */}
-      {activeTab === 'todos' && (
-        <div className="todos-container">
-          {loadingTodos ? (
-            <div className="loading">Todoを読み込み中...</div>
-          ) : getFilteredTodos().length === 0 ? (
+      {/* トレーニング記録表示 */}
+      {activeTab === 'trainings' && (
+        <div className="trainings-container">
+          {loadingTrainings ? (
+            <div className="loading">トレーニング記録を読み込み中...</div>
+          ) : getFilteredTrainings().length === 0 ? (
             <div className="empty-state">
-              <Check className="empty-icon" />
+              <Dumbbell className="empty-icon" />
               <h3>
-                {currentTodoFilter === 'all' 
-                  ? 'まだTodoがありません'
-                  : `${currentTodoFilter === 'pending' ? '未完了' : '完了済み'}のTodoがありません`
+                {currentTrainingFilter === 'all' 
+                  ? 'まだトレーニング記録がありません'
+                  : `${currentTrainingFilter === 'pending' ? '未完了' : '完了済み'}のトレーニング記録がありません`
                 }
               </h3>
               <p>
-                {currentTodoFilter === 'all'
-                  ? '新しいTodoを追加して、タスクを管理しましょう！'
-                  : `${currentTodoFilter === 'pending' ? '未完了' : '完了済み'}のTodoを追加してみましょう！`
+                {currentTrainingFilter === 'all'
+                  ? '新しいトレーニング記録を追加して、ワークアウトを管理しましょう！'
+                  : `${currentTrainingFilter === 'pending' ? '未完了' : '完了済み'}のトレーニング記録を追加してみましょう！`
                 }
               </p>
             </div>
           ) : (
-            <div className="todos-list">
-              {getFilteredTodos().map((todo: Todo) => (
-                <div key={todo.id} className={`todo-card ${todo.completed ? 'completed' : ''} ${todo.priority}-priority`}>
-                  <div className="todo-content">
-                    <div className="todo-header">
-                      <h3 className="todo-title">{todo.title}</h3>
-                      <div className="todo-actions">
+            <div className="trainings-list">
+              {getFilteredTrainings().map((training: Training) => (
+                <div key={training.id} className={`training-card ${training.completed ? 'completed' : ''}`}>
+                  <div className="training-content">
+                    <div className="training-header">
+                      <h3 className="training-title">{training.title}</h3>
+                      <div className="training-actions">
                         <button
-                          onClick={() => startEditingTodo(todo)}
+                          onClick={() => startEditingTraining(training)}
                           className="action-button edit"
                           title="編集"
                         >
                           <Edit size={16} />
                         </button>
                         <button
-                          onClick={() => deleteTodo(todo.id)}
+                          onClick={() => deleteTraining(training.id)}
                           className="action-button delete"
                           title="削除"
                         >
@@ -1111,35 +1176,51 @@ export default function Home() {
                       </div>
                     </div>
                     
-                    {todo.description && (
-                      <p className="todo-description">{todo.description}</p>
+                    {training.description && (
+                      <p className="training-description">{training.description}</p>
                     )}
                     
-                    <div className="todo-meta">
-                      <div className="todo-priority">
-                        <span className={`priority-badge ${getPriorityColor(todo.priority)}`}>
-                          {getPriorityLabel(todo.priority)}
-                        </span>
+                    <div className="training-meta">
+                      <div className="training-date">
+                        <Calendar size={14} />
+                        <span>{new Date(training.date).toLocaleDateString('ja-JP')}</span>
                       </div>
-                      {todo.dueDate && (
-                        <div className="todo-due-date">
-                          <Calendar size={14} />
-                          <span>期限: {new Date(todo.dueDate).toLocaleDateString('ja-JP')}</span>
+                      {training.duration && (
+                        <div className="training-duration">
+                          <Clock size={14} />
+                          <span>{training.duration}</span>
                         </div>
                       )}
                     </div>
                     
-                    <div className="todo-date">
-                      作成日: {new Date(todo.createdAt).toLocaleDateString('ja-JP')}
+                    {training.exercises.length > 0 && (
+                      <div className="training-exercises">
+                        <h4>エクササイズ</h4>
+                        <div className="exercises-list">
+                          {training.exercises.map((exercise, idx) => (
+                            <div key={idx} className="exercise-item">
+                              <span className="exercise-name">{exercise.name}</span>
+                              <span className="exercise-details">
+                                {exercise.sets}セット × {exercise.reps}回
+                                {exercise.weight && exercise.weight > 0 && ` (${exercise.weight}kg)`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="training-date">
+                      作成日: {new Date(training.createdAt).toLocaleDateString('ja-JP')}
                     </div>
                   </div>
                   
                   <button
-                    onClick={() => toggleTodo(todo.id)}
-                    className={`todo-complete-button ${todo.completed ? 'completed' : ''}`}
+                    onClick={() => toggleTraining(training.id)}
+                    className={`training-complete-button ${training.completed ? 'completed' : ''}`}
                   >
                     <Check size={20} />
-                    {todo.completed ? '完了済み' : '完了にする'}
+                    {training.completed ? '完了済み' : '完了にする'}
                   </button>
                 </div>
               ))}
@@ -1237,52 +1318,91 @@ export default function Home() {
         </div>
       )}
 
-      {/* Todo編集モーダル */}
-      {editingTodoId && (
+      {/* トレーニング編集モーダル */}
+      {editingTrainingId && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>Todoを編集</h3>
+            <h3>トレーニングを編集</h3>
             <input
               type="text"
-              placeholder="Todoのタイトル"
-              value={newTodo.title}
-              onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
+              placeholder="トレーニングのタイトル"
+              value={newTraining.title}
+              onChange={(e) => setNewTraining({ ...newTraining, title: e.target.value })}
               className="form-input"
             />
             <textarea
               placeholder="説明（オプション）"
-              value={newTodo.description}
-              onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
+              value={newTraining.description}
+              onChange={(e) => setNewTraining({ ...newTraining, description: e.target.value })}
               className="form-textarea"
             />
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">優先度</label>
-                <select
-                  value={newTodo.priority}
-                  onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value })}
-                  className="form-select"
-                >
-                  <option value="low">低</option>
-                  <option value="medium">中</option>
-                  <option value="high">高</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">期限</label>
+                <label className="form-label">日付</label>
                 <input
                   type="date"
-                  value={newTodo.dueDate}
-                  onChange={(e) => setNewTodo({ ...newTodo, dueDate: e.target.value })}
+                  value={newTraining.date}
+                  onChange={(e) => setNewTraining({ ...newTraining, date: e.target.value })}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">時間</label>
+                <input
+                  type="text"
+                  placeholder="例：60分"
+                  value={newTraining.duration}
+                  onChange={(e) => setNewTraining({ ...newTraining, duration: e.target.value })}
                   className="form-input"
                 />
               </div>
             </div>
+            <div className="form-exercises">
+              <label className="form-label">エクササイズ</label>
+              {newTraining.exercises.map((exercise, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <input
+                    type="text"
+                    value={exercise.name}
+                    onChange={e => updateExercise(idx, 'name', e.target.value)}
+                    placeholder="エクササイズ名（例：ベンチプレス）"
+                    style={{ flex: 2 }}
+                    className="form-input"
+                  />
+                  <input
+                    type="number"
+                    value={exercise.sets}
+                    onChange={e => updateExercise(idx, 'sets', parseInt(e.target.value) || 0)}
+                    placeholder="セット数"
+                    style={{ width: 80 }}
+                    className="form-input"
+                  />
+                  <input
+                    type="number"
+                    value={exercise.reps}
+                    onChange={e => updateExercise(idx, 'reps', parseInt(e.target.value) || 0)}
+                    placeholder="回数"
+                    style={{ width: 80 }}
+                    className="form-input"
+                  />
+                  <input
+                    type="number"
+                    value={exercise.weight}
+                    onChange={e => updateExercise(idx, 'weight', parseInt(e.target.value) || 0)}
+                    placeholder="重量(kg)"
+                    style={{ width: 100 }}
+                    className="form-input"
+                  />
+                  <button type="button" onClick={() => removeExercise(idx)} style={{ marginLeft: 4 }}>削除</button>
+                </div>
+              ))}
+              <button type="button" onClick={addExercise} style={{ marginTop: 8 }}>エクササイズを追加</button>
+            </div>
             <div className="modal-buttons">
-              <button onClick={saveTodoEdit} className="save-button">
+              <button onClick={saveTrainingEdit} className="save-button">
                 保存
               </button>
-              <button onClick={cancelTodoEdit} className="cancel-button">
+              <button onClick={cancelTrainingEdit} className="cancel-button">
                 キャンセル
               </button>
             </div>

@@ -357,6 +357,17 @@
   min-height: 100px;
 }
 
+.form-exercises {
+  margin-bottom: 1rem;
+}
+
+.form-exercises label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #8B7355;
+}
+
 .form-buttons {
   display: flex;
   justify-content: flex-end;
@@ -860,8 +871,8 @@
   height: 1.25rem;
 }
 
-/* Todoフィルター */
-.todo-filters {
+/* トレーニングフィルター */
+.training-filters {
   display: flex;
   justify-content: center;
   gap: 0.5rem;
@@ -869,7 +880,7 @@
   flex-wrap: wrap;
 }
 
-.todo-filter-button {
+.training-filter-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -884,30 +895,30 @@
   transition: all 0.3s ease;
 }
 
-.todo-filter-button:hover {
+.training-filter-button:hover {
   background: rgba(160, 120, 80, 0.2);
   transform: translateY(-1px);
 }
 
-.todo-filter-button.active {
+.training-filter-button.active {
   background: linear-gradient(135deg, #6B8E23 0%, #556B2F 100%);
   border-color: rgba(107, 142, 35, 0.5);
   color: #ffffff;
   box-shadow: 0 4px 15px rgba(107, 142, 35, 0.4);
 }
 
-/* Todoカード */
-.todos-container {
+/* トレーニングカード */
+.trainings-container {
   margin-top: 1.5rem;
 }
 
-.todos-list {
+.trainings-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.todo-card {
+.training-card {
   background: rgba(160, 120, 80, 0.1);
   backdrop-filter: blur(5px);
   border-radius: 16px;
@@ -922,7 +933,7 @@
   gap: 1rem;
 }
 
-.todo-card::before {
+.training-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -934,54 +945,42 @@
   transition: opacity 0.3s ease;
 }
 
-.todo-card:hover::before {
+.training-card:hover::before {
   opacity: 1;
 }
 
-.todo-card:hover {
+.training-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(101, 67, 33, 0.15);
   border-color: rgba(160, 120, 80, 0.4);
 }
 
-.todo-card.completed {
+.training-card.completed {
   background: rgba(107, 142, 35, 0.1);
   border-color: rgba(107, 142, 35, 0.3);
   opacity: 0.7;
 }
 
-.todo-card.completed::before {
+.training-card.completed::before {
   background: linear-gradient(135deg, #6B8E23 0%, #556B2F 100%);
   opacity: 1;
 }
 
-.todo-card.high-priority::before {
-  background: linear-gradient(135deg, #DC143C 0%, #B22222 100%);
-}
-
-.todo-card.medium-priority::before {
-  background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%);
-}
-
-.todo-card.low-priority::before {
-  background: linear-gradient(135deg, #4169E1 0%, #1E90FF 100%);
-}
-
-.todo-content {
+.training-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.todo-header {
+.training-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
 }
 
-.todo-title {
+.training-title {
   font-size: 1.125rem;
   font-weight: 600;
   color: #8B7355;
@@ -989,24 +988,24 @@
   flex: 1;
 }
 
-.todo-actions {
+.training-actions {
   display: flex;
   gap: 0.5rem;
   opacity: 0.7;
   transition: opacity 0.3s ease;
 }
 
-.todo-card:hover .todo-actions {
+.training-card:hover .training-actions {
   opacity: 1;
 }
 
-.todo-description {
+.training-description {
   color: rgba(139, 115, 85, 0.8);
   margin-bottom: 0.75rem;
   line-height: 1.5;
 }
 
-.todo-meta {
+.training-meta {
   display: flex;
   gap: 1rem;
   margin-bottom: 0.5rem;
@@ -1014,41 +1013,53 @@
   color: rgba(139, 115, 85, 0.7);
 }
 
-.todo-priority {
+.training-date {
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
-.todo-due-date {
+.training-duration {
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
-.priority-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
+.training-exercises {
+  margin-top: 0.5rem;
+}
+
+.training-exercises h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #8B7355;
+  margin: 0 0 0.5rem 0;
+}
+
+.exercises-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.exercise-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  font-size: 0.8rem;
+  color: rgba(139, 115, 85, 0.8);
+}
+
+.exercise-name {
   font-weight: 500;
 }
 
-.text-red-600.bg-red-100 {
-  color: #DC143C;
-  background: rgba(220, 20, 60, 0.1);
+.exercise-details {
+  color: rgba(139, 115, 85, 0.6);
 }
 
-.text-yellow-600.bg-yellow-100 {
-  color: #DAA520;
-  background: rgba(218, 165, 32, 0.1);
-}
-
-.text-blue-600.bg-blue-100 {
-  color: #4169E1;
-  background: rgba(65, 105, 225, 0.1);
-}
-
-.todo-complete-button {
+.training-complete-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1064,19 +1075,19 @@
   white-space: nowrap;
 }
 
-.todo-complete-button:hover {
+.training-complete-button:hover {
   background: rgba(160, 120, 80, 0.2);
   transform: translateY(-1px);
 }
 
-.todo-complete-button.completed {
+.training-complete-button.completed {
   background: linear-gradient(135deg, #6B8E23 0%, #556B2F 100%);
   border-color: rgba(107, 142, 35, 0.5);
   color: #ffffff;
   box-shadow: 0 4px 15px rgba(107, 142, 35, 0.4);
 }
 
-.todo-date {
+.training-date {
   font-size: 0.8rem;
   color: rgba(139, 115, 85, 0.6);
   font-weight: 400;
@@ -1094,30 +1105,30 @@
     min-width: 150px;
   }
   
-  .todo-card {
+  .training-card {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
     padding: 1.25rem;
   }
   
-  .todo-header {
+  .training-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
   }
   
-  .todo-actions {
+  .training-actions {
     align-self: flex-end;
     opacity: 1;
   }
   
-  .todo-meta {
+  .training-meta {
     flex-direction: column;
     gap: 0.5rem;
   }
   
-  .todo-complete-button {
+  .training-complete-button {
     align-self: stretch;
     justify-content: center;
     padding: 1rem;
